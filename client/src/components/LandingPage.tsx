@@ -175,7 +175,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
       {/* ── NAVBAR ───────────────────────────────────────────────────────── */}
       <nav className="landing-nav">
         <div className="landing-nav-inner">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div 
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
+            title="Go to Top" 
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
+          >
             <img src="/logo.jpg" alt="Primeflow Logo" style={{ width: '44px', height: '44px', borderRadius: '8px', border: '1.5px solid rgba(215,25,32,0.4)', boxShadow: '0 0 12px rgba(215,25,32,0.25)' }} />
             <div>
               <div style={{ fontSize: '1.15rem', fontWeight: '800', letterSpacing: '0.05em', fontFamily: "'Outfit', sans-serif" }}>
@@ -633,7 +637,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
         <div className="landing-container">
           <div className="footer-grid">
             <div className="footer-brand-col">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+              <div 
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
+                title="Go to Top"
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', cursor: 'pointer' }}
+              >
                 <img src="/logo.jpg" alt="Primeflow Logo" style={{ width: '40px', height: '40px', borderRadius: '8px' }} />
                 <div style={{ fontSize: '1.1rem', fontWeight: '800', fontFamily: "'Outfit', sans-serif" }}>
                   PRIME<span style={{ color: '#D71920' }}>FLOW</span>
