@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { getDb } from '../db';
+import { getDb, sendNotificationEmail } from '../db';
 import { authenticateJWT, AuthRequest } from '../middleware/auth';
 
 const router = Router();
@@ -105,6 +105,11 @@ router.post('/', authenticateJWT as any, async (req: AuthRequest, res) => {
     );
 
     const messageId = result.lastID;
+
+    if (req.user.role !== 'client') {
+      const emailMsg = message_text ? `"${message_text.trim()}"` : `Sent you a file attachment: ${filename || 'document'}`;
+      await sendNotificationEmail(db, receiverId, 'New Message from PrimeFlow Advisor', emailMsg);
+    }
     
     // Fetch the newly inserted message with sender name to return
     const newMessage = await db.get(

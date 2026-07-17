@@ -433,7 +433,9 @@ router.get('/profile/:userId', authenticateJWT as any, async (req: AuthRequest, 
         company_name: '',
         address: '',
         profile_bio: '',
-        avatar_url: ''
+        avatar_url: '',
+        state: '',
+        lga: ''
       };
     } else {
       // Map avatar_url to the endpoint
@@ -465,7 +467,7 @@ router.post('/profile/:userId', authenticateJWT as any, async (req: AuthRequest,
   }
   
   const userId = parseInt(req.params.userId as string);
-  const { phone, company_name, address, profile_bio, name } = req.body;
+  const { phone, company_name, address, profile_bio, name, state, lga } = req.body;
   
   // Auth check: Only system administrators can modify text profile fields
   if (req.user.role !== 'admin') {
@@ -492,13 +494,13 @@ router.post('/profile/:userId', authenticateJWT as any, async (req: AuthRequest,
     const profile = await db.get('SELECT user_id FROM profiles WHERE user_id = ?', [userId]);
     if (!profile) {
       await db.run(
-        'INSERT INTO profiles (user_id, phone, company_name, address, profile_bio) VALUES (?, ?, ?, ?, ?)',
-        [userId, phone || '', company_name || '', address || '', profile_bio || '']
+        'INSERT INTO profiles (user_id, phone, company_name, address, profile_bio, state, lga) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [userId, phone || '', company_name || '', address || '', profile_bio || '', state || '', lga || '']
       );
     } else {
       await db.run(
-        'UPDATE profiles SET phone = ?, company_name = ?, address = ?, profile_bio = ? WHERE user_id = ?',
-        [phone || '', company_name || '', address || '', profile_bio || '', userId]
+        'UPDATE profiles SET phone = ?, company_name = ?, address = ?, profile_bio = ?, state = ?, lga = ? WHERE user_id = ?',
+        [phone || '', company_name || '', address || '', profile_bio || '', state || '', lga || '', userId]
       );
     }
     

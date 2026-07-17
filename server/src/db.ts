@@ -66,6 +66,12 @@ async function initializeDatabase(db: Database) {
     try {
       await db.exec("ALTER TABLE messages ADD COLUMN is_read INTEGER DEFAULT 0");
     } catch (e) {}
+    try {
+      await db.exec("ALTER TABLE profiles ADD COLUMN state TEXT");
+    } catch (e) {}
+    try {
+      await db.exec("ALTER TABLE profiles ADD COLUMN lga TEXT");
+    } catch (e) {}
   } catch (err) {
     console.error("Migration warning:", err);
   }
@@ -186,4 +192,34 @@ async function seedDatabase(db: Database) {
     [adminUser.id, 'DATABASE_SEED', 'Successfully seeded mock users and projects in Abuja, Nigeria database.', '127.0.0.1']
   );
   console.log('Seeding completed.');
+}
+
+export async function sendNotificationEmail(db: any, userId: number, title: string, messageText: string) {
+  try {
+    const user = await db.get('SELECT name, email FROM users WHERE id = ?', [userId]);
+    if (!user) return;
+
+    const emailData = {
+      to: user.email,
+      toName: user.name,
+      subject: `[PrimeFlow Alert] ${title}`,
+      body: `Dear ${user.name},\n\nThis is an alert from PrimeFlow Admin:\n\n${messageText}\n\nBest regards,\nPrimeFlow Team`,
+      timestamp: new Date().toISOString()
+    };
+
+    const mailboxPath = path.resolve(__dirname, '..', 'mock_mailbox.json');
+    let currentMailbox: any[] = [];
+    if (fs.existsSync(mailboxPath)) {
+      try {
+        currentMailbox = JSON.parse(fs.readFileSync(mailboxPath, 'utf8'));
+      } catch (e) {
+        currentMailbox = [];
+      }
+    }
+    currentMailbox.push(emailData);
+    fs.writeFileSync(mailboxPath, JSON.stringify(currentMailbox, null, 2), 'utf8');
+    console.log(`[EMAIL SENT] To: ${user.email} | Subject: ${emailData.subject}`);
+  } catch (err) {
+    console.error('Failed to send notification email simulation:', err);
+  }
 }

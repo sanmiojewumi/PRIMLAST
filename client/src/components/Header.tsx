@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, API_BASE } from '../context/AuthContext';
-import { Bell, Search, User as UserIcon, Menu } from 'lucide-react';
+import { Bell, Search, User as UserIcon, Menu, Mail } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: string;
@@ -12,6 +12,8 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
   const { user, token } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [showMailbox, setShowMailbox] = useState(false);
+  const [emails, setEmails] = useState<any[]>([]);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -81,9 +83,27 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
     }
   };
 
+  const fetchEmails = async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE}/services/mock-mailbox`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setEmails(await res.json());
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000);
+    fetchEmails();
+    const interval = setInterval(() => {
+      fetchNotifications();
+      fetchEmails();
+    }, 10000);
     return () => clearInterval(interval);
   }, [token]);
 
@@ -235,10 +255,108 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
           )}
         </div>
 
+        {/* Mailbox Simulator */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => {
+              setShowMailbox(!showMailbox);
+              setShowNotifications(false);
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              padding: '6px',
+              borderRadius: '50%',
+              position: 'relative'
+            }}
+            title="Mailbox Alerts Simulator"
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+          >
+            <Mail size={20} />
+            {emails.length > 0 && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '4px',
+                  right: '4px',
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: '#22c55e',
+                  boxShadow: '0 0 8px #22c55e'
+                }}
+              />
+            )}
+          </button>
+
+          {/* Mailbox Dropdown */}
+          {showMailbox && (
+            <div
+              className="glass-panel"
+              style={{
+                position: 'absolute',
+                top: '40px',
+                right: 0,
+                width: '350px',
+                padding: '16px',
+                zIndex: 110,
+                animation: 'fadeIn 0.2s ease forwards'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#fff' }}>Simulated Email Inbox</span>
+                <span style={{ fontSize: '0.65rem', background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+                  Active Delivery
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '300px', overflowY: 'auto' }}>
+                {emails.slice().reverse().map((em, idx) => (
+                  <div 
+                    key={idx} 
+                    style={{ 
+                      padding: '10px', 
+                      borderRadius: '6px', 
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      border: '1px solid var(--border-color)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', fontWeight: '600', marginBottom: '4px' }}>
+                      <span style={{ color: '#fff' }}>{em.subject}</span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                        {new Date(em.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                      To: {em.to}
+                    </div>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0, whiteSpace: 'pre-wrap' }}>
+                      {em.body}
+                    </p>
+                  </div>
+                ))}
+
+                {emails.length === 0 && (
+                  <div style={{ padding: '24px 16px', fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+                    No emails received yet. Email alerts sent by administrators will show up here in real time.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Notifications */}
         <div style={{ position: 'relative' }}>
           <button
-            onClick={() => setShowNotifications(!showNotifications)}
+            onClick={() => {
+              setShowNotifications(!showNotifications);
+              setShowMailbox(false);
+            }}
             style={{
               background: 'none',
               border: 'none',

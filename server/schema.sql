@@ -93,6 +93,8 @@ CREATE TABLE IF NOT EXISTS profiles (
   address TEXT,
   profile_bio TEXT,
   avatar_url TEXT,
+  state TEXT,
+  lga TEXT,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 

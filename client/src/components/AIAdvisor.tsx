@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bot, Send, Minimize2, RefreshCw, Sparkles, ChevronDown } from 'lucide-react';
+import { useAuth, API_BASE } from '../context/AuthContext';
 
 interface Message {
   id: string;
@@ -82,12 +83,22 @@ const QUICK_PROMPTS = [
 ];
 
 // ─── Match KB entry ───────────────────────────────────────────────────────────
-function matchResponse(input: string): string {
+function matchResponse(input: string, location: { state: string; lga: string } | null): string {
   const lower = input.toLowerCase();
+
+  // Location specific query intercepts
+  if (location && location.state && (lower.includes('office') || lower.includes('location') || lower.includes('address') || lower.includes('where are you'))) {
+    return `📍 **Primeflow Localized Advisory**\n\nSince your business is registered in **${location.state} ${location.lga ? '(' + location.lga + ')' : ''}**, our services are customized for your location!\n\n🏢 **Abuja HQ Office:** Suite 29, Ejimuz Plaza, Aso Savings Road, Kubwa, Abuja.\n\n💼 **Local Support:** We offer remote consultations and physical document pickup services across **${location.state}** to make your compliance filings hassle-free!\n\n💬 **Contact local advisor:**\n📞 **Call & WhatsApp:** +234 707 292 8256\n📱 **WhatsApp Only:** +234 706 671 4961`;
+  }
+
   for (const key of Object.keys(KB)) {
     if (key === 'default') continue;
     if (KB[key].patterns.some(p => lower.includes(p))) {
-      return KB[key].response;
+      let resp = KB[key].response;
+      if (location && location.state && key === 'contact') {
+        resp += `\n\n📍 *Special Note for clients in **${location.state}**: We have dedicated representatives assigned to coordinate filings in your region!*`;
+      }
+      return resp;
     }
   }
   return KB.default.response;
@@ -132,6 +143,7 @@ function formatText(text: string): React.ReactNode {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const AIAdvisor: React.FC = () => {
+  const { user, token } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '0',
@@ -144,8 +156,32 @@ const AIAdvisor: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [showPrompts, setShowPrompts] = useState(true);
+  const [userLocation, setUserLocation] = useState<{ state: string; lga: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!user || !token) return;
+    const fetchLoc = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/auth/profile/${user.id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.profile?.state) {
+            setUserLocation({
+              state: data.profile.state,
+              lga: data.profile.lga || ''
+            });
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchLoc();
+  }, [user, token]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -163,7 +199,7 @@ const AIAdvisor: React.FC = () => {
     // Simulate AI thinking delay
     const delay = 600 + Math.random() * 800;
     setTimeout(() => {
-      const responseText = matchResponse(text);
+      const responseText = matchResponse(text, userLocation);
       const botMsg: Message = { id: (Date.now() + 1).toString(), role: 'assistant', text: responseText, timestamp: new Date() };
       setMessages(prev => [...prev, botMsg]);
       setIsTyping(false);

@@ -15,6 +15,30 @@ const DashboardOverview: React.FC = () => {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [clientApps, setClientApps] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  const [profileLocation, setProfileLocation] = useState<{ state: string; lga: string } | null>(null);
+
+  useEffect(() => {
+    if (!user || !token) return;
+    const fetchLoc = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/auth/profile/${user.id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.profile) {
+            setProfileLocation({
+              state: data.profile.state || '',
+              lga: data.profile.lga || ''
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch user location profile:', e);
+      }
+    };
+    fetchLoc();
+  }, [user, token]);
 
   useEffect(() => {
     if (!user || !token) return;
@@ -88,11 +112,11 @@ const DashboardOverview: React.FC = () => {
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
             {isClient 
               ? 'Track your regulatory submissions, file renewals, or launch new company incorporations.' 
-              : 'Here is the operational overview for PrimeFlow Abuja office today.'}
+              : `Here is the operational overview for PrimeFlow ${profileLocation?.state || 'Abuja'} office today.`}
           </p>
         </div>
         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'right' }}>
-          <div>Location: Abuja, Nigeria</div>
+          <div>Location: {profileLocation?.state ? `${profileLocation.state}${profileLocation.lga ? ' (' + profileLocation.lga + ')' : ''}, Nigeria` : 'Abuja, Nigeria'}</div>
           <div>Date: {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
         </div>
       </div>

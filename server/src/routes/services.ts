@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { getDb } from '../db';
+import { getDb, sendNotificationEmail } from '../db';
 import { authenticateJWT, AuthRequest, requireRole } from '../middleware/auth';
 
 const router = Router();
@@ -179,14 +179,17 @@ router.put('/applications/:id/status', authenticateJWT as any, requireRole(['adm
     );
 
     // Insert status notification for the client
+    const notificationMsg = `Your application for ${app.service_type.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())} (Ref: #${appId}) status has been updated to "${status.replace(/_/g, ' ')}".`;
     await db.run(
       'INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)',
       [
         app.client_id,
         'Application Status Update',
-        `Your application for ${app.service_type.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())} (Ref: #${appId}) status has been updated to "${status.replace(/_/g, ' ')}".`
+        notificationMsg
       ]
     );
+
+    await sendNotificationEmail(db, app.client_id, 'Application Status Update', notificationMsg);
 
     await logAudit(
       req.user.id,
@@ -365,6 +368,34 @@ router.get('/unread-summary', authenticateJWT as any, async (req: AuthRequest, r
       notifications,
       messages
     });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET MOCK MAILBOX FOR CURRENT USER
+router.get('/mock-mailbox', authenticateJWT as any, async (req: AuthRequest, res) => {
+  if (!req.user) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+  const email = req.user.email;
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const mailboxPath = path.resolve(__dirname, '..', 'mock_mailbox.json');
+    let emails: any[] = [];
+    if (fs.existsSync(mailboxPath)) {
+      try {
+        const fileContent = fs.readFileSync(mailboxPath, 'utf8');
+        emails = JSON.parse(fileContent);
+      } catch (e) {
+        emails = [];
+      }
+    }
+    const userEmails = emails.filter((em: any) => em.to.toLowerCase() === email.toLowerCase());
+    res.status(200).json(userEmails);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });

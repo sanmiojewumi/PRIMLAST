@@ -3,7 +3,7 @@ import { useAuth, API_BASE } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import DashboardOverview from './components/DashboardOverview';
-import ServicesPortal from './components/ServicesPortal';
+import ServicesPortal, { NIGERIA_STATES_AND_LGAS } from './components/ServicesPortal';
 import KanbanBoard from './components/KanbanBoard';
 import ChatRoom from './components/ChatRoom';
 import AdminPortal from './components/AdminPortal';
@@ -77,6 +77,8 @@ const App: React.FC = () => {
   const [profAddress, setProfAddress] = useState('');
   const [profBio, setProfBio] = useState('');
   const [profAvatar, setProfAvatar] = useState('');
+  const [profState, setProfState] = useState('');
+  const [profLga, setProfLga] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
@@ -168,6 +170,8 @@ const App: React.FC = () => {
         setProfAddress(data.profile.address);
         setProfBio(data.profile.profile_bio);
         setProfAvatar(data.profile.avatar_url || '');
+        setProfState(data.profile.state || '');
+        setProfLga(data.profile.lga || '');
       } else {
         setProfileError(data.error || 'Failed to fetch profile details');
       }
@@ -197,7 +201,9 @@ const App: React.FC = () => {
             phone: profPhone,
             company_name: profCompany,
             address: profAddress,
-            profile_bio: profBio
+            profile_bio: profBio,
+            state: profState,
+            lga: profLga
           })
         });
         const detailsData = await detailsRes.json();
@@ -1333,6 +1339,60 @@ const App: React.FC = () => {
                       readOnly={user.role !== 'admin'}
                       style={user.role !== 'admin' ? { background: 'rgba(255,255,255,0.01)', color: 'var(--text-secondary)' } : {}}
                     />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">State</label>
+                      {user.role === 'admin' ? (
+                        <select
+                          className="form-select"
+                          value={profState}
+                          onChange={(e) => {
+                            setProfState(e.target.value);
+                            setProfLga('');
+                          }}
+                        >
+                          <option value="">Select State</option>
+                          {Object.keys(NIGERIA_STATES_AND_LGAS).map(st => (
+                            <option key={st} value={st}>{st}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={profState || 'Not Set'}
+                          readOnly
+                          style={{ background: 'rgba(255,255,255,0.01)', color: 'var(--text-secondary)' }}
+                        />
+                      )}
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">Local Government (LGA)</label>
+                      {user.role === 'admin' ? (
+                        <select
+                          className="form-select"
+                          value={profLga}
+                          onChange={(e) => setProfLga(e.target.value)}
+                          disabled={!profState}
+                        >
+                          <option value="">Select LGA</option>
+                          {profState && NIGERIA_STATES_AND_LGAS[profState]?.map(lg => (
+                            <option key={lg} value={lg}>{lg}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={profLga || 'Not Set'}
+                          readOnly
+                          style={{ background: 'rgba(255,255,255,0.01)', color: 'var(--text-secondary)' }}
+                        />
+                      )}
+                    </div>
                   </div>
 
                   <div className="form-group">
