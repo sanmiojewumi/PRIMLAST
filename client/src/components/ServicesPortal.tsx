@@ -47,10 +47,12 @@ const COMPLIANCE_SUB_SERVICES = [
   "NSITF",
   "TCC",
   "BPP",
-  "SCUML"
+  "SCUML",
+  "TIN Validation"
 ];
 
 const OTHER_SUB_SERVICES = [
+  "Trademark Registration",
   "Export licence",
   "Mining licence",
   "NAFDAC",
@@ -99,6 +101,17 @@ const NIGERIA_STATES_AND_LGAS: Record<string, string[]> = {
   "Yobe": ["Bade", "Bursari", "Damaturu", "Fika", "Fune", "Geidam", "Gujba", "Gulani", "Jakusko", "Karasuwa", "Machina", "Nangere", "Nguru", "Potiskum", "Tarmuwa", "Yunusari", "Yusufari"],
   "Zamfara": ["Anka", "Bakura", "Bukkuyum", "Bungudu", "Gummi", "Gusau", "Kaura Namoda", "Maradun", "Maru", "Shinkafi", "Talata Mafara", "Zurmi"]
 };
+
+const COMPLIANCE_DOCS_MAP: Record<string, string[]> = {
+  "NSITF": ["CAC Certificate", "Director's Identity Card", "Director's Signature"],
+  "SCUML": ["All CAC Documents", "TIN Slip"],
+  "TIN Validation": ["CAC Certificate", "Utility Bill", "NIN Slip"],
+  "ITF": ["CAC Certificate", "Previous NSITF Certificate for renewal"],
+  "Pencom": ["CAC Certificate", "Director's Identity Card", "Staff Details"],
+  "TCC": ["CAC Certificate", "TIN Slip", "Director's Tax Clearance Slip"],
+  "BPP": ["CAC Certificate", "TCC Certificate", "ITF Certificate", "NSITF Certificate"]
+};
+
 
 const ServicesPortal: React.FC = () => {
   const { token } = useAuth();
@@ -212,14 +225,105 @@ const ServicesPortal: React.FC = () => {
   const [compNokPhone, setCompNokPhone] = useState<string>('');
   const [compBvn, setCompBvn] = useState<string>('');
 
-  // Compliance 5 required files state
-  const [complianceRequiredFiles, setComplianceRequiredFiles] = useState<Record<string, File[]>>({
-    'Passport photography': [],
-    'Signature': [],
-    'NIN slip': [],
-    'CAC document': [],
-    'company letter head': []
-  });
+  // --- NSITF Custom Fields ---
+  const [nsitfFullName, setNsitfFullName] = useState<string>('');
+  const [nsitfMaritalStatus, setNsitfMaritalStatus] = useState<string>('Single');
+  const [nsitfDob, setNsitfDob] = useState<string>('');
+  const [nsitfResAddress, setNsitfResAddress] = useState<string>('');
+  const [nsitfStateOfOrigin, setNsitfStateOfOrigin] = useState<string>('');
+  const [nsitfLgaOfOrigin, setNsitfLgaOfOrigin] = useState<string>('');
+  const [nsitfPhone, setNsitfPhone] = useState<string>('');
+  const [nsitfNin, setNsitfNin] = useState<string>('');
+  const [nsitfEmail, setNsitfEmail] = useState<string>('');
+  const [nsitfDependentsCount, setNsitfDependentsCount] = useState<string>('0');
+  const [nsitfNokName, setNsitfNokName] = useState<string>('');
+  const [nsitfNokPhone, setNsitfNokPhone] = useState<string>('');
+  const [nsitfNokRelationship, setNsitfNokRelationship] = useState<string>('');
+  const [nsitfCompanyAddress, setNsitfCompanyAddress] = useState<string>('');
+  const [nsitfCompanyEmail, setNsitfCompanyEmail] = useState<string>('');
+  const [nsitfCompanyPhone, setNsitfCompanyPhone] = useState<string>('');
+  const [nsitfStaffList, setNsitfStaffList] = useState<{ name: string; designation: string; phone: string; }[]>([
+    { name: '', designation: '', phone: '' },
+    { name: '', designation: '', phone: '' },
+    { name: '', designation: '', phone: '' }
+  ]);
+
+  // --- TRADEMARK Custom Fields ---
+  const [tmProposedName, setTmProposedName] = useState<string>('');
+  const [tmSurname, setTmSurname] = useState<string>('');
+  const [tmFirstName, setTmFirstName] = useState<string>('');
+  const [tmMiddleName, setTmMiddleName] = useState<string>('');
+  const [tmAddress, setTmAddress] = useState<string>('');
+  const [tmBusinessClass, setTmBusinessClass] = useState<string>('');
+  const [tmPhone, setTmPhone] = useState<string>('');
+  const [tmCompanyName, setTmCompanyName] = useState<string>('');
+  const [tmEmail, setTmEmail] = useState<string>('');
+
+  // --- SCUML Custom Fields ---
+  const [scumlCompanyName, setScumlCompanyName] = useState<string>('');
+  const [scumlRcNumber, setScumlRcNumber] = useState<string>('');
+  const [scumlIncDate, setScumlIncDate] = useState<string>('');
+  const [scumlCompanyAddress, setScumlCompanyAddress] = useState<string>('');
+  const [scumlTin, setScumlTin] = useState<string>('');
+  const [scumlDirectorName, setScumlDirectorName] = useState<string>('');
+  const [scumlDirectorEmail, setScumlDirectorEmail] = useState<string>('');
+  const [scumlDirectorPhone, setScumlDirectorPhone] = useState<string>('');
+  const [scumlBankName, setScumlBankName] = useState<string>('');
+  const [scumlBankAccount, setScumlBankAccount] = useState<string>('');
+  const [scumlNin, setScumlNin] = useState<string>('');
+  const [scumlDob, setScumlDob] = useState<string>('');
+  const [scumlBvn, setScumlBvn] = useState<string>('');
+  const [scumlGender, setScumlGender] = useState<string>('Male');
+
+  // --- TIN VALIDATION Custom Fields ---
+  const [tvCompanyName, setTvCompanyName] = useState<string>('');
+  const [tvRcNumber, setTvRcNumber] = useState<string>('');
+  const [tvTin, setTvTin] = useState<string>('');
+  const [tvNatureOfBusiness, setTvNatureOfBusiness] = useState<string>('');
+  const [tvCompanyAddress, setTvCompanyAddress] = useState<string>('');
+  const [tvCompanyPhone, setTvCompanyPhone] = useState<string>('');
+  const [tvCompanyEmail, setTvCompanyEmail] = useState<string>('');
+  const [tvCommencementDate, setTvCommencementDate] = useState<string>('');
+  const [tvAccountingYearEnd, setTvAccountingYearEnd] = useState<string>('');
+  const [tvAuthorizedPerson, setTvAuthorizedPerson] = useState<string>('');
+  const [tvDirectorEmail, setTvDirectorEmail] = useState<string>('');
+  const [tvDirectorPhone, setTvDirectorPhone] = useState<string>('');
+
+  // --- ITF Custom Fields ---
+  const [itfCompanyAddress, setItfCompanyAddress] = useState<string>('');
+  const [itfEmail, setItfEmail] = useState<string>('');
+  const [itfPhone, setItfPhone] = useState<string>('');
+  const [itfTin, setItfTin] = useState<string>('');
+
+  // Compliance required files state
+  const [complianceRequiredFiles, setComplianceRequiredFiles] = useState<Record<string, File[]>>({});
+
+  const getComplianceRequiredDocs = (): string[] => {
+    const docs = new Set<string>();
+    selectedComplianceServices.forEach(sub => {
+      const subDocs = COMPLIANCE_DOCS_MAP[sub] || ["CAC Certificate", "Director's Identity Card"];
+      subDocs.forEach(d => docs.add(d));
+    });
+    if (docs.size === 0) {
+      return ['Passport photography', 'Signature', 'NIN slip', 'CAC document', 'company letter head'];
+    }
+    return Array.from(docs);
+  };
+
+
+  const getOtherRequiredDocsList = (): { key: string; label: string; isCustom: boolean }[] => {
+    const list: { key: string; label: string; isCustom: boolean }[] = [];
+    selectedOtherServices.forEach(sub => {
+      if (sub === 'Trademark Registration') {
+        list.push({ key: 'CAC Certificate', label: 'CAC Certificate', isCustom: true });
+        list.push({ key: 'Company Logo', label: 'Company Logo', isCustom: true });
+        list.push({ key: "Director's Signature", label: "Director's Signature", isCustom: true });
+      } else {
+        list.push({ key: sub, label: `${sub} Supporting Document`, isCustom: false });
+      }
+    });
+    return list;
+  };
 
   // Listen to navigation events from Global Search
   React.useEffect(() => {
@@ -475,112 +579,83 @@ const ServicesPortal: React.FC = () => {
           return false;
         }
       } else if (selectedService === 'compliance') {
-        if (!firstName.trim()) {
-          setError('First name is required.');
-          return false;
+        if (selectedComplianceServices.includes('NSITF')) {
+          if (!nsitfFullName.trim()) { setError('NSITF Full name is required.'); return false; }
+          if (!nsitfDob.trim()) { setError('NSITF Date of birth is required.'); return false; }
+          if (!nsitfResAddress.trim()) { setError('NSITF Residential address is required.'); return false; }
+          if (!nsitfStateOfOrigin.trim()) { setError('NSITF State of Origin is required.'); return false; }
+          if (!nsitfLgaOfOrigin.trim()) { setError('NSITF Local Govt (LGA) of Origin is required.'); return false; }
+          if (!nsitfPhone.trim()) { setError('NSITF Phone number is required.'); return false; }
+          if (!nsitfNin.trim() || nsitfNin.trim().length !== 11) { setError('NSITF NIN must be exactly 11 digits.'); return false; }
+          if (!nsitfEmail.trim() || !isValidEmail(nsitfEmail)) { setError('NSITF valid Email is required.'); return false; }
+          if (!nsitfNokName.trim()) { setError('NSITF Next of Kin name is required.'); return false; }
+          if (!nsitfNokPhone.trim()) { setError('NSITF Next of Kin phone number is required.'); return false; }
+          if (!nsitfNokRelationship.trim()) { setError('NSITF Next of Kin relationship is required.'); return false; }
+          if (!nsitfCompanyAddress.trim()) { setError('NSITF Company address is required.'); return false; }
+          if (!nsitfCompanyEmail.trim() || !isValidEmail(nsitfCompanyEmail)) { setError('NSITF valid Company email is required.'); return false; }
+          if (!nsitfCompanyPhone.trim()) { setError('NSITF Company phone is required.'); return false; }
+          if (nsitfStaffList.length < 3) { setError('NSITF requires a minimum of 3 Staff.'); return false; }
+          for (let idx = 0; idx < nsitfStaffList.length; idx++) {
+            const staff = nsitfStaffList[idx];
+            if (!staff.name.trim()) { setError(`NSITF Staff #${idx + 1} Name is required.`); return false; }
+            if (!staff.designation.trim()) { setError(`NSITF Staff #${idx + 1} Designation is required.`); return false; }
+            if (!staff.phone.trim()) { setError(`NSITF Staff #${idx + 1} Phone Number is required.`); return false; }
+          }
         }
-        if (!surname.trim()) {
-          setError('Surname is required.');
-          return false;
+        if (selectedComplianceServices.includes('SCUML')) {
+          if (!scumlCompanyName.trim()) { setError('SCUML Company name is required.'); return false; }
+          if (!scumlRcNumber.trim()) { setError('SCUML Company RC/BN is required.'); return false; }
+          if (!scumlIncDate.trim()) { setError('SCUML Date of incorporation is required.'); return false; }
+          if (!scumlCompanyAddress.trim()) { setError('SCUML Company address is required.'); return false; }
+          if (!scumlTin.trim()) { setError('SCUML TIN number is required.'); return false; }
+          if (!scumlDirectorName.trim()) { setError('SCUML Director full name is required.'); return false; }
+          if (!scumlDirectorEmail.trim() || !isValidEmail(scumlDirectorEmail)) { setError('SCUML valid Director email is required.'); return false; }
+          if (!scumlDirectorPhone.trim()) { setError('SCUML Director Phone number is required.'); return false; }
+          if (!scumlBankName.trim()) { setError('SCUML Bank name is required.'); return false; }
+          if (!scumlBankAccount.trim()) { setError('SCUML Account number is required.'); return false; }
+          if (!scumlNin.trim() || scumlNin.trim().length !== 11) { setError('SCUML NIN must be exactly 11 digits.'); return false; }
+          if (!scumlDob.trim()) { setError('SCUML Date of birth is required.'); return false; }
+          if (!scumlBvn.trim() || scumlBvn.trim().length !== 11) { setError('SCUML BVN must be exactly 11 digits.'); return false; }
         }
-        if (!partyPhone.trim()) {
-          setError('Phone number is required.');
-          return false;
+        if (selectedComplianceServices.includes('TIN Validation')) {
+          if (!tvCompanyName.trim()) { setError('TIN Validation Company/Business Name is required.'); return false; }
+          if (!tvRcNumber.trim()) { setError('TIN Validation RC/BN number is required.'); return false; }
+          if (!tvTin.trim()) { setError('TIN Validation FIRS TIN number is required.'); return false; }
+          if (!tvNatureOfBusiness.trim()) { setError('TIN Validation Line of Business is required.'); return false; }
+          if (!tvCompanyAddress.trim()) { setError('TIN Validation Company address is required.'); return false; }
+          if (!tvCompanyPhone.trim()) { setError('TIN Validation Company phone is required.'); return false; }
+          if (!tvCompanyEmail.trim() || !isValidEmail(tvCompanyEmail)) { setError('TIN Validation valid Company email is required.'); return false; }
+          if (!tvCommencementDate.trim()) { setError('TIN Validation Commencement date is required.'); return false; }
+          if (!tvAccountingYearEnd.trim()) { setError('TIN Validation Accounting Year End is required.'); return false; }
+          if (!tvAuthorizedPerson.trim()) { setError('TIN Validation Name of Authorized Person(s) is required.'); return false; }
+          if (!tvDirectorEmail.trim() || !isValidEmail(tvDirectorEmail)) { setError('TIN Validation valid Director email is required.'); return false; }
+          if (!tvDirectorPhone.trim()) { setError('TIN Validation Director phone is required.'); return false; }
         }
-        if (!partyEmail.trim()) {
-          setError('Email address is required.');
-          return false;
+        if (selectedComplianceServices.includes('ITF')) {
+          if (!itfCompanyAddress.trim()) { setError('ITF Address is required.'); return false; }
+          if (!itfEmail.trim() || !isValidEmail(itfEmail)) { setError('ITF valid email is required.'); return false; }
+          if (!itfPhone.trim()) { setError('ITF Phone number is required.'); return false; }
+          if (!itfTin.trim()) { setError('ITF TIN number is required.'); return false; }
         }
-        if (!dob.trim()) {
-          setError('Date of birth is required.');
-          return false;
+        const activeDefaults = selectedComplianceServices.filter(s => !['NSITF', 'SCUML', 'TIN Validation', 'ITF'].includes(s));
+        if (activeDefaults.length > 0) {
+          if (!firstName.trim()) { setError('Contact Person First name is required.'); return false; }
+          if (!surname.trim()) { setError('Contact Person Surname is required.'); return false; }
+          if (!partyPhone.trim()) { setError('Contact Person Phone is required.'); return false; }
+          if (!partyEmail.trim() || !isValidEmail(partyEmail)) { setError('Contact Person valid Email is required.'); return false; }
+          if (!compAddress.trim()) { setError('Company / Business Address is required.'); return false; }
         }
-        if (!compMaritalStatus.trim()) {
-          setError('Marital status is required.');
-          return false;
+      } else if (selectedService === 'other_services') {
+        if (selectedOtherServices.includes('Trademark Registration')) {
+          if (!tmProposedName.trim()) { setError('Trademark Proposed Name is required.'); return false; }
+          if (!tmSurname.trim()) { setError('Trademark Surname is required.'); return false; }
+          if (!tmFirstName.trim()) { setError('Trademark First Name is required.'); return false; }
+          if (!tmAddress.trim()) { setError('Trademark Business/Company Address is required.'); return false; }
+          if (!tmBusinessClass.trim()) { setError('Trademark Class of Business is required.'); return false; }
+          if (!tmPhone.trim()) { setError('Trademark Phone Number is required.'); return false; }
+          if (!tmCompanyName.trim()) { setError('Trademark Business/Company Name is required.'); return false; }
+          if (!tmEmail.trim() || !isValidEmail(tmEmail)) { setError('Trademark valid Email is required.'); return false; }
         }
-        if (!compStateOfOrigin.trim()) {
-          setError('State of Origin is required.');
-          return false;
-        }
-        if (!compLgaOfOrigin.trim()) {
-          setError('LGA of Origin is required.');
-          return false;
-        }
-        if (!compPlaceOfBirth.trim()) {
-          setError('Place of birth is required.');
-          return false;
-        }
-        if (!compNin.trim()) {
-          setError('National ID Number (NIN) is required.');
-          return false;
-        }
-        if (!compAddress.trim()) {
-          setError('Address is required.');
-          return false;
-        }
-
-        if (!isValidName(firstName) || !isValidName(surname) || (otherName.trim() && !isValidName(otherName))) {
-          setError('Names must contain only alphabetic characters.');
-          return false;
-        }
-        if (!isValidEmail(partyEmail)) {
-          setError('Invalid email address format.');
-          return false;
-        }
-        if (!isValidPhone(partyPhone)) {
-          setError('Invalid phone number format.');
-          return false;
-        }
-        if (!isValidPhone(compNin) || compNin.trim().length !== 11) {
-          setError('National ID Number (NIN) must be exactly 11 digits.');
-          return false;
-        }
-
-        // NOK
-        if (!compNokFirstName.trim()) {
-          setError('Next of Kin First name is required.');
-          return false;
-        }
-        if (!compNokSurname.trim()) {
-          setError('Next of Kin Surname is required.');
-          return false;
-        }
-        if (!compNokRelationship.trim()) {
-          setError('Relationship with next of kin is required.');
-          return false;
-        }
-        if (!compNokAddress.trim()) {
-          setError('Next of Kin Address is required.');
-          return false;
-        }
-        if (!compNokPhone.trim()) {
-          setError('Next of Kin Phone is required.');
-          return false;
-        }
-        if (!compBvn.trim()) {
-          setError('BVN is required.');
-          return false;
-        }
-
-        if (!isValidName(compNokFirstName) || !isValidName(compNokSurname) || (compNokOtherName.trim() && !isValidName(compNokOtherName))) {
-          setError('Next of Kin names must contain only alphabetic characters.');
-          return false;
-        }
-        if (compNokEmail.trim() && !isValidEmail(compNokEmail)) {
-          setError('Invalid Next of Kin email address format.');
-          return false;
-        }
-        if (!isValidPhone(compNokPhone)) {
-          setError('Invalid Next of Kin phone number format.');
-          return false;
-        }
-        if (!isValidPhone(compBvn) || compBvn.trim().length !== 11) {
-          setError('BVN must be exactly 11 digits.');
-          return false;
-        }
-      } else {
-        // detailsText is optional in step 2
       }
     }
     return true;
@@ -719,13 +794,83 @@ const ServicesPortal: React.FC = () => {
     } else if (selectedService === 'other_services') {
       detailsObj = {
         subServices: selectedOtherServices,
-        details: detailsText
+        details: detailsText,
+        trademarkDetails: selectedOtherServices.includes('Trademark Registration') ? {
+          proposedName: tmProposedName,
+          surname: tmSurname,
+          firstName: tmFirstName,
+          middleName: tmMiddleName,
+          address: tmAddress,
+          businessClass: tmBusinessClass,
+          phone: tmPhone,
+          companyName: tmCompanyName,
+          email: tmEmail
+        } : undefined
       };
     } else {
       detailsObj = {
-        requestType: complianceType,
         rcNumber,
-        details: detailsText
+        selectedSubServices: selectedComplianceServices,
+        details: detailsText,
+        nsitfDetails: selectedComplianceServices.includes('NSITF') ? {
+          fullName: nsitfFullName,
+          maritalStatus: nsitfMaritalStatus,
+          dob: nsitfDob,
+          residentialAddress: nsitfResAddress,
+          stateOfOrigin: nsitfStateOfOrigin,
+          lgaOfOrigin: nsitfLgaOfOrigin,
+          phone: nsitfPhone,
+          nin: nsitfNin,
+          email: nsitfEmail,
+          dependentsCount: nsitfDependentsCount,
+          nextOfKin: {
+            name: nsitfNokName,
+            phone: nsitfNokPhone,
+            relationship: nsitfNokRelationship
+          },
+          companyAddress: nsitfCompanyAddress,
+          companyEmail: nsitfCompanyEmail,
+          companyPhone: nsitfCompanyPhone,
+          staffList: nsitfStaffList
+        } : undefined,
+        scumlDetails: selectedComplianceServices.includes('SCUML') ? {
+          companyName: scumlCompanyName,
+          rcNumber: scumlRcNumber,
+          incorporationDate: scumlIncDate,
+          companyAddress: scumlCompanyAddress,
+          tin: scumlTin,
+          director: {
+            fullName: scumlDirectorName,
+            email: scumlDirectorEmail,
+            phone: scumlDirectorPhone,
+            nin: scumlNin,
+            dob: scumlDob,
+            bvn: scumlBvn,
+            gender: scumlGender
+          },
+          bankName: scumlBankName,
+          accountNumber: scumlBankAccount
+        } : undefined,
+        tinValidationDetails: selectedComplianceServices.includes('TIN Validation') ? {
+          companyName: tvCompanyName,
+          rcNumber: tvRcNumber,
+          tin: tvTin,
+          natureOfBusiness: tvNatureOfBusiness,
+          companyAddress: tvCompanyAddress,
+          companyPhone: tvCompanyPhone,
+          companyEmail: tvCompanyEmail,
+          commencementDate: tvCommencementDate,
+          accountingYearEnd: tvAccountingYearEnd,
+          authorizedPerson: tvAuthorizedPerson,
+          directorEmail: tvDirectorEmail,
+          directorPhone: tvDirectorPhone
+        } : undefined,
+        itfDetails: selectedComplianceServices.includes('ITF') ? {
+          companyAddress: itfCompanyAddress,
+          email: itfEmail,
+          phone: itfPhone,
+          tin: itfTin
+        } : undefined
       };
     }
 
@@ -753,30 +898,56 @@ const ServicesPortal: React.FC = () => {
         if (['post_incorporation', 'other_services'].includes(selectedService)) {
           const activeSubServices = selectedService === 'post_incorporation' ? selectedSubServices : selectedOtherServices;
           for (const sub of activeSubServices) {
-            const files = subServiceFiles[sub] || [];
-            for (const file of files) {
-              const formData = new FormData();
-              const renamedFile = new File([file], `[${sub}] ${file.name}`, { type: file.type });
-              formData.append('file', renamedFile);
-              formData.append('application_id', newAppId.toString());
+            if (selectedService === 'other_services' && sub === 'Trademark Registration') {
+              const trademarkDocs = ["CAC Certificate", "Company Logo", "Director's Signature"];
+              for (const docType of trademarkDocs) {
+                const files = complianceRequiredFiles[docType] || [];
+                for (const file of files) {
+                  const formData = new FormData();
+                  const renamedFile = new File([file], `[${sub} - ${docType}] ${file.name}`, { type: file.type });
+                  formData.append('file', renamedFile);
+                  formData.append('application_id', newAppId.toString());
 
-              const uploadRes = await fetch(`${API_BASE}/documents/upload`, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${token}`
-                },
-                body: formData
-              });
+                  const uploadRes = await fetch(`${API_BASE}/documents/upload`, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                  });
 
-              const uploadData = await uploadRes.json();
-              if (!uploadRes.ok) {
-                throw new Error(`Application submitted, but file "${file.name}" for "${sub}" failed: ${uploadData.error}`);
+                  const uploadData = await uploadRes.json();
+                  if (!uploadRes.ok) {
+                    throw new Error(`Application submitted, but file "${file.name}" for "${docType}" failed: ${uploadData.error}`);
+                  }
+                }
+              }
+            } else {
+              const files = subServiceFiles[sub] || [];
+              for (const file of files) {
+                const formData = new FormData();
+                const renamedFile = new File([file], `[${sub}] ${file.name}`, { type: file.type });
+                formData.append('file', renamedFile);
+                formData.append('application_id', newAppId.toString());
+
+                const uploadRes = await fetch(`${API_BASE}/documents/upload`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: formData
+                });
+
+                const uploadData = await uploadRes.json();
+                if (!uploadRes.ok) {
+                  throw new Error(`Application submitted, but file "${file.name}" for "${sub}" failed: ${uploadData.error}`);
+                }
               }
             }
           }
         } else {
           // compliance
-          const requiredDocs = ['Passport photography', 'Signature', 'NIN slip', 'CAC document', 'company letter head'];
+          const requiredDocs = getComplianceRequiredDocs();
           for (const docType of requiredDocs) {
             const files = complianceRequiredFiles[docType] || [];
             for (const file of files) {
@@ -2036,266 +2207,878 @@ const ServicesPortal: React.FC = () => {
                   </div>
                 )}
                 {selectedService === 'compliance' && (
-                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '8px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <h4 style={{ color: 'var(--accent-red)', fontSize: '1rem', fontWeight: '700', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Personal Details
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    {selectedComplianceServices.map((subService) => {
+                      if (subService === 'NSITF') {
+                        return (
+                          <div key={subService} className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', borderColor: 'rgba(215, 25, 32, 0.15)' }}>
+                            <h4 style={{ color: 'var(--accent-red)', fontSize: '1.05rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', margin: 0 }}>
+                              NSITF Requirement Form
+                            </h4>
+                            
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*Full Name:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="e.g. Babajide Sowande"
+                                  className="form-input"
+                                  value={nsitfFullName}
+                                  onChange={(e) => setNsitfFullName(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Marital Status:*</label>
+                                <select 
+                                  className="form-select"
+                                  value={nsitfMaritalStatus}
+                                  onChange={(e) => setNsitfMaritalStatus(e.target.value)}
+                                >
+                                  <option value="Single">Single</option>
+                                  <option value="Married">Married</option>
+                                  <option value="Divorced">Divorced</option>
+                                  <option value="Widowed">Widowed</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*Date of Birth:*</label>
+                                <input
+                                  type="date"
+                                  required
+                                  max={new Date(Date.now() - 18 * 365.25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                                  className="form-input"
+                                  value={nsitfDob}
+                                  onChange={(e) => setNsitfDob(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Phone Number:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="e.g. +234 803 123 4567"
+                                  className="form-input"
+                                  value={nsitfPhone}
+                                  onChange={(e) => setNsitfPhone(e.target.value)}
+                                />
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*State of Origin:*</label>
+                                <select
+                                  required
+                                  className="form-select"
+                                  value={nsitfStateOfOrigin}
+                                  onChange={(e) => {
+                                    setNsitfStateOfOrigin(e.target.value);
+                                    setNsitfLgaOfOrigin('');
+                                  }}
+                                >
+                                  <option value="">Select State</option>
+                                  {Object.keys(NIGERIA_STATES_AND_LGAS).map(st => (
+                                    <option key={st} value={st}>{st}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Local Govt (LGA) of Origin:*</label>
+                                <select
+                                  required
+                                  className="form-select"
+                                  value={nsitfLgaOfOrigin}
+                                  onChange={(e) => setNsitfLgaOfOrigin(e.target.value)}
+                                  disabled={!nsitfStateOfOrigin}
+                                >
+                                  <option value="">Select LGA</option>
+                                  {nsitfStateOfOrigin && NIGERIA_STATES_AND_LGAS[nsitfStateOfOrigin]?.map(lg => (
+                                    <option key={lg} value={lg}>{lg}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*NIN Number:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="e.g. 12345678901"
+                                  className="form-input"
+                                  value={nsitfNin}
+                                  onChange={(e) => setNsitfNin(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Email Address:*</label>
+                                <input
+                                  type="email"
+                                  required
+                                  placeholder="e.g. client@domain.com"
+                                  className="form-input"
+                                  value={nsitfEmail}
+                                  onChange={(e) => setNsitfEmail(e.target.value)}
+                                />
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*Number of Dependents:*</label>
+                                <input
+                                  type="number"
+                                  required
+                                  min="0"
+                                  className="form-input"
+                                  value={nsitfDependentsCount}
+                                  onChange={(e) => setNsitfDependentsCount(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Residential Address:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="e.g. 10 Garki St, Abuja"
+                                  className="form-input"
+                                  value={nsitfResAddress}
+                                  onChange={(e) => setNsitfResAddress(e.target.value)}
+                                />
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*Next of Kin Name:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="e.g. Jane Sowande"
+                                  className="form-input"
+                                  value={nsitfNokName}
+                                  onChange={(e) => setNsitfNokName(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Next of Kin Phone:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="e.g. +234 809 999 8888"
+                                  className="form-input"
+                                  value={nsitfNokPhone}
+                                  onChange={(e) => setNsitfNokPhone(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Next of Kin Relationship:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="e.g. Spouse"
+                                  className="form-input"
+                                  value={nsitfNokRelationship}
+                                  onChange={(e) => setNsitfNokRelationship(e.target.value)}
+                                />
+                              </div>
+                            </div>
+
+                            <h5 style={{ color: '#fff', fontSize: '0.85rem', fontWeight: '700', marginTop: '12px', marginBottom: '4px', textTransform: 'uppercase' }}>
+                              Company Details
+                            </h5>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*Company Address:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="e.g. 5 Main St, Lagos"
+                                  className="form-input"
+                                  value={nsitfCompanyAddress}
+                                  onChange={(e) => setNsitfCompanyAddress(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Company Email:*</label>
+                                <input
+                                  type="email"
+                                  required
+                                  placeholder="e.g. office@company.com"
+                                  className="form-input"
+                                  value={nsitfCompanyEmail}
+                                  onChange={(e) => setNsitfCompanyEmail(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Company Phone:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="e.g. +234 812 345 6789"
+                                  className="form-input"
+                                  value={nsitfCompanyPhone}
+                                  onChange={(e) => setNsitfCompanyPhone(e.target.value)}
+                                />
+                              </div>
+                            </div>
+
+                            <h5 style={{ color: '#fff', fontSize: '0.85rem', fontWeight: '700', marginTop: '12px', marginBottom: '4px', textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span>Staff Details (Minimum 3 Required)</span>
+                              <button
+                                type="button"
+                                className="btn-secondary"
+                                style={{ padding: '4px 10px', fontSize: '0.7rem' }}
+                                onClick={() => setNsitfStaffList(prev => [...prev, { name: '', designation: '', phone: '' }])}
+                              >
+                                + Add Staff Option
+                              </button>
+                            </h5>
+                            
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                              {nsitfStaffList.map((staff, staffIdx) => (
+                                <div key={staffIdx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '10px', alignItems: 'end' }}>
+                                  <div className="form-group" style={{ margin: 0 }}>
+                                    <label className="form-label" style={{ fontSize: '0.7rem' }}>*Staff #{staffIdx + 1} Name:*</label>
+                                    <input
+                                      type="text"
+                                      required
+                                      placeholder="Full Name"
+                                      className="form-input"
+                                      style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                                      value={staff.name}
+                                      onChange={(e) => {
+                                        const newList = [...nsitfStaffList];
+                                        newList[staffIdx].name = e.target.value;
+                                        setNsitfStaffList(newList);
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="form-group" style={{ margin: 0 }}>
+                                    <label className="form-label" style={{ fontSize: '0.7rem' }}>*Designation:*</label>
+                                    <input
+                                      type="text"
+                                      required
+                                      placeholder="Position"
+                                      className="form-input"
+                                      style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                                      value={staff.designation}
+                                      onChange={(e) => {
+                                        const newList = [...nsitfStaffList];
+                                        newList[staffIdx].designation = e.target.value;
+                                        setNsitfStaffList(newList);
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="form-group" style={{ margin: 0 }}>
+                                    <label className="form-label" style={{ fontSize: '0.7rem' }}>*Phone Number:*</label>
+                                    <input
+                                      type="text"
+                                      required
+                                      placeholder="Phone"
+                                      className="form-input"
+                                      style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                                      value={staff.phone}
+                                      onChange={(e) => {
+                                        const newList = [...nsitfStaffList];
+                                        newList[staffIdx].phone = e.target.value;
+                                        setNsitfStaffList(newList);
+                                      }}
+                                    />
+                                  </div>
+                                  {nsitfStaffList.length > 3 && (
+                                    <button
+                                      type="button"
+                                      className="btn-secondary"
+                                      style={{ padding: '8px', color: 'var(--accent-red)', border: '1px solid rgba(215,25,32,0.2)', margin: 0 }}
+                                      onClick={() => setNsitfStaffList(prev => prev.filter((_, idx) => idx !== staffIdx))}
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      if (subService === 'SCUML') {
+                        return (
+                          <div key={subService} className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', borderColor: 'rgba(215, 25, 32, 0.15)' }}>
+                            <h4 style={{ color: 'var(--accent-red)', fontSize: '1.05rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', margin: 0 }}>
+                              SCUML Requirement Form
+                            </h4>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*Company Name:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Company Name"
+                                  className="form-input"
+                                  value={scumlCompanyName}
+                                  onChange={(e) => setScumlCompanyName(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Company RC/BN:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Company RC/BN"
+                                  className="form-input"
+                                  value={scumlRcNumber}
+                                  onChange={(e) => setScumlRcNumber(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*Date of Incorporation:*</label>
+                                <input
+                                  type="date"
+                                  required
+                                  max={new Date().toISOString().split('T')[0]}
+                                  className="form-input"
+                                  value={scumlIncDate}
+                                  onChange={(e) => setScumlIncDate(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*TIN No:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="TIN No"
+                                  className="form-input"
+                                  value={scumlTin}
+                                  onChange={(e) => setScumlTin(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*Director Full Name:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Director Full Name"
+                                  className="form-input"
+                                  value={scumlDirectorName}
+                                  onChange={(e) => setScumlDirectorName(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Active Director Email:*</label>
+                                <input
+                                  type="email"
+                                  required
+                                  placeholder="Director Email"
+                                  className="form-input"
+                                  value={scumlDirectorEmail}
+                                  onChange={(e) => setScumlDirectorEmail(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Director Phone No:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Director Phone"
+                                  className="form-input"
+                                  value={scumlDirectorPhone}
+                                  onChange={(e) => setScumlDirectorPhone(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*Bank Name:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Bank Name"
+                                  className="form-input"
+                                  value={scumlBankName}
+                                  onChange={(e) => setScumlBankName(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Account Number:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Account Number"
+                                  className="form-input"
+                                  value={scumlBankAccount}
+                                  onChange={(e) => setScumlBankAccount(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*NIN:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="NIN Number"
+                                  className="form-input"
+                                  value={scumlNin}
+                                  onChange={(e) => setScumlNin(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Date of Birth:*</label>
+                                <input
+                                  type="date"
+                                  required
+                                  max={new Date(Date.now() - 18 * 365.25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                                  className="form-input"
+                                  value={scumlDob}
+                                  onChange={(e) => setScumlDob(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*BVN:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="BVN Number"
+                                  className="form-input"
+                                  value={scumlBvn}
+                                  onChange={(e) => setScumlBvn(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*Gender:*</label>
+                                <select 
+                                  className="form-select"
+                                  value={scumlGender}
+                                  onChange={(e) => setScumlGender(e.target.value)}
+                                >
+                                  <option value="Male">Male</option>
+                                  <option value="Female">Female</option>
+                                </select>
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Company Address:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Company Address"
+                                  className="form-input"
+                                  value={scumlCompanyAddress}
+                                  onChange={(e) => setScumlCompanyAddress(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      if (subService === 'TIN Validation') {
+                        return (
+                          <div key={subService} className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', borderColor: 'rgba(215, 25, 32, 0.15)' }}>
+                            <h4 style={{ color: 'var(--accent-red)', fontSize: '1.05rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', margin: 0 }}>
+                              TIN Validation on Tax Promax Form
+                            </h4>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*Company/Business Name:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Company/Business Name"
+                                  className="form-input"
+                                  value={tvCompanyName}
+                                  onChange={(e) => setTvCompanyName(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*RC/BN Number:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="RC/BN Number"
+                                  className="form-input"
+                                  value={tvRcNumber}
+                                  onChange={(e) => setTvRcNumber(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*FIRS TIN Number:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="FIRS TIN Number"
+                                  className="form-input"
+                                  value={tvTin}
+                                  onChange={(e) => setTvTin(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Nature of Business:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Line of Business"
+                                  className="form-input"
+                                  value={tvNatureOfBusiness}
+                                  onChange={(e) => setTvNatureOfBusiness(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*Company Phone Number:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Company Phone"
+                                  className="form-input"
+                                  value={tvCompanyPhone}
+                                  onChange={(e) => setTvCompanyPhone(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Company Email Address:*</label>
+                                <input
+                                  type="email"
+                                  required
+                                  placeholder="Company Email"
+                                  className="form-input"
+                                  value={tvCompanyEmail}
+                                  onChange={(e) => setTvCompanyEmail(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*Commencement Date:*</label>
+                                <input
+                                  type="date"
+                                  required
+                                  max={new Date().toISOString().split('T')[0]}
+                                  className="form-input"
+                                  value={tvCommencementDate}
+                                  onChange={(e) => setTvCommencementDate(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Accounting Year End:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="e.g. December 31"
+                                  className="form-input"
+                                  value={tvAccountingYearEnd}
+                                  onChange={(e) => setTvAccountingYearEnd(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*Authorized Person(s):*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Name of Authorized Person"
+                                  className="form-input"
+                                  value={tvAuthorizedPerson}
+                                  onChange={(e) => setTvAuthorizedPerson(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Director Email:*</label>
+                                <input
+                                  type="email"
+                                  required
+                                  placeholder="Director Email"
+                                  className="form-input"
+                                  value={tvDirectorEmail}
+                                  onChange={(e) => setTvDirectorEmail(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Director Phone:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Director Phone"
+                                  className="form-input"
+                                  value={tvDirectorPhone}
+                                  onChange={(e) => setTvDirectorPhone(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div className="form-group">
+                              <label className="form-label">*Company Address:*</label>
+                              <input
+                                type="text"
+                                required
+                                placeholder="Office Address"
+                                className="form-input"
+                                value={tvCompanyAddress}
+                                onChange={(e) => setTvCompanyAddress(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      if (subService === 'ITF') {
+                        return (
+                          <div key={subService} className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', borderColor: 'rgba(215, 25, 32, 0.15)' }}>
+                            <h4 style={{ color: 'var(--accent-red)', fontSize: '1.05rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', margin: 0 }}>
+                              ITF Requirement Form
+                            </h4>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*Active Email Address:*</label>
+                                <input
+                                  type="email"
+                                  required
+                                  placeholder="Active Email"
+                                  className="form-input"
+                                  value={itfEmail}
+                                  onChange={(e) => setItfEmail(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Phone Number:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Phone Number"
+                                  className="form-input"
+                                  value={itfPhone}
+                                  onChange={(e) => setItfPhone(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                              <div className="form-group">
+                                <label className="form-label">*TIN Number:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="TIN Number"
+                                  className="form-input"
+                                  value={itfTin}
+                                  onChange={(e) => setItfTin(e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">*Company Address:*</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Company Address"
+                                  className="form-input"
+                                  value={itfCompanyAddress}
+                                  onChange={(e) => setItfCompanyAddress(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Default compliance form for Pencom, TCC, BPP, etc.
+                      return (
+                        <div key={subService} className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', borderColor: 'rgba(255, 255, 255, 0.08)' }}>
+                          <h4 style={{ color: '#fff', fontSize: '1rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', margin: 0 }}>
+                            {subService} Requirement Details
+                          </h4>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div className="form-group">
+                              <label className="form-label">*Contact Person Full Name:*</label>
+                              <input
+                                type="text"
+                                required
+                                placeholder="e.g. Babajide Sowande"
+                                className="form-input"
+                                value={firstName}
+                                onChange={(e) => { setFirstName(e.target.value); setSurname('Compliance'); }}
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label className="form-label">*Phone Number:*</label>
+                              <input
+                                type="text"
+                                required
+                                placeholder="e.g. +234 803 123 4567"
+                                className="form-input"
+                                value={partyPhone}
+                                onChange={(e) => setPartyPhone(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div className="form-group">
+                              <label className="form-label">*Email Address:*</label>
+                              <input
+                                type="email"
+                                required
+                                placeholder="e.g. rep@company.com"
+                                className="form-input"
+                                value={partyEmail}
+                                onChange={(e) => setPartyEmail(e.target.value)}
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label className="form-label">*NIN or BVN:*</label>
+                              <input
+                                type="text"
+                                required
+                                placeholder="e.g. 12345678901"
+                                className="form-input"
+                                value={compBvn}
+                                onChange={(e) => { setCompBvn(e.target.value); setCompNin(e.target.value); }}
+                              />
+                            </div>
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">*Company / Business Address:*</label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="e.g. 15 Garki Road, Abuja"
+                              className="form-input"
+                              value={compAddress}
+                              onChange={(e) => setCompAddress(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {selectedService === 'other_services' && selectedOtherServices.includes('Trademark Registration') && (
+                  <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', borderColor: 'rgba(215, 25, 32, 0.15)', marginBottom: '16px' }}>
+                    <h4 style={{ color: 'var(--accent-red)', fontSize: '1.05rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', margin: 0 }}>
+                      Trademark Requirement Form
                     </h4>
                     
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                       <div className="form-group">
-                        <label className="form-label">*First name:*</label>
+                        <label className="form-label">*Proposed Trademark Name:*</label>
                         <input
                           type="text"
                           required
-                          placeholder="e.g. Babajide"
+                          placeholder="Proposed Trademark Name"
                           className="form-input"
-                          value={firstName}
-                          onChange={(e) => setFirstName(e.target.value)}
+                          value={tmProposedName}
+                          onChange={(e) => setTmProposedName(e.target.value)}
                         />
                       </div>
                       <div className="form-group">
-                        <label className="form-label">Other name:</label>
+                        <label className="form-label">*Business/Company Name:*</label>
                         <input
                           type="text"
-                          placeholder="e.g. Olusegun"
+                          required
+                          placeholder="Business/Company Name"
                           className="form-input"
-                          value={otherName}
-                          onChange={(e) => setOtherName(e.target.value)}
+                          value={tmCompanyName}
+                          onChange={(e) => setTmCompanyName(e.target.value)}
                         />
                       </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                       <div className="form-group">
                         <label className="form-label">*Surname:*</label>
                         <input
                           type="text"
                           required
-                          placeholder="e.g. Sowande"
+                          placeholder="Surname"
                           className="form-input"
-                          value={surname}
-                          onChange={(e) => setSurname(e.target.value)}
+                          value={tmSurname}
+                          onChange={(e) => setTmSurname(e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">*First Name:*</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="First Name"
+                          className="form-input"
+                          value={tmFirstName}
+                          onChange={(e) => setTmFirstName(e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Middle Name:</label>
+                        <input
+                          type="text"
+                          placeholder="Middle Name"
+                          className="form-input"
+                          value={tmMiddleName}
+                          onChange={(e) => setTmMiddleName(e.target.value)}
                         />
                       </div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                       <div className="form-group">
-                        <label className="form-label">*Phone number:*</label>
+                        <label className="form-label">*Class of Business:*</label>
                         <input
                           type="text"
                           required
-                          placeholder="e.g. +234 803 123 4567"
+                          placeholder="e.g. Class 35"
                           className="form-input"
-                          value={partyPhone}
-                          onChange={(e) => setPartyPhone(e.target.value)}
+                          value={tmBusinessClass}
+                          onChange={(e) => setTmBusinessClass(e.target.value)}
                         />
                       </div>
                       <div className="form-group">
-                        <label className="form-label">*Email:*</label>
+                        <label className="form-label">*Phone Number:*</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Phone Number"
+                          className="form-input"
+                          value={tmPhone}
+                          onChange={(e) => setTmPhone(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div className="form-group">
+                        <label className="form-label">*Email Address:*</label>
                         <input
                           type="email"
                           required
-                          placeholder="e.g. rep@primeflow.com"
+                          placeholder="Email Address"
                           className="form-input"
-                          value={partyEmail}
-                          onChange={(e) => setPartyEmail(e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                      <div className="form-group">
-                        <label className="form-label">*Marital status:*</label>
-                        <select 
-                          className="form-select"
-                          value={compMaritalStatus}
-                          onChange={(e) => setCompMaritalStatus(e.target.value)}
-                        >
-                          <option value="Single">Single</option>
-                          <option value="Married">Married</option>
-                          <option value="Divorced">Divorced</option>
-                          <option value="Widowed">Widowed</option>
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">*Date of birth:*</label>
-                        <input
-                          type="date"
-                          required
-                          max={new Date(Date.now() - 18 * 365.25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-                          className="form-input"
-                          value={dob}
-                          onChange={(e) => setDob(e.target.value)}
+                          value={tmEmail}
+                          onChange={(e) => setTmEmail(e.target.value)}
                         />
                       </div>
                       <div className="form-group">
-                        <label className="form-label">*Place of birth:*</label>
+                        <label className="form-label">*Business/Company Address:*</label>
                         <input
                           type="text"
                           required
-                          placeholder="e.g. Lagos"
+                          placeholder="Business/Company Address"
                           className="form-input"
-                          value={compPlaceOfBirth}
-                          onChange={(e) => setCompPlaceOfBirth(e.target.value)}
+                          value={tmAddress}
+                          onChange={(e) => setTmAddress(e.target.value)}
                         />
                       </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                      <div className="form-group">
-                        <label className="form-label">*State of Origin:*</label>
-                        <select
-                          required
-                          className="form-select"
-                          value={compStateOfOrigin}
-                          onChange={(e) => {
-                            setCompStateOfOrigin(e.target.value);
-                            setCompLgaOfOrigin('');
-                          }}
-                        >
-                          <option value="">Select State</option>
-                          {Object.keys(NIGERIA_STATES_AND_LGAS).map(st => (
-                            <option key={st} value={st}>{st}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">*LGA of Origin:*</label>
-                        <select
-                          required
-                          className="form-select"
-                          value={compLgaOfOrigin}
-                          onChange={(e) => setCompLgaOfOrigin(e.target.value)}
-                          disabled={!compStateOfOrigin}
-                        >
-                          <option value="">Select LGA</option>
-                          {compStateOfOrigin && NIGERIA_STATES_AND_LGAS[compStateOfOrigin]?.map(lg => (
-                            <option key={lg} value={lg}>{lg}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">*National ID Number (NIN):*</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. 12345678901"
-                          className="form-input"
-                          value={compNin}
-                          onChange={(e) => setCompNin(e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">*Address:*</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. Flat 3, 12 Garki Road, Abuja"
-                        className="form-input"
-                        value={compAddress}
-                        onChange={(e) => setCompAddress(e.target.value)}
-                      />
-                    </div>
-
-                    {/* NOK Section */}
-                    <h4 style={{ color: 'var(--accent-red)', fontSize: '1rem', fontWeight: '700', marginTop: '12px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-                      Next of Kin (NOK)
-                    </h4>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                      <div className="form-group">
-                        <label className="form-label">*NOK First name:*</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. Adeleke"
-                          className="form-input"
-                          value={compNokFirstName}
-                          onChange={(e) => setCompNokFirstName(e.target.value)}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">NOK Other name:</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Gbolahan"
-                          className="form-input"
-                          value={compNokOtherName}
-                          onChange={(e) => setCompNokOtherName(e.target.value)}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">*NOK Surname:*</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. Sowande"
-                          className="form-input"
-                          value={compNokSurname}
-                          onChange={(e) => setCompNokSurname(e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                      <div className="form-group">
-                        <label className="form-label">*Relationship with NOK:*</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. Brother, Spouse"
-                          className="form-input"
-                          value={compNokRelationship}
-                          onChange={(e) => setCompNokRelationship(e.target.value)}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">*NOK Phone:*</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. +234 809 999 8888"
-                          className="form-input"
-                          value={compNokPhone}
-                          onChange={(e) => setCompNokPhone(e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                      <div className="form-group">
-                        <label className="form-label">NOK Email:</label>
-                        <input
-                          type="email"
-                          placeholder="e.g. nok@example.com"
-                          className="form-input"
-                          value={compNokEmail}
-                          onChange={(e) => setCompNokEmail(e.target.value)}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">*BVN:*</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. 22223333444"
-                          className="form-input"
-                          value={compBvn}
-                          onChange={(e) => setCompBvn(e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">*NOK Address:*</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. 15 Allen Avenue, Ikeja, Lagos"
-                        className="form-input"
-                        value={compNokAddress}
-                        onChange={(e) => setCompNokAddress(e.target.value)}
-                      />
                     </div>
                   </div>
                 )}
@@ -2350,19 +3133,21 @@ const ServicesPortal: React.FC = () => {
                     </h5>
                     
                     {(selectedService === 'post_incorporation' 
-                      ? selectedSubServices 
+                      ? selectedSubServices.map(sub => ({ key: sub, label: sub, isCompliance: false }))
                       : selectedService === 'other_services'
-                        ? selectedOtherServices
-                        : ['Passport photography', 'Signature', 'NIN slip', 'CAC document', 'company letter head']
-                    ).map((sub) => {
-                      const files = (['post_incorporation', 'other_services'].includes(selectedService!)
-                        ? subServiceFiles[sub] 
-                        : complianceRequiredFiles[sub]) || [];
+                        ? getOtherRequiredDocsList().map(item => ({ key: item.key, label: item.label, isCompliance: item.isCustom }))
+                        : getComplianceRequiredDocs().map(doc => ({ key: doc, label: doc, isCompliance: true }))
+                    ).map((item) => {
+                      const sub = item.key;
+                      const isComp = item.isCompliance;
+                      const files = (isComp
+                        ? complianceRequiredFiles[sub]
+                        : subServiceFiles[sub]) || [];
                       return (
-                        <div key={sub} className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div key={item.label} className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#fff' }}>
-                              {sub} {selectedService === 'compliance' ? '(Required)' : 'Documents'}
+                              {item.label} {isComp ? '(Required)' : 'Documents'}
                             </span>
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                               {files.length} file(s) attached
@@ -2385,13 +3170,13 @@ const ServicesPortal: React.FC = () => {
                                     }
                                     return true;
                                   });
-                                  if (['post_incorporation', 'other_services'].includes(selectedService!)) {
-                                    setSubServiceFiles(prev => ({
+                                  if (isComp) {
+                                    setComplianceRequiredFiles(prev => ({
                                       ...prev,
                                       [sub]: [...(prev[sub] || []), ...validFiles]
                                     }));
                                   } else {
-                                    setComplianceRequiredFiles(prev => ({
+                                    setSubServiceFiles(prev => ({
                                       ...prev,
                                       [sub]: [...(prev[sub] || []), ...validFiles]
                                     }));
@@ -2435,13 +3220,13 @@ const ServicesPortal: React.FC = () => {
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        if (['post_incorporation', 'other_services'].includes(selectedService!)) {
-                                          setSubServiceFiles(prev => ({
+                                        if (isComp) {
+                                          setComplianceRequiredFiles(prev => ({
                                             ...prev,
                                             [sub]: (prev[sub] || []).filter((_, i) => i !== fileIdx)
                                           }));
                                         } else {
-                                          setComplianceRequiredFiles(prev => ({
+                                          setSubServiceFiles(prev => ({
                                             ...prev,
                                             [sub]: (prev[sub] || []).filter((_, i) => i !== fileIdx)
                                           }));
