@@ -1,0 +1,29 @@
+# Node modules
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Production builds
+dist/
+client/dist/
+server/dist/
+
+# SQLite databases
+*.db
+*.db-journal
+
+# Uploaded documents
+server/uploads/
+uploads/
+
+# OS/Editor files
+.DS_Store
+.vscode/
+.idea/
+*.suo
+*.sln
+*.swp
+
+# Log files
+*.log
+logs/
