@@ -27,6 +27,23 @@ interface AuthContextType {
   resetPassword: (email: string, newPassword: string) => Promise<string>;
 }
 
+async function fetchJson(url: string, options?: RequestInit): Promise<any> {
+  const res = await fetch(url, options).catch(() => {
+    throw new Error('Network error: Unable to connect to backend API. Please verify that your backend server is online.');
+  });
+  
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.includes('text/html')) {
+    throw new Error('API Configuration Error: The server returned HTML instead of JSON. This usually means the API URL (VITE_API_BASE_URL) is pointing to your frontend URL instead of the backend server. Please verify your environment variables and trigger a new deploy.');
+  }
+  
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Request failed');
+  }
+  return data;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -49,19 +66,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
+      const data = await fetchJson(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), password: password.trim() })
-      }).catch(() => {
-        throw new Error('Network error: Unable to connect to backend API. Please check your Vercel VITE_API_BASE_URL setting.');
       });
-
-      const data = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(data.error || 'Login failed');
-      }
 
       localStorage.setItem('primeflow_token', data.token);
       localStorage.setItem('primeflow_user', JSON.stringify(data.user));
@@ -75,17 +84,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (name: string, email: string, password: string, phone: string): Promise<string> => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/auth/register-request`, {
+      const data = await fetchJson(`${API_BASE}/auth/register-request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password, phone })
       });
-
-      const data = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(data.error || 'Registration request failed');
-      }
 
       return data.code; // Simulated OTP code
     } finally {
@@ -96,17 +99,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const registerVerify = async (email: string, code: string): Promise<void> => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/auth/register-verify`, {
+      const data = await fetchJson(`${API_BASE}/auth/register-verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code })
       });
-
-      const data = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(data.error || 'Verification failed');
-      }
 
       localStorage.setItem('primeflow_token', data.token);
       localStorage.setItem('primeflow_user', JSON.stringify(data.user));
@@ -125,18 +122,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const resetPassword = async (email: string, newPassword: string): Promise<string> => {
-    try {
-      const res = await fetch(`${API_BASE}/auth/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, newPassword })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Reset failed');
-      return data.message || 'Password reset request complete.';
-    } catch (err: any) {
-      throw new Error(err.message);
-    }
+    const data = await fetchJson(`${API_BASE}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, newPassword })
+    });
+    return data.message || 'Password reset request complete.';
   };
 
   return (
