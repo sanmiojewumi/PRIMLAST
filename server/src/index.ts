@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import multer from 'multer';
 import { getDb } from './db';
 
 // Load environment variables
@@ -97,7 +98,7 @@ async function startServer() {
     await getDb();
     console.log('Database initialized successfully.');
 
-    app.listen(PORT, () => {
+    app.listen(Number(PORT), '0.0.0.0', () => {
       console.log(`===============================================`);
       console.log(`  PrimeFlow API Server started on port ${PORT}`);
       console.log(`  Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -108,9 +109,6 @@ async function startServer() {
     process.exit(1);
   }
 }
-
-// Support class declarations in this scope for multer errors check
-import multer from 'multer';
 
 startServer();
 export default app;

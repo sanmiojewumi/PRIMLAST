@@ -76,7 +76,16 @@ async function initializeDatabase(db: Database) {
     console.error("Migration warning:", err);
   }
 
-  const schemaPath = path.resolve(__dirname, '..', 'schema.sql');
+  let schemaPath = path.resolve(__dirname, '..', 'schema.sql');
+  if (!fs.existsSync(schemaPath)) {
+    schemaPath = path.resolve(__dirname, 'schema.sql');
+  }
+  if (!fs.existsSync(schemaPath)) {
+    schemaPath = path.resolve(process.cwd(), 'schema.sql');
+  }
+  if (!fs.existsSync(schemaPath)) {
+    schemaPath = path.resolve(process.cwd(), 'server', 'schema.sql');
+  }
   const schemaSql = fs.readFileSync(schemaPath, 'utf8');
   
   // SQLite multiple statements execution is supported via exec

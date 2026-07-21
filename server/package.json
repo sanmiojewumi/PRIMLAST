@@ -4,7 +4,7 @@
   "description": "PrimeFlow Consulting Services Digital Transformation Platform Server",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"require('fs').copyFileSync('schema.sql', 'dist/schema.sql')\"",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "test-security": "ts-node src/test-security.ts"
