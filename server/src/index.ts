@@ -72,6 +72,15 @@ app.use('/api/messages', messagesRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/compliance', complianceRouter);
 
+// Root route for API welcome & status check
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: 'Welcome to PrimeFlow Consulting Services API',
+    status: 'online',
+    timestamp: new Date()
+  });
+});
+
 // Base route for connectivity checks
 app.get('/health', (req, res) => {
    res.status(200).json({ status: 'healthy', timestamp: new Date() });
