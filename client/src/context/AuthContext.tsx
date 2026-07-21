@@ -1,8 +1,13 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import type { User } from '../types';
 
-export const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL 
-  ? (import.meta as any).env.VITE_API_BASE_URL 
+let rawApiBase = (import.meta as any).env?.VITE_API_BASE_URL || '';
+if (rawApiBase.includes('<your-render-url>') || rawApiBase.includes('<') || rawApiBase.includes('>')) {
+  rawApiBase = '';
+}
+
+export const API_BASE = rawApiBase 
+  ? rawApiBase 
   : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:5000/api'
     : (window.location.hostname.includes('localtunnel.me') || window.location.hostname.includes('loca.lt'))
@@ -48,7 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), password: password.trim() })
-      }).catch(err => {
+      }).catch(() => {
         throw new Error('Network error: Unable to connect to backend API. Please check your Vercel VITE_API_BASE_URL setting.');
       });
 
