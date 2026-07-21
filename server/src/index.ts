@@ -72,19 +72,35 @@ app.use('/api/messages', messagesRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/compliance', complianceRouter);
 
-// Root route for API welcome & status check
-app.get('/', (req, res) => {
-  res.status(200).json({
-    message: 'Welcome to PrimeFlow Consulting Services API',
-    status: 'online',
-    timestamp: new Date()
-  });
-});
-
 // Base route for connectivity checks
 app.get('/health', (req, res) => {
    res.status(200).json({ status: 'healthy', timestamp: new Date() });
 });
+
+// Serve frontend static assets in production if available
+const clientDistPath = path.resolve(__dirname, '..', '..', 'client', 'dist');
+if (fs.existsSync(clientDistPath)) {
+  console.log(`Serving static client assets from: ${clientDistPath}`);
+  app.use(express.static(clientDistPath));
+  
+  // Wildcard handler to support client-side SPA routing (Vite React Router)
+  app.get('*', (req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/health')) {
+      res.sendFile(path.join(clientDistPath, 'index.html'));
+    } else {
+      next();
+    }
+  });
+} else {
+  // Root route fallback when client build is not integrated/built locally
+  app.get('/', (req, res) => {
+    res.status(200).json({
+      message: 'Welcome to PrimeFlow Consulting Services API',
+      status: 'online',
+      timestamp: new Date()
+    });
+  });
+}
 
 // Global Error Handler for uncaught middleware exceptions (e.g. Multer upload errors, JSON syntax)
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

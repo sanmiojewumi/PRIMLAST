@@ -14,7 +14,7 @@ export const API_BASE = rawApiBase
       ? 'https://tiny-facts-rhyme.loca.lt/api'
       : window.location.hostname.includes('lhr.life')
         ? 'https://88e810fa5c0eaf.lhr.life/api'
-        : `http://${window.location.hostname}:5000/api`;
+        : `${window.location.origin}/api`;
 
 interface AuthContextType {
   user: User | null;
