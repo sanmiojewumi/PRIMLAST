@@ -47,7 +47,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: email.trim(), password: password.trim() })
+      }).catch(err => {
+        throw new Error('Network error: Unable to connect to backend API. Please check your Vercel VITE_API_BASE_URL setting.');
       });
 
       const data = await res.json();

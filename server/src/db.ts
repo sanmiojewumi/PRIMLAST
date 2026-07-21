@@ -91,10 +91,10 @@ async function initializeDatabase(db: Database) {
   // SQLite multiple statements execution is supported via exec
   await db.exec(schemaSql);
 
-  // Check if we already have users. If not, seed the database with mock data.
-  const userCount = await db.get<{ count: number }>('SELECT COUNT(*) as count FROM users');
-  if (userCount && userCount.count === 0) {
-    console.log('Database empty. Seeding mock data...');
+  // Check if we already have admin user. If not, seed the database with default accounts.
+  const adminExists = await db.get<{ id: number }>('SELECT id FROM users WHERE LOWER(email) = ?', ['admin@primeflow.com']);
+  if (!adminExists) {
+    console.log('Admin account missing. Seeding default accounts...');
     await seedDatabase(db);
   }
 }
