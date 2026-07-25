@@ -345,6 +345,7 @@ const App: React.FC = () => {
               className="glass-panel-light"
               style={{
                 width: '100%', maxWidth: '440px', padding: '36px',
+                maxHeight: 'calc(100vh - 40px)', overflowY: 'auto',
                 position: 'relative', display: 'flex', flexDirection: 'column', gap: '24px',
                 boxShadow: '0 30px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05)',
                 animation: 'fadeIn 0.3s ease'
@@ -1468,6 +1469,8 @@ const App: React.FC = () => {
               width: '100%', 
               maxWidth: '500px', 
               padding: '24px', 
+              maxHeight: 'calc(100vh - 40px)', 
+              overflowY: 'auto',
               borderRadius: '16px',
               border: '1px solid var(--accent-red)',
               background: 'rgba(10, 10, 12, 0.98)',
