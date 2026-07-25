@@ -8,8 +8,15 @@ if (rawApiBase.includes('<your-render-url>') || rawApiBase.includes('<') || rawA
 
 export const API_BASE = rawApiBase 
   ? rawApiBase 
-  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:5000/api'
+  : (
+      window.location.hostname === 'localhost' || 
+      window.location.hostname === '127.0.0.1' || 
+      window.location.hostname.startsWith('192.168.') || 
+      window.location.hostname.startsWith('10.') || 
+      window.location.hostname.startsWith('172.') || 
+      window.location.hostname.endsWith('.local')
+    )
+    ? `http://${window.location.hostname}:5000/api`
     : (window.location.hostname.includes('localtunnel.me') || window.location.hostname.includes('loca.lt'))
       ? 'https://tiny-facts-rhyme.loca.lt/api'
       : window.location.hostname.includes('lhr.life')
