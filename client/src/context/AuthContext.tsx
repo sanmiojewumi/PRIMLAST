@@ -4,7 +4,7 @@ import type { User } from '../types';
 export const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:5000/api'
   : window.location.hostname.includes('lhr.life')
-    ? 'https://791903ac1d4bd2.lhr.life/api'
+    ? 'https://e5bd6a13aab9f8.lhr.life/api'
     : `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
 interface AuthContextType {
