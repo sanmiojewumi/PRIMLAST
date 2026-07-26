@@ -5,6 +5,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    allowedHosts: true
+    host: '0.0.0.0',   // Bind to all interfaces so mobile/tablet can connect
+    port: 5173,
+    strictPort: false,
+    allowedHosts: true,
+    cors: true
   }
 })

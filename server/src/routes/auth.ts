@@ -254,9 +254,9 @@ router.post('/register-staff', authenticateJWT as any, async (req: AuthRequest, 
      return;
   }
 
-  // Valid staff roles check
-  if (!['operations_officer', 'compliance_officer', 'admin', 'supervisor'].includes(role)) {
-     res.status(400).json({ error: 'Invalid staff role' });
+  // Valid staff/user roles check
+  if (!['client', 'operations_officer', 'compliance_officer', 'admin', 'supervisor'].includes(role)) {
+     res.status(400).json({ error: 'Invalid user role' });
      return;
   }
 

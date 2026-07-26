@@ -97,9 +97,23 @@ async function startServer() {
     await getDb();
     console.log('Database initialized successfully.');
 
-    app.listen(PORT, () => {
+    app.listen(PORT as number, '0.0.0.0', () => {
+      const os = require('os');
+      const nets = os.networkInterfaces();
+      let localIP = 'unknown';
+      for (const name of Object.keys(nets)) {
+        for (const net of nets[name]) {
+          if (net.family === 'IPv4' && !net.internal) {
+            localIP = net.address;
+            break;
+          }
+        }
+        if (localIP !== 'unknown') break;
+      }
       console.log(`===============================================`);
       console.log(`  PrimeFlow API Server started on port ${PORT}`);
+      console.log(`  Local:   http://localhost:${PORT}`);
+      console.log(`  Network: http://${localIP}:${PORT}  ← use this on mobile`);
       console.log(`  Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`===============================================`);
     });

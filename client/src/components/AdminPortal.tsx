@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, API_BASE } from '../context/AuthContext';
-import { ShieldCheck, ShieldAlert, UserMinus, UserCheck, AlertCircle, RefreshCw, FileSpreadsheet, Trash2 } from 'lucide-react';
+import { 
+  ShieldCheck, UserMinus, UserCheck, AlertCircle, RefreshCw, 
+  FileSpreadsheet, Trash2, Edit3, X, Search, UserPlus, FileText 
+} from 'lucide-react';
 import type { User, AuditLog, Application } from '../types';
 
 const AdminPortal: React.FC = () => {
@@ -11,73 +14,47 @@ const AdminPortal: React.FC = () => {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [apps, setApps] = useState<Application[]>([]);
   const [expandedStaffId, setExpandedStaffId] = useState<number | null>(null);
-  const [expandedClientId, setExpandedClientId] = useState<number | null>(null);
   
-  // Create Staff Account Form State
-  const [staffName, setStaffName] = useState('');
-  const [staffEmail, setStaffEmail] = useState('');
-  const [staffPassword, setStaffPassword] = useState('');
-  const [staffRole, setStaffRole] = useState('operations_officer');
-  const [creatingStaff, setCreatingStaff] = useState(false);
-  const [staffSuccess, setStaffSuccess] = useState<string | null>(null);
-  const [staffError, setStaffError] = useState<string | null>(null);
-  const [staffPermissions, setStaffPermissions] = useState({
+  // Create Account Form State (Client or Staff)
+  const [accountName, setAccountName] = useState('');
+  const [accountEmail, setAccountEmail] = useState('');
+  const [accountPassword, setAccountPassword] = useState('');
+  const [accountPhone, setAccountPhone] = useState('');
+  const [accountRole, setAccountRole] = useState('client');
+  const [creatingAccount, setCreatingAccount] = useState(false);
+  const [accountSuccess, setAccountSuccess] = useState<string | null>(null);
+  const [accountError, setAccountError] = useState<string | null>(null);
+  const [staffPermissions] = useState({
     can_view_users: true,
-    can_update_user_status: false,
-    can_delete_users: false,
-    can_delete_applications: false,
-    can_view_logs: false,
-    can_create_staff: false
+    can_update_user_status: true,
+    can_delete_users: true,
+    can_delete_applications: true,
+    can_view_logs: true,
+    can_create_staff: true
   });
 
-  const handleCreateStaff = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCreatingStaff(true);
-    setStaffSuccess(null);
-    setStaffError(null);
+  // Edit User Modal State
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editRole, setEditRole] = useState('client');
+  const [editStatus, setEditStatus] = useState('active');
+  const [editPhone, setEditPhone] = useState('');
+  const [editPassword, setEditPassword] = useState('');
+  const [savingUser, setSavingUser] = useState(false);
 
-    try {
-      const res = await fetch(`${API_BASE}/auth/register-staff`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          name: staffName,
-          email: staffEmail,
-          password: staffPassword,
-          role: staffRole,
-          permissions: staffRole === 'supervisor' ? staffPermissions : null
-        })
-      });
+  // Edit Application Modal State
+  const [editingApp, setEditingApp] = useState<Application | null>(null);
+  const [editAppStatus, setEditAppStatus] = useState('submitted');
+  const [editAppService, setEditAppService] = useState('company_incorporation');
+  const [editAppAssignee, setEditAppAssignee] = useState<string>('');
+  const [editAppDetails, setEditAppDetails] = useState('');
+  const [savingApp, setSavingApp] = useState(false);
 
-      const data = await res.json();
-      if (res.ok) {
-        setStaffSuccess('Staff account created successfully!');
-        setStaffName('');
-        setStaffEmail('');
-        setStaffPassword('');
-        setStaffPermissions({
-          can_view_users: true,
-          can_update_user_status: false,
-          can_delete_users: false,
-          can_delete_applications: false,
-          can_view_logs: false,
-          can_create_staff: false
-        });
-        fetchUsers();
-        fetchLogs();
-      } else {
-        setStaffError(data.error || 'Failed to create staff account.');
-      }
-    } catch (err) {
-      setStaffError('Network error. Failed to create staff.');
-    } finally {
-      setCreatingStaff(false);
-    }
-  };
-  
+  // Search & Filter for Applications section
+  const [appSearchQuery, setAppSearchQuery] = useState('');
+  const [appStatusFilter, setAppStatusFilter] = useState('all');
+
   const hasPermission = (permName: string) => {
     if (!activeUser) return false;
     if (activeUser.role === 'admin') return true;
@@ -91,6 +68,7 @@ const AdminPortal: React.FC = () => {
   // Loading indicators
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [loadingLogs, setLoadingLogs] = useState(true);
+  const [loadingApps, setLoadingApps] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch Users
@@ -137,8 +115,9 @@ const AdminPortal: React.FC = () => {
     }
   };
 
-  // Fetch all applications (for CSV export)
+  // Fetch all applications
   const fetchApplications = async () => {
+    setLoadingApps(true);
     try {
       const res = await fetch(`${API_BASE}/services/applications`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -148,6 +127,8 @@ const AdminPortal: React.FC = () => {
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoadingApps(false);
     }
   };
 
@@ -158,221 +139,126 @@ const AdminPortal: React.FC = () => {
     fetchApplications();
   }, [token]);
 
-  const renderUserRow = (u: User) => {
-    const isMe = u.id === activeUser?.id;
-    const isStaff = u.role !== 'client';
-    
-    // Find all cases/filings assigned to this staff member
-    const staffApps = apps.filter(a => a.assigned_to === u.id);
-    
-    // Get unique list of client IDs assigned to this staff member
-    const assignedClientIds = Array.from(new Set(staffApps.map(a => a.client_id)));
-    const assignedClients = assignedClientIds.map(cId => {
-      const clientApp = staffApps.find(a => a.client_id === cId);
-      return {
-        id: cId,
-        name: clientApp?.client_name || `Client #${cId}`,
-        applications: staffApps.filter(a => a.client_id === cId)
-      };
-    });
+  // Create User Account (Client or Staff)
+  const handleCreateAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreatingAccount(true);
+    setAccountSuccess(null);
+    setAccountError(null);
 
-    const isExpanded = expandedStaffId === u.id;
+    try {
+      const endpoint = `${API_BASE}/admin/users`;
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: accountName,
+          email: accountEmail,
+          password: accountPassword,
+          role: accountRole,
+          phone: accountPhone,
+          permissions: accountRole === 'supervisor' ? staffPermissions : null
+        })
+      });
 
-    return (
-      <div key={u.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        {/* Main Row */}
-        <div 
-          onClick={() => {
-            if (isStaff) {
-              setExpandedStaffId(isExpanded ? null : u.id);
-              setExpandedClientId(null);
-            }
-          }}
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '10px 12px',
-            background: isExpanded ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.01)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '8px',
-            cursor: isStaff ? 'pointer' : 'default',
-            transition: 'background 0.2s'
-          }}
-          title={isStaff ? "Click to toggle assigned clients and progress list" : undefined}
-        >
-          <div>
-            <span 
-              onClick={(e) => {
-                e.stopPropagation(); // Prevent toggling dropdown
-                if ((window as any).openProfileModal) {
-                  (window as any).openProfileModal(u.id);
-                }
-              }}
-              style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--accent-red)', display: 'inline-block', cursor: 'pointer', textDecoration: 'underline' }}
-              title="Click to view/edit user profile"
-            >
-              {u.name} {isMe && <span style={{ color: 'var(--text-primary)', fontSize: '0.7rem' }}>(You)</span>}
-            </span>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>
-              {u.email}
-            </span>
-            <span style={{ fontSize: '0.65rem', color: 'var(--accent-red)', textTransform: 'capitalize', fontWeight: '500' }}>
-              {u.role.replace('_', ' ')} {isStaff && `(${assignedClients.length} clients assigned)`}
-            </span>
-            {u.role === 'supervisor' && u.permissions && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
-                {Object.entries(u.permissions).map(([key, val]) => {
-                  if (val !== true) return null;
-                  return (
-                    <span key={key} style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', fontSize: '0.6rem', padding: '1px 5px', borderRadius: '3px', border: '1px solid var(--border-color)' }}>
-                      {key.replace('can_', '').replace(/_/g, ' ')}
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {!isMe && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
-              {hasPermission('can_update_user_status') && (
-                <button
-                  onClick={() => handleToggleUserStatus(u.id, u.status)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: u.status === 'active' ? '#fc8181' : '#48bb78',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '6px',
-                    borderRadius: '4px'
-                  }}
-                  title={u.status === 'active' ? 'Suspend user' : 'Activate user'}
-                >
-                  {u.status === 'active' ? <UserMinus size={16} /> : <UserCheck size={16} />}
-                </button>
-              )}
-              
-              {hasPermission('can_delete_users') && (
-                <button
-                  onClick={() => handleDeleteUser(u.id)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#fc8181',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '6px',
-                    borderRadius: '4px'
-                  }}
-                  title="Delete User Account"
-                >
-                  <Trash2 size={16} />
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Dropdown of Assigned Clients */}
-        {isStaff && isExpanded && (
-          <div style={{
-            marginLeft: '12px',
-            padding: '12px',
-            background: 'rgba(0,0,0,0.2)',
-            borderLeft: '2px solid var(--accent-red)',
-            borderRadius: '0 8px 8px 0',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px'
-          }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Clients assigned to {u.name.split(' ')[0]}
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {assignedClients.map(client => {
-                const isClientExpanded = expandedClientId === client.id;
-                return (
-                  <div key={client.id} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div 
-                      onClick={() => setExpandedClientId(isClientExpanded ? null : client.id)}
-                      style={{
-                        padding: '6px 10px',
-                        background: isClientExpanded ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.01)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '6px',
-                        fontSize: '0.8rem',
-                        fontWeight: '600',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}
-                      title="Click to view client work progress details"
-                    >
-                      <span>{client.name}</span>
-                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                        {client.applications.length} case{client.applications.length > 1 ? 's' : ''} {isClientExpanded ? '▼' : '►'}
-                      </span>
-                    </div>
-
-                    {isClientExpanded && (
-                      <div style={{
-                        padding: '8px 12px',
-                        background: 'rgba(0,0,0,0.15)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '6px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                        marginLeft: '8px'
-                      }}>
-                        {client.applications.map(app => (
-                          <div key={app.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
-                            <div>
-                              <span style={{ color: '#fff', fontWeight: '500' }}>
-                                {app.service_type.replace(/_/g, ' ').toUpperCase()}
-                              </span>
-                              <span style={{ color: 'var(--text-muted)', marginLeft: '6px' }}>(#{app.id})</span>
-                            </div>
-                            <span style={{
-                              background: app.status === 'completed' ? 'rgba(72,187,120,0.1)' : app.status === 'rejected' || app.status === 'add_info_required' ? 'rgba(229,62,62,0.1)' : 'rgba(49,130,206,0.1)',
-                              color: app.status === 'completed' ? '#48bb78' : app.status === 'rejected' || app.status === 'add_info_required' ? '#f56565' : '#4299e1',
-                              padding: '2px 6px',
-                              borderRadius: '4px',
-                              fontSize: '0.65rem',
-                              textTransform: 'uppercase',
-                              fontWeight: '700'
-                            }}>
-                              {app.status.replace(/_/g, ' ')}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {assignedClients.length === 0 && (
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', padding: '8px' }}>
-                  No clients currently assigned.
-                </div>
-              )}
-            </div>
-
-          </div>
-        )}
-      </div>
-    );
+      const data = await res.json();
+      if (res.ok) {
+        setAccountSuccess(`Account (${accountRole.replace('_', ' ')}) created successfully!`);
+        setAccountName('');
+        setAccountEmail('');
+        setAccountPassword('');
+        setAccountPhone('');
+        fetchUsers();
+        fetchLogs();
+      } else {
+        setAccountError(data.error || 'Failed to create account.');
+      }
+    } catch (err) {
+      setAccountError('Network error. Failed to create account.');
+    } finally {
+      setCreatingAccount(false);
+    }
   };
 
-  // Toggle user status (Suspend / Activate)
+  // Open Edit User Modal
+  const openEditUser = (u: User) => {
+    setEditingUser(u);
+    setEditName(u.name);
+    setEditEmail(u.email);
+    setEditRole(u.role);
+    setEditStatus(u.status || 'active');
+    setEditPhone((u as any).phone || '');
+    setEditPassword('');
+  };
+
+  // Save Edit User Account
+  const handleSaveUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setSavingUser(true);
+
+    try {
+      const res = await fetch(`${API_BASE}/admin/users/${editingUser.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: editName,
+          email: editEmail,
+          role: editRole,
+          status: editStatus,
+          phone: editPhone,
+          password: editPassword.trim() ? editPassword.trim() : undefined
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setEditingUser(null);
+        fetchUsers();
+        fetchLogs();
+      } else {
+        alert(data.error || 'Failed to update user account.');
+      }
+    } catch (err) {
+      alert('Network error. Failed to update user account.');
+    } finally {
+      setSavingUser(false);
+    }
+  };
+
+  // Delete User Account
+  const handleDeleteUser = async (userId: number) => {
+    if (!window.confirm('Are you sure you want to permanently delete this user account? This action cannot be undone.')) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (res.ok) {
+        setUsers(users.filter(u => u.id !== userId));
+        fetchLogs();
+        fetchApplications();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to delete user account.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error. Failed to delete user account.');
+    }
+  };
+
+  // Toggle user status
   const handleToggleUserStatus = async (userId: number, currentStatus: string) => {
     const nextStatus = currentStatus === 'active' ? 'pending' : 'active';
     try {
@@ -390,75 +276,96 @@ const AdminPortal: React.FC = () => {
         throw new Error(data.error || 'Failed to update user status');
       }
       
-      // Update local state
       setUsers(users.map(u => u.id === userId ? { ...u, status: nextStatus } : u));
-      fetchLogs(); // Reload audit logs
+      fetchLogs();
     } catch (err: any) {
       setError(err.message);
       setTimeout(() => setError(null), 4000);
     }
   };
 
-  // Delete user account (Admin only)
-  const handleDeleteUser = async (userId: number) => {
-    if (!window.confirm('Are you sure you want to permanently delete this user account? This action cannot be undone.')) return;
+  // Open Edit Application Modal
+  const openEditApp = (app: Application) => {
+    setEditingApp(app);
+    setEditAppStatus(app.status);
+    setEditAppService(app.service_type);
+    setEditAppAssignee(app.assigned_to ? app.assigned_to.toString() : '');
+    setEditAppDetails(typeof app.details === 'string' ? app.details : JSON.stringify(app.details, null, 2));
+  };
+
+  // Save Edit Application
+  const handleSaveApp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingApp) return;
+    setSavingApp(true);
 
     try {
-      const res = await fetch(`${API_BASE}/admin/users/${userId}`, {
-        method: 'DELETE',
+      const res = await fetch(`${API_BASE}/admin/applications/${editingApp.id}`, {
+        method: 'PUT',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({
+          status: editAppStatus,
+          service_type: editAppService,
+          assigned_to: editAppAssignee ? parseInt(editAppAssignee) : null,
+          details: editAppDetails
+        })
       });
 
+      const data = await res.json();
       if (res.ok) {
-        setUsers(users.filter(u => u.id !== userId));
+        setEditingApp(null);
+        fetchApplications();
+        fetchLogs();
       } else {
-        const data = await res.json();
-        alert(data.error || 'Failed to delete user.');
+        alert(data.error || 'Failed to update application.');
       }
     } catch (err) {
-      console.error(err);
-      alert('Network error. Failed to delete user.');
+      alert('Network error. Failed to update application.');
+    } finally {
+      setSavingApp(false);
     }
   };
 
-  // Export applications to CSV (categorised by service type with all client-supplied information)
+  // Delete Application
+  const handleDeleteApp = async (appId: number) => {
+    if (!window.confirm(`Are you sure you want to delete application #${appId}? This action cannot be undone.`)) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/admin/applications/${appId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        setApps(apps.filter(a => a.id !== appId));
+        fetchLogs();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to delete application.');
+      }
+    } catch (err) {
+      alert('Network error. Failed to delete application.');
+    }
+  };
+
+  // Export applications to CSV
   const handleExportCSV = () => {
     if (apps.length === 0) {
       alert('No application records found to export.');
       return;
     }
 
-    // Sort by service type to group/categorise them based on services
     const sortedApps = [...apps].sort((a, b) => a.service_type.localeCompare(b.service_type));
 
-    // Headers
     const headers = [
-      'Ref ID',
-      'Client Name',
-      'Service Type',
-      'Status',
-      'Assigned To',
-      'Created At',
-      'Proposed Name / Service Name',
-      'Proposed Name 2',
-      'Proposed Name 3',
-      'Share Capital / Aims & Objectives / Nature of Business',
-      'Selected Sub-services',
-      'Client Email',
-      'Client Phone',
-      'BVN',
-      'State of Origin',
-      'State',
-      'LGA',
-      'Residential Address',
-      'Next of Kin',
-      'Next of Kin Contact',
-      'Directors / Trustees List'
+      'Ref ID', 'Client Name', 'Service Type', 'Status', 'Assigned To', 'Created At',
+      'Proposed Name 1', 'Proposed Name 2', 'Proposed Name 3', 'Share Capital / Details',
+      'Client Email', 'Client Phone', 'State', 'LGA'
     ];
     
-    // Rows
     const rows = sortedApps.map(app => {
       let detailsObj: any = {};
       try {
@@ -467,86 +374,182 @@ const AdminPortal: React.FC = () => {
         detailsObj = { raw_details: app.details };
       }
 
-      // Map directors/trustees arrays to a clean readable string
-      const members = detailsObj.directors || detailsObj.trustees || [];
-      const membersStr = Array.isArray(members) 
-        ? members.map((m: any) => `${m.name || ''} (${m.email || ''}, ${m.phone || ''})`).join('; ') 
-        : '';
-
-      const subServices = Array.isArray(detailsObj.selectedSubServices)
-        ? detailsObj.selectedSubServices.join(', ')
-        : (detailsObj.selectedSubServices || '');
-
-      const shareOrAims = detailsObj.shareCapital 
-        ? `₦${detailsObj.shareCapital}` 
-        : (detailsObj.aimsAndObjectives || detailsObj.natureOfBusiness || '');
-
       return [
         app.id.toString(),
         app.client_name || `Client #${app.client_id}`,
-        app.service_type.toUpperCase().replace('_', ' '),
-        app.status.toUpperCase().replace('_', ' '),
+        app.service_type.toUpperCase().replace(/_/g, ' '),
+        app.status.toUpperCase().replace(/_/g, ' '),
         app.assignee_name || 'Unassigned',
         app.created_at ? new Date(app.created_at).toLocaleDateString() : '',
         detailsObj.proposedName1 || detailsObj.serviceName || '',
         detailsObj.proposedName2 || '',
         detailsObj.proposedName3 || '',
-        shareOrAims,
-        subServices,
+        detailsObj.shareCapital ? `₦${detailsObj.shareCapital}` : (detailsObj.natureOfBusiness || ''),
         detailsObj.email || '',
         detailsObj.phone || '',
-        detailsObj.bvn || '',
-        detailsObj.stateOfOrigin || '',
         detailsObj.state || '',
-        detailsObj.lga || '',
-        detailsObj.residentialAddress || '',
-        detailsObj.nextOfKin || '',
-        detailsObj.nextOfKinContact || '',
-        membersStr
+        detailsObj.lga || ''
       ];
     });
 
-    // Helper to escape CSV cell contents
-    const escapeCSV = (val: string) => {
-      const escaped = val.toString().replace(/"/g, '""');
-      return `"${escaped}"`;
-    };
-
-    // Construct CSV content with UTF-8 BOM for direct Excel compatibility
+    const escapeCSV = (val: string) => `"${val.toString().replace(/"/g, '""')}"`;
     const csvHeader = headers.map(escapeCSV).join(',');
     const csvRows = rows.map(row => row.map(escapeCSV).join(','));
     const csvContent = [csvHeader, ...csvRows].join('\n');
 
-    // Create download link
     const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = window.document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `primeflow_all_filings_by_service_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `primeflow_filings_${new Date().toISOString().split('T')[0]}.csv`);
     window.document.body.appendChild(link);
     link.click();
     window.document.body.removeChild(link);
   };
 
+  const renderUserRow = (u: User) => {
+    const isMe = u.id === activeUser?.id;
+    const isStaff = u.role !== 'client';
+    const staffApps = apps.filter(a => a.assigned_to === u.id);
+    const assignedClientIds = Array.from(new Set(staffApps.map(a => a.client_id)));
+    const isExpanded = expandedStaffId === u.id;
+
+    return (
+      <div key={u.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div 
+          onClick={() => {
+            if (isStaff) {
+              setExpandedStaffId(isExpanded ? null : u.id);
+            }
+          }}
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '10px 12px',
+            background: isExpanded ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.01)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '8px',
+            cursor: isStaff ? 'pointer' : 'default',
+            transition: 'background 0.2s'
+          }}
+        >
+          <div>
+            <span 
+              onClick={(e) => {
+                e.stopPropagation();
+                openEditUser(u);
+              }}
+              style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--accent-red)', display: 'inline-block', cursor: 'pointer', textDecoration: 'underline' }}
+              title="Click to edit user account details"
+            >
+              {u.name} {isMe && <span style={{ color: 'var(--text-primary)', fontSize: '0.7rem' }}>(You)</span>}
+            </span>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>
+              {u.email}
+            </span>
+            <span style={{ fontSize: '0.65rem', color: 'var(--accent-red)', textTransform: 'capitalize', fontWeight: '500' }}>
+              {u.role.replace('_', ' ')} {isStaff && `(${assignedClientIds.length} clients assigned)`}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => openEditUser(u)}
+              style={{
+                background: 'rgba(26,111,232,0.1)',
+                border: '1px solid rgba(26,111,232,0.3)',
+                color: '#60a5fa',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '5px 8px',
+                borderRadius: '4px',
+                fontSize: '0.7rem',
+                gap: '4px'
+              }}
+              title="Edit User Account"
+            >
+              <Edit3 size={14} /> Edit
+            </button>
+
+            {!isMe && hasPermission('can_update_user_status') && (
+              <button
+                onClick={() => handleToggleUserStatus(u.id, u.status)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: u.status === 'active' ? '#fc8181' : '#48bb78',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '6px',
+                  borderRadius: '4px'
+                }}
+                title={u.status === 'active' ? 'Suspend user' : 'Activate user'}
+              >
+                {u.status === 'active' ? <UserMinus size={16} /> : <UserCheck size={16} />}
+              </button>
+            )}
+            
+            {!isMe && hasPermission('can_delete_users') && (
+              <button
+                onClick={() => handleDeleteUser(u.id)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#fc8181',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '6px',
+                  borderRadius: '4px'
+                }}
+                title="Delete User Account"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Filtered applications list
+  const filteredApps = apps.filter(a => {
+    const matchesSearch = 
+      a.id.toString().includes(appSearchQuery) ||
+      (a.client_name && a.client_name.toLowerCase().includes(appSearchQuery.toLowerCase())) ||
+      a.service_type.toLowerCase().includes(appSearchQuery.toLowerCase());
+
+    const matchesStatus = appStatusFilter === 'all' || a.status === appStatusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const staffMembers = users.filter(u => u.role !== 'client');
+
   return (
     <div className="animate-fade-in theme-colored page-theme-glow page-container">
       
       {/* Top action row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-            System configurations, user administration, data reports, and maximum security audit trails.
+          <h3 style={{ fontSize: '1.4rem', color: '#fff', margin: 0, fontWeight: '800' }}>Admin Portal</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>
+            System administration, user account management, filing controls, and security audit trails.
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
           <button onClick={handleExportCSV} className="btn-secondary" style={{ fontSize: '0.8rem' }}>
-            <FileSpreadsheet size={16} /> Export Applications CSV
+            <FileSpreadsheet size={16} /> Export CSV
           </button>
           <button 
-            onClick={() => { fetchUsers(); fetchLogs(); }} 
+            onClick={() => { fetchUsers(); fetchLogs(); fetchApplications(); }} 
             className="btn-secondary" 
             style={{ fontSize: '0.8rem', padding: '10px' }}
+            title="Refresh All Data"
           >
             <RefreshCw size={16} />
           </button>
@@ -563,59 +566,27 @@ const AdminPortal: React.FC = () => {
       {/* Main Admin Grid */}
       <div className="admin-grid-container">
         
-        {/* User Management Section */}
+        {/* Left Column: Create Account & Users List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                 {/* Create Staff Account Form */}
+          
+          {/* Create User Account Form */}
           {hasPermission('can_create_staff') ? (
             <div className="glass-panel" style={{ padding: '20px' }}>
-              <h4 style={{ fontSize: '1.1rem', color: '#fff', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-                Create Staff Account
-              </h4>
-              <form onSubmit={handleCreateStaff} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+                <UserPlus size={20} style={{ color: 'var(--accent-red)' }} />
+                <h4 style={{ fontSize: '1.1rem', color: '#fff', margin: 0 }}>Create User Account</h4>
+              </div>
+              
+              <form onSubmit={handleCreateAccount} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Name</label>
-                  <input 
-                    type="text" 
-                    required 
-                    className="form-input" 
-                    style={{ padding: '8px 12px', fontSize: '0.85rem' }}
-                    value={staffName} 
-                    onChange={(e) => setStaffName(e.target.value)} 
-                    placeholder="e.g. Fatima Okafor"
-                  />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Email Address</label>
-                  <input 
-                    type="email" 
-                    required 
-                    className="form-input" 
-                    style={{ padding: '8px 12px', fontSize: '0.85rem' }}
-                    value={staffEmail} 
-                    onChange={(e) => setStaffEmail(e.target.value)} 
-                    placeholder="e.g. fatima@primeflow.com"
-                  />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Password</label>
-                  <input 
-                    type="password" 
-                    required 
-                    className="form-input" 
-                    style={{ padding: '8px 12px', fontSize: '0.85rem' }}
-                    value={staffPassword} 
-                    onChange={(e) => setStaffPassword(e.target.value)} 
-                    placeholder="••••••••"
-                  />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Role</label>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Account Role</label>
                   <select 
                     className="form-select" 
                     style={{ padding: '8px 12px', fontSize: '0.85rem' }}
-                    value={staffRole} 
-                    onChange={(e) => setStaffRole(e.target.value)}
+                    value={accountRole} 
+                    onChange={(e) => setAccountRole(e.target.value)}
                   >
+                    <option value="client">Client Account (Business Owner)</option>
                     <option value="operations_officer">Operations Officer (Consultant)</option>
                     <option value="compliance_officer">Compliance Officer (Filer)</option>
                     <option value="supervisor">Supervisor (Manager)</option>
@@ -623,75 +594,80 @@ const AdminPortal: React.FC = () => {
                   </select>
                 </div>
 
-                {staffRole === 'supervisor' && (
-                  <div style={{
-                    padding: '12px',
-                    background: 'rgba(0,0,0,0.15)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '6px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '8px',
-                    marginTop: '4px'
-                  }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Supervisor Permissions Checklist
-                    </span>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
-                      {[
-                        { key: 'can_view_users', label: 'Monitor User Accounts list' },
-                        { key: 'can_update_user_status', label: 'Suspend/Activate user accounts' },
-                        { key: 'can_delete_users', label: 'Permanently delete user accounts' },
-                        { key: 'can_delete_applications', label: 'Permanently delete applications' },
-                        { key: 'can_view_logs', label: 'Monitor Security Audit logs' },
-                        { key: 'can_create_staff', label: 'Onboard/create other staff accounts' }
-                      ].map(perm => (
-                        <label key={perm.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                          <input
-                            type="checkbox"
-                            checked={(staffPermissions as any)[perm.key]}
-                            onChange={(e) => setStaffPermissions(prev => ({
-                              ...prev,
-                              [perm.key]: e.target.checked
-                            }))}
-                            style={{ accentColor: 'var(--accent-red)' }}
-                          />
-                          <span>{perm.label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {staffSuccess && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Full Name</label>
+                  <input 
+                    type="text" 
+                    required 
+                    className="form-input" 
+                    style={{ padding: '8px 12px', fontSize: '0.85rem' }}
+                    value={accountName} 
+                    onChange={(e) => setAccountName(e.target.value)} 
+                    placeholder="e.g. Babajide Sowande"
+                  />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Email Address</label>
+                  <input 
+                    type="email" 
+                    required 
+                    className="form-input" 
+                    style={{ padding: '8px 12px', fontSize: '0.85rem' }}
+                    value={accountEmail} 
+                    onChange={(e) => setAccountEmail(e.target.value)} 
+                    placeholder="e.g. client@primeflow.com"
+                  />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Phone Number</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    style={{ padding: '8px 12px', fontSize: '0.85rem' }}
+                    value={accountPhone} 
+                    onChange={(e) => setAccountPhone(e.target.value)} 
+                    placeholder="e.g. 08012345678"
+                  />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Initial Password</label>
+                  <input 
+                    type="password" 
+                    required 
+                    className="form-input" 
+                    style={{ padding: '8px 12px', fontSize: '0.85rem' }}
+                    value={accountPassword} 
+                    onChange={(e) => setAccountPassword(e.target.value)} 
+                    placeholder="••••••••"
+                  />
+                </div>
+
+                {accountSuccess && (
                   <div style={{ color: '#48bb78', fontSize: '0.8rem', textAlign: 'center', fontWeight: '500' }}>
-                    {staffSuccess}
+                    {accountSuccess}
                   </div>
                 )}
-                {staffError && (
+                {accountError && (
                   <div style={{ color: 'var(--accent-red)', fontSize: '0.8rem', textAlign: 'center', fontWeight: '500' }}>
-                    {staffError}
+                    {accountError}
                   </div>
                 )}
                 
-                <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '8px 16px', fontSize: '0.85rem' }} disabled={creatingStaff}>
-                  {creatingStaff ? 'Creating...' : 'Create Account'}
+                <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '8px 16px', fontSize: '0.85rem' }} disabled={creatingAccount}>
+                  {creatingAccount ? 'Creating...' : 'Create Account'}
                 </button>
               </form>
             </div>
-          ) : (
-            <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-              <ShieldAlert size={28} style={{ color: 'var(--accent-red)', marginBottom: '4px' }} />
-              <div style={{ fontWeight: '600', color: '#fff', fontSize: '0.95rem' }}>Staff Onboarding Locked</div>
-              <div style={{ textAlign: 'center', lineHeight: '1.4' }}>Supervisor grant required to onboard new staff members.</div>
-            </div>
-          )}
+          ) : null}
 
           {/* User Accounts List */}
           {hasPermission('can_view_users') ? (
             <div className="glass-panel" style={{ padding: '20px' }}>
               <h4 style={{ fontSize: '1.1rem', color: '#fff', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-                User Accounts
+                User Accounts Directory
               </h4>
 
               {loadingUsers ? (
@@ -730,71 +706,358 @@ const AdminPortal: React.FC = () => {
                 </div>
               )}
             </div>
-          ) : (
-            <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-              <ShieldAlert size={28} style={{ color: 'var(--accent-red)', marginBottom: '4px' }} />
-              <div style={{ fontWeight: '600', color: '#fff', fontSize: '0.95rem' }}>Accounts Directory Locked</div>
-              <div style={{ textAlign: 'center', lineHeight: '1.4' }}>Supervisor grant required to view staff and client accounts.</div>
-            </div>
-          )}
+          ) : null}
 
         </div>
 
-        {/* Security Audit Trail Section */}
-        {hasPermission('can_view_logs') ? (
+        {/* Right Column: Applications Management & Security Trail */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          {/* Applications Management Section */}
           <div className="glass-panel" style={{ padding: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-              <ShieldCheck size={20} style={{ color: 'var(--accent-red)' }} />
-              <h4 style={{ fontSize: '1.1rem', color: '#fff' }}>Security Audit Trail</h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FileText size={20} style={{ color: 'var(--accent-red)' }} />
+                <h4 style={{ fontSize: '1.1rem', color: '#fff', margin: 0 }}>Applications Management</h4>
+              </div>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total: {apps.length} filings</span>
             </div>
 
-            {loadingLogs ? (
-              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading audit logs...</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '500px', overflowY: 'auto' }}>
-                {auditLogs.map(log => (
-                  <div 
-                    key={log.id}
-                    style={{
-                      padding: '10px',
-                      background: 'rgba(0,0,0,0.15)',
-                      border: '1px solid var(--border-color)',
-                      borderLeft: '3px solid var(--accent-red)',
-                      borderRadius: '6px',
-                      fontSize: '0.75rem'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '600', marginBottom: '4px' }}>
-                      <span style={{ color: 'var(--accent-red)' }}>{log.action}</span>
-                      <span style={{ color: 'var(--text-muted)' }}>
-                        {new Date(log.created_at).toLocaleString()}
-                      </span>
-                    </div>
-                    <p style={{ color: 'var(--text-primary)', marginBottom: '4px', lineHeight: '1.3' }}>
-                      {log.details}
-                    </p>
-                    <div style={{ display: 'flex', gap: '16px', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                      <span>Operator: {log.user_name || 'System'} ({log.user_role || 'unassigned'})</span>
-                      <span>IP: {log.ip_address}</span>
-                    </div>
-                  </div>
-                ))}
+            {/* Filter & Search */}
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+              <div style={{ position: 'relative', flex: 1, minWidth: '180px' }}>
+                <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  style={{ padding: '6px 10px 6px 30px', fontSize: '0.8rem', width: '100%' }}
+                  placeholder="Search by client or ID..."
+                  value={appSearchQuery}
+                  onChange={(e) => setAppSearchQuery(e.target.value)}
+                />
+              </div>
 
-                {auditLogs.length === 0 && (
-                  <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>No audit logs recorded.</div>
-                )}
+              <select 
+                className="form-select" 
+                style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                value={appStatusFilter}
+                onChange={(e) => setAppStatusFilter(e.target.value)}
+              >
+                <option value="all">All Statuses</option>
+                <option value="submitted">Submitted</option>
+                <option value="under_review">Under Review</option>
+                <option value="processing">Processing</option>
+                <option value="add_info_required">Add Info Required</option>
+                <option value="completed">Completed</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+
+            {loadingApps ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading applications...</div>
+            ) : (
+              <div className="table-responsive" style={{ maxHeight: '420px', overflowY: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
+                      <th style={{ padding: '8px' }}>Ref ID</th>
+                      <th style={{ padding: '8px' }}>Client</th>
+                      <th style={{ padding: '8px' }}>Service Type</th>
+                      <th style={{ padding: '8px' }}>Status</th>
+                      <th style={{ padding: '8px' }}>Assignee</th>
+                      <th style={{ padding: '8px', textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredApps.map(a => (
+                      <tr key={a.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                        <td style={{ padding: '8px', color: '#fff', fontWeight: '700' }}>#{a.id}</td>
+                        <td style={{ padding: '8px', color: 'var(--text-primary)' }}>{a.client_name || `Client #${a.client_id}`}</td>
+                        <td style={{ padding: '8px', color: 'var(--text-secondary)' }}>{a.service_type.replace(/_/g, ' ').toUpperCase()}</td>
+                        <td style={{ padding: '8px' }}>
+                          <span style={{
+                            background: a.status === 'completed' ? 'rgba(72,187,120,0.15)' : a.status === 'rejected' || a.status === 'add_info_required' ? 'rgba(229,62,62,0.15)' : 'rgba(49,130,206,0.15)',
+                            color: a.status === 'completed' ? '#48bb78' : a.status === 'rejected' || a.status === 'add_info_required' ? '#f56565' : '#4299e1',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            fontSize: '0.65rem',
+                            fontWeight: '700',
+                            textTransform: 'uppercase'
+                          }}>
+                            {a.status.replace(/_/g, ' ')}
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px', color: 'var(--text-muted)' }}>{a.assignee_name || 'Unassigned'}</td>
+                        <td style={{ padding: '8px', textAlign: 'right' }}>
+                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                            <button 
+                              onClick={() => openEditApp(a)}
+                              style={{ background: 'rgba(26,111,232,0.1)', border: '1px solid rgba(26,111,232,0.3)', color: '#60a5fa', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem' }}
+                              title="Edit Application Details"
+                            >
+                              <Edit3 size={13} />
+                            </button>
+
+                            <button 
+                              onClick={() => handleDeleteApp(a.id)}
+                              style={{ background: 'rgba(229,62,62,0.1)', border: '1px solid rgba(229,62,62,0.3)', color: '#fc8181', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem' }}
+                              title="Delete Application"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredApps.length === 0 && (
+                      <tr>
+                        <td colSpan={6} style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                          No application records found matching criteria.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
-        ) : (
-          <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-            <ShieldAlert size={28} style={{ color: 'var(--accent-red)', marginBottom: '4px' }} />
-            <div style={{ fontWeight: '600', color: '#fff', fontSize: '0.95rem' }}>Security Trail Locked</div>
-            <div style={{ textAlign: 'center', lineHeight: '1.4' }}>Supervisor grant required to monitor security audit logs.</div>
-          </div>
-        )}
+
+          {/* Security Audit Trail Section */}
+          {hasPermission('can_view_logs') ? (
+            <div className="glass-panel" style={{ padding: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+                <ShieldCheck size={20} style={{ color: 'var(--accent-red)' }} />
+                <h4 style={{ fontSize: '1.1rem', color: '#fff', margin: 0 }}>Security Audit Trail</h4>
+              </div>
+
+              {loadingLogs ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading audit logs...</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '350px', overflowY: 'auto' }}>
+                  {auditLogs.map(log => (
+                    <div 
+                      key={log.id}
+                      style={{
+                        padding: '10px',
+                        background: 'rgba(0,0,0,0.15)',
+                        border: '1px solid var(--border-color)',
+                        borderLeft: '3px solid var(--accent-red)',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '600', marginBottom: '4px' }}>
+                        <span style={{ color: 'var(--accent-red)' }}>{log.action}</span>
+                        <span style={{ color: 'var(--text-muted)' }}>
+                          {new Date(log.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                      <p style={{ color: 'var(--text-primary)', marginBottom: '4px', lineHeight: '1.3' }}>
+                        {log.details}
+                      </p>
+                      <div style={{ display: 'flex', gap: '16px', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                        <span>Operator: {log.user_name || 'System'} ({log.user_role || 'unassigned'})</span>
+                        <span>IP: {log.ip_address}</span>
+                      </div>
+                    </div>
+                  ))}
+
+                  {auditLogs.length === 0 && (
+                    <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>No audit logs recorded.</div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : null}
+
+        </div>
 
       </div>
+
+      {/* EDIT USER ACCOUNT MODAL (POPUP FRAMED) */}
+      {editingUser && (
+        <div className="modal-overlay" onClick={() => setEditingUser(null)}>
+          <div className="modal-frame" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+              <h4 style={{ fontSize: '1.2rem', color: '#fff', margin: 0, fontWeight: '700' }}>Edit User Account</h4>
+              <button onClick={() => setEditingUser(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveUser} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: '0.75rem' }}>Full Name</label>
+                <input 
+                  type="text" 
+                  required 
+                  className="form-input"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: '0.75rem' }}>Email Address</label>
+                <input 
+                  type="email" 
+                  required 
+                  className="form-input"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: '0.75rem' }}>Phone Number</label>
+                <input 
+                  type="text" 
+                  className="form-input"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  placeholder="e.g. 08012345678"
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Role</label>
+                  <select 
+                    className="form-select"
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value)}
+                  >
+                    <option value="client">Client Account</option>
+                    <option value="operations_officer">Operations Officer</option>
+                    <option value="compliance_officer">Compliance Officer</option>
+                    <option value="supervisor">Supervisor</option>
+                    <option value="admin">System Administrator</option>
+                  </select>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Status</label>
+                  <select 
+                    className="form-select"
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value)}
+                  >
+                    <option value="active">Active</option>
+                    <option value="pending">Suspended / Pending</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: '0.75rem' }}>New Password (leave blank to keep current)</label>
+                <input 
+                  type="password" 
+                  className="form-input"
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '12px', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={() => setEditingUser(null)} className="btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary" disabled={savingUser}>
+                  {savingUser ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT APPLICATION MODAL (POPUP FRAMED) */}
+      {editingApp && (
+        <div className="modal-overlay" onClick={() => setEditingApp(null)}>
+          <div className="modal-frame" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+              <h4 style={{ fontSize: '1.2rem', color: '#fff', margin: 0, fontWeight: '700' }}>
+                Edit Application #{editingApp.id}
+              </h4>
+              <button onClick={() => setEditingApp(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveApp} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Status</label>
+                  <select 
+                    className="form-select"
+                    value={editAppStatus}
+                    onChange={(e) => setEditAppStatus(e.target.value)}
+                  >
+                    <option value="submitted">Submitted</option>
+                    <option value="under_review">Under Review</option>
+                    <option value="processing">Processing</option>
+                    <option value="add_info_required">Add Info Required</option>
+                    <option value="completed">Completed</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Service Type</label>
+                  <select 
+                    className="form-select"
+                    value={editAppService}
+                    onChange={(e) => setEditAppService(e.target.value)}
+                  >
+                    <option value="company_incorporation">Company Incorporation</option>
+                    <option value="business_registration">Business Name Registration</option>
+                    <option value="incorporated_trustee">Incorporated Trustee (NGO)</option>
+                    <option value="annual_returns">Annual Returns</option>
+                    <option value="post_incorporation">Post Incorporation</option>
+                    <option value="compliance">Compliance (SCUML/TIN)</option>
+                    <option value="other_services">Other Services</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: '0.75rem' }}>Assigned Staff Member</label>
+                <select 
+                  className="form-select"
+                  value={editAppAssignee}
+                  onChange={(e) => setEditAppAssignee(e.target.value)}
+                >
+                  <option value="">-- Unassigned --</option>
+                  {staffMembers.map(s => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.role.replace('_', ' ')})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: '0.75rem' }}>Application Details (JSON or Plain Text)</label>
+                <textarea 
+                  rows={6}
+                  className="form-input"
+                  style={{ fontFamily: 'monospace', fontSize: '0.8rem', resize: 'vertical' }}
+                  value={editAppDetails}
+                  onChange={(e) => setEditAppDetails(e.target.value)}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '12px', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={() => setEditingApp(null)} className="btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary" disabled={savingApp}>
+                  {savingApp ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { getDb } from '../db';
 import { authenticateJWT, AuthRequest, requireRole, requirePermission } from '../middleware/auth';
+import bcrypt from 'bcryptjs';
 
 const router = Router();
 
@@ -167,6 +168,164 @@ router.delete('/users/:id', authenticateJWT as any, requirePermission('can_delet
   } catch (err) {
     console.error(err);
      res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// CREATE USER ACCOUNT (Client or Staff by Admin)
+router.post('/users', authenticateJWT as any, requirePermission('can_create_staff') as any, async (req: AuthRequest, res) => {
+  const { name, email, password, role, phone, permissions } = req.body;
+
+  if (!name || !email || !password || !role) {
+    res.status(400).json({ error: 'Name, email, password, and role are required' });
+    return;
+  }
+
+  const validRoles = ['client', 'operations_officer', 'compliance_officer', 'supervisor', 'admin'];
+  if (!validRoles.includes(role)) {
+    res.status(400).json({ error: 'Invalid role specified' });
+    return;
+  }
+
+  try {
+    const db = await getDb();
+    const existing = await db.get('SELECT id FROM users WHERE email = ?', [email.trim().toLowerCase()]);
+    if (existing) {
+      res.status(409).json({ error: 'A user with this email address already exists' });
+      return;
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+    const permsJson = permissions ? JSON.stringify(permissions) : null;
+
+    const result = await db.run(
+      'INSERT INTO users (name, email, password_hash, role, status, permissions) VALUES (?, ?, ?, ?, ?, ?)',
+      [name.trim(), email.trim().toLowerCase(), passwordHash, role, 'active', permsJson]
+    );
+
+    const newUserId = result.lastID;
+
+    // Seed/Create profile entry
+    await db.run(
+      'INSERT INTO profiles (user_id, phone, company_name, address, profile_bio) VALUES (?, ?, ?, ?, ?)',
+      [newUserId, phone || '', '', '', '']
+    );
+
+    // Audit log
+    await db.run(
+      'INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES (?, ?, ?, ?)',
+      [req.user?.id, 'ADMIN_USER_CREATE', `Created account for ${name} (${email}) with role '${role}'`, req.ip]
+    );
+
+    res.status(201).json({
+      message: 'Account created successfully',
+      user: { id: newUserId, name: name.trim(), email: email.trim().toLowerCase(), role, status: 'active' }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// EDIT USER ACCOUNT (Admin and authorized Supervisors)
+router.put('/users/:id', authenticateJWT as any, requirePermission('can_update_user_status') as any, async (req: AuthRequest, res) => {
+  const userId = parseInt(req.params.id as string);
+  const { name, email, role, status, phone, password, permissions } = req.body;
+
+  try {
+    const db = await getDb();
+    const existing = await db.get('SELECT * FROM users WHERE id = ?', [userId]);
+    if (!existing) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    // Check duplicate email if changed
+    if (email && email.trim().toLowerCase() !== existing.email.toLowerCase()) {
+      const emailCheck = await db.get('SELECT id FROM users WHERE email = ? AND id != ?', [email.trim().toLowerCase(), userId]);
+      if (emailCheck) {
+        res.status(409).json({ error: 'Email address is already in use by another user' });
+        return;
+      }
+    }
+
+    const updatedName = name !== undefined ? name.trim() : existing.name;
+    const updatedEmail = email !== undefined ? email.trim().toLowerCase() : existing.email;
+    const updatedRole = role !== undefined ? role : existing.role;
+    const updatedStatus = status !== undefined ? status : existing.status;
+    const permsJson = permissions !== undefined ? (permissions ? JSON.stringify(permissions) : null) : existing.permissions;
+
+    let passwordHash = existing.password_hash;
+    if (password && password.trim().length >= 6) {
+      const salt = await bcrypt.genSalt(10);
+      passwordHash = await bcrypt.hash(password.trim(), salt);
+    }
+
+    await db.run(
+      'UPDATE users SET name = ?, email = ?, password_hash = ?, role = ?, status = ?, permissions = ? WHERE id = ?',
+      [updatedName, updatedEmail, passwordHash, updatedRole, updatedStatus, permsJson, userId]
+    );
+
+    // Update profile phone if provided
+    if (phone !== undefined) {
+      const prof = await db.get('SELECT user_id FROM profiles WHERE user_id = ?', [userId]);
+      if (prof) {
+        await db.run('UPDATE profiles SET phone = ? WHERE user_id = ?', [phone, userId]);
+      } else {
+        await db.run('INSERT INTO profiles (user_id, phone) VALUES (?, ?)', [userId, phone]);
+      }
+    }
+
+    // Audit log
+    await db.run(
+      'INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES (?, ?, ?, ?)',
+      [req.user?.id, 'ADMIN_USER_UPDATE', `Updated user account details for ${updatedName} (ID: ${userId})`, req.ip]
+    );
+
+    res.status(200).json({ message: 'User account updated successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// EDIT APPLICATION (Admin and Staff)
+router.put('/applications/:id', authenticateJWT as any, requireRole(['admin', 'operations_officer', 'compliance_officer', 'supervisor']) as any, async (req: AuthRequest, res) => {
+  const appId = parseInt(req.params.id as string);
+  const { status, service_type, assigned_to, details } = req.body;
+
+  try {
+    const db = await getDb();
+    const existing = await db.get('SELECT * FROM applications WHERE id = ?', [appId]);
+    if (!existing) {
+      res.status(404).json({ error: 'Application not found' });
+      return;
+    }
+
+    const updatedStatus = status !== undefined ? status : existing.status;
+    const updatedService = service_type !== undefined ? service_type : existing.service_type;
+    const updatedAssignee = assigned_to !== undefined ? (assigned_to ? parseInt(assigned_to) : null) : existing.assigned_to;
+    
+    let updatedDetails = existing.details;
+    if (details !== undefined) {
+      updatedDetails = typeof details === 'string' ? details : JSON.stringify(details);
+    }
+
+    await db.run(
+      'UPDATE applications SET status = ?, service_type = ?, assigned_to = ?, details = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [updatedStatus, updatedService, updatedAssignee, updatedDetails, appId]
+    );
+
+    // Audit log
+    await db.run(
+      'INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES (?, ?, ?, ?)',
+      [req.user?.id, 'APPLICATION_UPDATE', `Updated application #${appId} (Status: ${updatedStatus})`, req.ip]
+    );
+
+    res.status(200).json({ message: 'Application updated successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

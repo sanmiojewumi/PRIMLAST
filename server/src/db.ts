@@ -98,7 +98,7 @@ async function seedDatabase(db: Database) {
   const compHash = await bcrypt.hash('compliance123', salt);
   const clientHash = await bcrypt.hash('client123', salt);
 
-  // Seed Users
+  // Seed Initial System Users
   await db.run(
     'INSERT INTO users (name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)',
     ['System Administrator', 'admin@primeflow.com', adminHash, 'admin', 'active']
@@ -116,82 +116,14 @@ async function seedDatabase(db: Database) {
     ['Babajide Sowande', 'client@primeflow.com', clientHash, 'client', 'active']
   );
 
-  // Retrieve user IDs for referencing
   const adminUser = await db.get<{ id: number }>('SELECT id FROM users WHERE email = ?', ['admin@primeflow.com']);
-  const opsUser = await db.get<{ id: number }>('SELECT id FROM users WHERE email = ?', ['ops@primeflow.com']);
-  const compUser = await db.get<{ id: number }>('SELECT id FROM users WHERE email = ?', ['compliance@primeflow.com']);
-  const clientUser = await db.get<{ id: number }>('SELECT id FROM users WHERE email = ?', ['client@primeflow.com']);
-
-  if (!adminUser || !opsUser || !compUser || !clientUser) return;
-
-  // Seed Applications
-  // Application 1: Company Incorporation (In Progress)
-  const incDetails = JSON.stringify({
-    proposedNames: ['PrimeTech Solutions Ltd', 'PrimeTech Digital Hub Ltd'],
-    shareCapital: '1,000,000',
-    directors: [
-      { name: 'Babajide Sowande', address: 'Abuja, Nigeria', phone: '08012345678' }
-    ],
-    natureOfBusiness: 'Information Technology Services'
-  });
-  await db.run(
-    'INSERT INTO applications (client_id, service_type, status, assigned_to, details) VALUES (?, ?, ?, ?, ?)',
-    [clientUser.id, 'company_incorporation', 'processing', opsUser.id, incDetails]
-  );
-
-  // Application 2: Business Registration (Submitted)
-  const regDetails = JSON.stringify({
-    proposedNames: ['Aso Rock Ventures', 'Abuja Spice Catering'],
-    natureOfBusiness: 'Catering and Event Planning',
-    proprietors: [
-      { name: 'Babajide Sowande', address: 'Wuse II, Abuja', phone: '08012345678' }
-    ]
-  });
-  await db.run(
-    'INSERT INTO applications (client_id, service_type, status, details) VALUES (?, ?, ?, ?)',
-    [clientUser.id, 'business_registration', 'submitted', regDetails]
-  );
-
-  // Application 3: Compliance Services (Additional Info Required)
-  const compDetails = JSON.stringify({
-    taxIdentificationNumber: '12345678-0001',
-    permitType: 'SCUML Registration',
-    currentStatus: 'Awaiting Document Upload'
-  });
-  await db.run(
-    'INSERT INTO applications (client_id, service_type, status, assigned_to, details) VALUES (?, ?, ?, ?, ?)',
-    [clientUser.id, 'compliance', 'add_info_required', compUser.id, compDetails]
-  );
-
-  // Get application IDs for message seeds
-  const app1 = await db.get<{ id: number }>('SELECT id FROM applications WHERE service_type = ? AND status = ?', ['company_incorporation', 'processing']);
-  const app3 = await db.get<{ id: number }>('SELECT id FROM applications WHERE service_type = ? AND status = ?', ['compliance', 'add_info_required']);
-
-  if (app1) {
-    // Seed Messages
+  if (adminUser) {
     await db.run(
-      'INSERT INTO messages (sender_id, receiver_id, application_id, message_text) VALUES (?, ?, ?, ?)',
-      [clientUser.id, opsUser.id, app1.id, 'Hello Fatima, I have submitted the proposed names. When can I expect feedback?']
-    );
-    await db.run(
-      'INSERT INTO messages (sender_id, receiver_id, application_id, message_text) VALUES (?, ?, ?, ?)',
-      [opsUser.id, clientUser.id, app1.id, 'Hello Babajide, I am currently reviewing the name availability with the Corporate Affairs Commission (CAC). I will update you as soon as we get a response.']
+      'INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES (?, ?, ?, ?)',
+      [adminUser.id, 'DATABASE_SEED', 'System initialized.', '127.0.0.1']
     );
   }
-
-  if (app3) {
-    await db.run(
-      'INSERT INTO messages (sender_id, receiver_id, application_id, message_text) VALUES (?, ?, ?, ?)',
-      [compUser.id, clientUser.id, app3.id, 'Please upload a clear copy of your valid ID (National ID or Passport) to proceed with SCUML compliance registration.']
-    );
-  }
-
-  // Seed Audit Logs
-  await db.run(
-    'INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES (?, ?, ?, ?)',
-    [adminUser.id, 'DATABASE_SEED', 'Successfully seeded mock users and projects in Abuja, Nigeria database.', '127.0.0.1']
-  );
-  console.log('Seeding completed.');
+  console.log('Database initialization completed.');
 }
 
 export async function sendNotificationEmail(db: any, userId: number, title: string, messageText: string) {
