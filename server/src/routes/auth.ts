@@ -302,21 +302,18 @@ router.post('/login', async (req, res) => {
      return;
   }
 
-  const cleanEmail = String(email).trim().toLowerCase();
-  const cleanPassword = String(password).trim();
-
   try {
     const db = await getDb();
 
-    // Fetch user (case-insensitive)
+    // Fetch user
     const user = await db.get<any>(
-      'SELECT id, name, email, password_hash, role, status, permissions FROM users WHERE LOWER(email) = ?',
-      [cleanEmail]
+      'SELECT id, name, email, password_hash, role, status, permissions FROM users WHERE email = ?',
+      [email]
     );
 
     if (!user) {
       // Avoid enumerating email existence for maximum security. Use generic messages.
-      await logAudit(null, 'LOGIN_FAILED', `Failed login attempt for email: ${cleanEmail}`, req.ip);
+      await logAudit(null, 'LOGIN_FAILED', `Failed login attempt for email: ${email}`, req.ip);
        res.status(401).json({ error: 'Invalid email or password' });
        return;
     }
@@ -328,7 +325,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Verify password
-    const match = await bcrypt.compare(cleanPassword, user.password_hash);
+    const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
       await logAudit(user.id, 'LOGIN_FAILED', `Invalid password entered`, req.ip);
        res.status(401).json({ error: 'Invalid email or password' });

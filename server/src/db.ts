@@ -76,23 +76,18 @@ async function initializeDatabase(db: Database) {
     console.error("Migration warning:", err);
   }
 
-  let schemaPath = path.resolve(__dirname, '..', 'schema.sql');
-  if (!fs.existsSync(schemaPath)) {
-    schemaPath = path.resolve(__dirname, 'schema.sql');
-  }
-  if (!fs.existsSync(schemaPath)) {
-    schemaPath = path.resolve(process.cwd(), 'schema.sql');
-  }
-  if (!fs.existsSync(schemaPath)) {
-    schemaPath = path.resolve(process.cwd(), 'server', 'schema.sql');
-  }
+  const schemaPath = path.resolve(__dirname, '..', 'schema.sql');
   const schemaSql = fs.readFileSync(schemaPath, 'utf8');
   
   // SQLite multiple statements execution is supported via exec
   await db.exec(schemaSql);
 
-  // Always seed missing default users
-  await seedDatabase(db);
+  // Check if we already have users. If not, seed the database with mock data.
+  const userCount = await db.get<{ count: number }>('SELECT COUNT(*) as count FROM users');
+  if (userCount && userCount.count === 0) {
+    console.log('Database empty. Seeding mock data...');
+    await seedDatabase(db);
+  }
 }
 
 async function seedDatabase(db: Database) {
@@ -103,38 +98,23 @@ async function seedDatabase(db: Database) {
   const compHash = await bcrypt.hash('compliance123', salt);
   const clientHash = await bcrypt.hash('client123', salt);
 
-  // Seed default accounts if they do not exist
-  const adminExists = await db.get('SELECT id FROM users WHERE LOWER(email) = ?', ['admin@primeflow.com']);
-  if (!adminExists) {
-    await db.run(
-      'INSERT INTO users (name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)',
-      ['System Administrator', 'admin@primeflow.com', adminHash, 'admin', 'active']
-    );
-  }
-
-  const opsExists = await db.get('SELECT id FROM users WHERE LOWER(email) = ?', ['ops@primeflow.com']);
-  if (!opsExists) {
-    await db.run(
-      'INSERT INTO users (name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)',
-      ['Fatima Ibrahim', 'ops@primeflow.com', opsHash, 'operations_officer', 'active']
-    );
-  }
-
-  const compExists = await db.get('SELECT id FROM users WHERE LOWER(email) = ?', ['compliance@primeflow.com']);
-  if (!compExists) {
-    await db.run(
-      'INSERT INTO users (name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)',
-      ['Chinedu Okafor', 'compliance@primeflow.com', compHash, 'compliance_officer', 'active']
-    );
-  }
-
-  const clientExists = await db.get('SELECT id FROM users WHERE LOWER(email) = ?', ['client@primeflow.com']);
-  if (!clientExists) {
-    await db.run(
-      'INSERT INTO users (name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)',
-      ['Babajide Sowande', 'client@primeflow.com', clientHash, 'client', 'active']
-    );
-  }
+  // Seed Users
+  await db.run(
+    'INSERT INTO users (name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)',
+    ['System Administrator', 'admin@primeflow.com', adminHash, 'admin', 'active']
+  );
+  await db.run(
+    'INSERT INTO users (name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)',
+    ['Fatima Ibrahim', 'ops@primeflow.com', opsHash, 'operations_officer', 'active']
+  );
+  await db.run(
+    'INSERT INTO users (name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)',
+    ['Chinedu Okafor', 'compliance@primeflow.com', compHash, 'compliance_officer', 'active']
+  );
+  await db.run(
+    'INSERT INTO users (name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)',
+    ['Babajide Sowande', 'client@primeflow.com', clientHash, 'client', 'active']
+  );
 
   // Retrieve user IDs for referencing
   const adminUser = await db.get<{ id: number }>('SELECT id FROM users WHERE email = ?', ['admin@primeflow.com']);

@@ -176,8 +176,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
       <nav className="landing-nav">
         <div className="landing-nav-inner">
           <div 
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
-            title="Go to Top" 
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            title="Return to Homepage"
             style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
           >
             <img src="/logo.jpg" alt="Primeflow Logo" style={{ width: '44px', height: '44px', borderRadius: '8px', border: '1.5px solid rgba(215,25,32,0.4)', boxShadow: '0 0 12px rgba(215,25,32,0.25)' }} />
@@ -638,8 +638,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
           <div className="footer-grid">
             <div className="footer-brand-col">
               <div 
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
-                title="Go to Top"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                title="Return to Homepage"
                 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', cursor: 'pointer' }}
               >
                 <img src="/logo.jpg" alt="Primeflow Logo" style={{ width: '40px', height: '40px', borderRadius: '8px' }} />

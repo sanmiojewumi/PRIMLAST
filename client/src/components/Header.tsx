@@ -178,13 +178,15 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
         >
           <Menu size={22} />
         </button>
-        <h2 
+        <div
           onClick={() => setActiveTab && setActiveTab('welcome')}
-          title="Go to Home Workspace"
-          style={{ fontSize: '1.25rem', fontWeight: '700', color: '#fff', cursor: 'pointer' }}
+          title="Return to Homepage"
+          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
         >
-          {tabNames[activeTab] || 'PrimeFlow Hub'}
-        </h2>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#fff', margin: 0 }}>
+            {tabNames[activeTab] || 'PrimeFlow Hub'}
+          </h2>
+        </div>
       </div>
 
       {/* Global Actions */}

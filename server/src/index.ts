@@ -5,7 +5,6 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
-import multer from 'multer';
 import { getDb } from './db';
 
 // Load environment variables
@@ -77,31 +76,6 @@ app.get('/health', (req, res) => {
    res.status(200).json({ status: 'healthy', timestamp: new Date() });
 });
 
-// Serve frontend static assets in production if available
-const clientDistPath = path.resolve(__dirname, '..', '..', 'client', 'dist');
-if (fs.existsSync(clientDistPath)) {
-  console.log(`Serving static client assets from: ${clientDistPath}`);
-  app.use(express.static(clientDistPath));
-  
-  // Wildcard handler to support client-side SPA routing (Vite React Router)
-  app.get('*', (req, res, next) => {
-    if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/health')) {
-      res.sendFile(path.join(clientDistPath, 'index.html'));
-    } else {
-      next();
-    }
-  });
-} else {
-  // Root route fallback when client build is not integrated/built locally
-  app.get('/', (req, res) => {
-    res.status(200).json({
-      message: 'Welcome to PrimeFlow Consulting Services API',
-      status: 'online',
-      timestamp: new Date()
-    });
-  });
-}
-
 // Global Error Handler for uncaught middleware exceptions (e.g. Multer upload errors, JSON syntax)
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error('Unhandled Server Error:', err.message);
@@ -123,7 +97,7 @@ async function startServer() {
     await getDb();
     console.log('Database initialized successfully.');
 
-    app.listen(Number(PORT), '0.0.0.0', () => {
+    app.listen(PORT, () => {
       console.log(`===============================================`);
       console.log(`  PrimeFlow API Server started on port ${PORT}`);
       console.log(`  Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -134,6 +108,9 @@ async function startServer() {
     process.exit(1);
   }
 }
+
+// Support class declarations in this scope for multer errors check
+import multer from 'multer';
 
 startServer();
 export default app;

@@ -71,12 +71,12 @@ const Sidebar: React.FC<SidebarProps> = ({
         {!collapsed && (
           <div 
             onClick={() => { setActiveTab('welcome'); if (setMobileOpen) setMobileOpen(false); }}
-            title="Go to Home"
+            title="Return to Homepage"
             style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
           >
             <img 
               src="/logo.jpg" 
-              alt="Logo" 
+              alt="PrimeFlow Logo" 
               style={{ 
                 width: '46px', 
                 height: '46px', 
@@ -94,9 +94,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         {collapsed && (
           <img 
             src="/logo.jpg" 
-            alt="Logo" 
-            onClick={() => setActiveTab('welcome')}
-            title="Go to Home"
+            alt="PrimeFlow Logo" 
+            onClick={() => { setActiveTab('welcome'); if (setMobileOpen) setMobileOpen(false); }}
+            title="Return to Homepage"
             style={{ 
               width: '46px', 
               height: '46px', 
