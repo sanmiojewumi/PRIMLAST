@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { getDb } from '../db';
+import { getDb, sendNotificationEmail } from '../db';
 import { authenticateJWT, AuthRequest, requireRole, requirePermission } from '../middleware/auth';
 import bcrypt from 'bcryptjs';
 
@@ -315,6 +315,18 @@ router.put('/applications/:id', authenticateJWT as any, requireRole(['admin', 'o
       'UPDATE applications SET status = ?, service_type = ?, assigned_to = ?, details = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [updatedStatus, updatedService, updatedAssignee, updatedDetails, appId]
     );
+
+    // Send email notification to client whenever Admin updates status or details
+    if (existing.client_id) {
+      const statusLabel = updatedStatus.replace(/_/g, ' ').toUpperCase();
+      const serviceTitle = updatedService.replace(/_/g, ' ').toUpperCase();
+      await sendNotificationEmail(
+        db,
+        existing.client_id,
+        `Admin Action Request & Reaction on Application #${appId} (${serviceTitle})`,
+        `Your application #${appId} (${serviceTitle}) has received an update/action request from PrimeFlow Admin.\n\nUpdated Status: ${statusLabel}\nDetails / Notes: ${updatedDetails}\n\nPlease log in to your PrimeFlow Portal to review this notification.`
+      );
+    }
 
     // Audit log
     await db.run(

@@ -12,7 +12,7 @@ import AIAdvisor from './components/AIAdvisor';
 import ComplianceDashboard from './components/ComplianceDashboard';
 import KnowledgeHub from './components/KnowledgeHub';
 import DraggableWhatsApp from './components/DraggableWhatsApp';
-import { ShieldCheck, ArrowRight, Eye, EyeOff, Building2, FileCheck2, FolderHeart, ShieldAlert, RefreshCw, MessageSquare, Layers, X, Search } from 'lucide-react';
+import { ShieldCheck, ArrowRight, Eye, EyeOff, Building2, FileCheck2, FolderHeart, ShieldAlert, RefreshCw, MessageSquare, Layers, X, Search, Bell } from 'lucide-react';
 
 const App: React.FC = () => {
   const { user, token, loading, login, register, registerVerify, resetPassword, logout } = useAuth();
@@ -87,6 +87,68 @@ const App: React.FC = () => {
   // Home search bar states
   const [homeSearchQuery, setHomeSearchQuery] = useState('');
   const [showHomeSuggestions, setShowHomeSuggestions] = useState(false);
+
+  // Admin Request / Reaction Notification Popup State for Clients
+  const [adminNotificationModal, setAdminNotificationModal] = useState<{
+    appId: number;
+    serviceType: string;
+    status: string;
+    details: string;
+    updatedAt: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (user && user.role === 'client' && token) {
+      const checkAdminNotifications = async () => {
+        try {
+          const res = await fetch(`${API_BASE}/services/applications`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const apps = await res.json();
+            const acknowledgedKey = `acknowledged_admin_notif_${user.id}`;
+            const acknowledgedStr = localStorage.getItem(acknowledgedKey) || '{}';
+            let acknowledgedMap: Record<number, string> = {};
+            try { acknowledgedMap = JSON.parse(acknowledgedStr); } catch (e) {}
+
+            for (const app of apps) {
+              const lastAck = acknowledgedMap[app.id];
+              const appUpdated = app.updated_at || app.created_at;
+              if (!lastAck || lastAck !== appUpdated) {
+                setAdminNotificationModal({
+                  appId: app.id,
+                  serviceType: app.service_type,
+                  status: app.status,
+                  details: typeof app.details === 'string' ? app.details : JSON.stringify(app.details),
+                  updatedAt: appUpdated
+                });
+                break;
+              }
+            }
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      };
+
+      checkAdminNotifications();
+    }
+  }, [user, token]);
+
+  const handleAcknowledgeAdminNotif = (goToServices = false) => {
+    if (adminNotificationModal && user) {
+      const acknowledgedKey = `acknowledged_admin_notif_${user.id}`;
+      const acknowledgedStr = localStorage.getItem(acknowledgedKey) || '{}';
+      let acknowledgedMap: Record<number, string> = {};
+      try { acknowledgedMap = JSON.parse(acknowledgedStr); } catch (e) {}
+      acknowledgedMap[adminNotificationModal.appId] = adminNotificationModal.updatedAt;
+      localStorage.setItem(acknowledgedKey, JSON.stringify(acknowledgedMap));
+      setAdminNotificationModal(null);
+      if (goToServices) {
+        setActiveTab('services');
+      }
+    }
+  };
 
   // Unread notifications & messages popup states
   const [unreadSummary, setUnreadSummary] = useState<{ notifications: any[], messages: any[] } | null>(null);
@@ -1133,22 +1195,41 @@ const App: React.FC = () => {
                   </span>
                 </div>
 
-                <div 
-                  onClick={() => setActiveTab(user.role === 'client' ? 'chat' : 'dashboard')}
-                  className="glass-panel-interactive animate-fade-in"
-                  style={{ padding: '24px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '12px', cursor: 'pointer' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <ShieldCheck size={24} style={{ color: 'var(--accent-red)' }} />
-                    <h3 style={{ color: '#fff', fontSize: '1.1rem', margin: 0, fontWeight: '700' }}>Platform Security</h3>
+                {user.role === 'client' ? (
+                  <div 
+                    onClick={() => setActiveTab('compliance')}
+                    className="glass-panel-interactive animate-fade-in"
+                    style={{ padding: '24px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '12px', cursor: 'pointer' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <ShieldCheck size={24} style={{ color: 'var(--accent-red)' }} />
+                      <h3 style={{ color: '#fff', fontSize: '1.1rem', margin: 0, fontWeight: '700' }}>Corporate Compliance Hub</h3>
+                    </div>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.5' }}>
+                      Access your annual regulatory compliance status, tax clearances, Pencom, ITF, and SCUML filings.
+                    </p>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--accent-red)', fontWeight: '600', alignSelf: 'flex-start', marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      View Compliance Status <ArrowRight size={14} />
+                    </span>
                   </div>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.5' }}>
-                    Verify your session logs, audit trails, parameters sanitization checks, and secure document uploads encryption settings.
-                  </p>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--accent-red)', fontWeight: '600', alignSelf: 'flex-start', marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    Verify Workspace Logs <ArrowRight size={14} />
-                  </span>
-                </div>
+                ) : (
+                  <div 
+                    onClick={() => setActiveTab('dashboard')}
+                    className="glass-panel-interactive animate-fade-in"
+                    style={{ padding: '24px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '12px', cursor: 'pointer' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <ShieldCheck size={24} style={{ color: 'var(--accent-red)' }} />
+                      <h3 style={{ color: '#fff', fontSize: '1.1rem', margin: 0, fontWeight: '700' }}>Platform Security & Logs</h3>
+                    </div>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.5' }}>
+                      Verify session logs, audit trails, parameters sanitization checks, and system security controls.
+                    </p>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--accent-red)', fontWeight: '600', alignSelf: 'flex-start', marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      Verify Workspace Logs <ArrowRight size={14} />
+                    </span>
+                  </div>
+                )}
                 
               </div>
             </div>
@@ -1167,6 +1248,82 @@ const App: React.FC = () => {
       {/* Floating Draggable WhatsApp Button */}
       <DraggableWhatsApp />
 
+
+      {/* ── ADMIN ACTION REQUEST / REACTION POPUP MODAL FOR CLIENTS ──────── */}
+      {adminNotificationModal && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-frame animate-fade-in" style={{ maxWidth: '520px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Bell size={24} style={{ color: 'var(--accent-red)' }} />
+                <div>
+                  <h3 style={{ color: '#fff', fontSize: '1.15rem', margin: 0, fontWeight: '700' }}>
+                    New Admin Action Request & Reaction
+                  </h3>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    Filing Application #${adminNotificationModal.appId}
+                  </span>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => handleAcknowledgeAdminNotif(false)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: '700', color: '#fff' }}>
+                  Category: {adminNotificationModal.serviceType.replace(/_/g, ' ').toUpperCase()}
+                </span>
+                <span style={{
+                  fontSize: '0.7rem',
+                  fontWeight: '700',
+                  padding: '4px 10px',
+                  borderRadius: '12px',
+                  background: adminNotificationModal.status === 'action_required' ? 'rgba(229,62,62,0.2)' : 'rgba(72,187,120,0.2)',
+                  color: adminNotificationModal.status === 'action_required' ? '#fc8181' : '#48bb78',
+                  border: adminNotificationModal.status === 'action_required' ? '1px solid #fc8181' : '1px solid #48bb78'
+                }}>
+                  {adminNotificationModal.status.replace(/_/g, ' ').toUpperCase()}
+                </span>
+              </div>
+
+              <div style={{ padding: '14px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Admin Notes & Action Request Message:
+                </span>
+                <p style={{ fontSize: '0.85rem', color: '#e2e8f0', margin: 0, lineHeight: '1.5' }}>
+                  {adminNotificationModal.details || 'Your application status has been updated by PrimeFlow Admin Officers.'}
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => handleAcknowledgeAdminNotif(false)}
+                  className="btn-secondary"
+                  style={{ padding: '8px 16px', fontSize: '0.8rem' }}
+                >
+                  Dismiss
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAcknowledgeAdminNotif(true)}
+                  className="btn-primary"
+                  style={{ padding: '8px 20px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <span>Acknowledge & View Filing</span>
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Profile Details Modal */}
       {profileUserId !== null && (

@@ -351,30 +351,30 @@ const DashboardOverview: React.FC = () => {
             </p>
           </div>
 
-          {/* System Audit Log feed (Admins/Staff) OR Quick FAQ (Clients) */}
+          {/* System Audit Log feed (Admins/Staff) OR Filing Guidance (Clients) */}
           <div className="glass-panel" style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <Activity size={18} style={{ color: 'var(--accent-red)' }} />
               <h4 style={{ fontSize: '1.1rem', color: '#fff' }}>
-                {isClient ? 'Platform Security Verification' : 'Real-time Security Logs'}
+                {isClient ? 'Filing Process Guidance & Tips' : 'Real-time Security Audit Logs'}
               </h4>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, maxHeight: '350px', overflowY: 'auto' }}>
               {isClient ? (
-                // Security facts for clients to verify maximum security
+                // Helpful guidance for clients
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
                   <div style={{ padding: '10px', borderRadius: '6px', background: 'rgba(255,255,255,0.01)', borderLeft: '2px solid var(--accent-red)' }}>
-                    <strong style={{ color: '#fff', display: 'block', marginBottom: '2px' }}>Parameteric Queries Active</strong>
-                    Database input fields are sanitized against SQL injection vulnerabilities.
+                    <strong style={{ color: '#fff', display: 'block', marginBottom: '2px' }}>Clear Scan Attachments</strong>
+                    Ensure your scanned NIN slip or valid ID card images are legible before uploading.
                   </div>
                   <div style={{ padding: '10px', borderRadius: '6px', background: 'rgba(255,255,255,0.01)', borderLeft: '2px solid var(--accent-red)' }}>
-                    <strong style={{ color: '#fff', display: 'block', marginBottom: '2px' }}>JWT Encryption</strong>
-                    Session tokens expire in 24 hours to prevent connection hijack.
+                    <strong style={{ color: '#fff', display: 'block', marginBottom: '2px' }}>Real-time Status Tracking</strong>
+                    Check your filings tab to monitor CAC review progress, approval certificates, and official documents.
                   </div>
                   <div style={{ padding: '10px', borderRadius: '6px', background: 'rgba(255,255,255,0.01)', borderLeft: '2px solid var(--accent-red)' }}>
-                    <strong style={{ color: '#fff', display: 'block', marginBottom: '2px' }}>Audit Logging</strong>
-                    Every document access and status modification registers a trackable footprint in our audit trail.
+                    <strong style={{ color: '#fff', display: 'block', marginBottom: '2px' }}>Direct Advisor Consultation</strong>
+                    Use the Live Chat or AI Advisor for instant clarification on tax clearances and regulatory compliance.
                   </div>
                 </div>
               ) : (
