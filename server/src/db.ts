@@ -29,6 +29,12 @@ export async function getDb(): Promise<Database> {
 }
 
 async function initializeDatabase(db: Database) {
+  // Enable Write-Ahead Logging (WAL) and foreign keys for high reliability and concurrency
+  try {
+    await db.exec("PRAGMA journal_mode = WAL;");
+    await db.exec("PRAGMA foreign_keys = ON;");
+  } catch (e) {}
+
   // Recreate users table if 'supervisor' is not in the check constraint
   try {
     const tableInfo = await db.get("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'");
@@ -56,6 +62,50 @@ async function initializeDatabase(db: Database) {
         await db.exec("ALTER TABLE users ADD COLUMN permissions TEXT");
       } catch (e) {}
     }
+
+    // Recreate applications table if status CHECK constraint doesn't include action_required
+    const appTableInfo = await db.get("SELECT sql FROM sqlite_master WHERE type='table' AND name='applications'");
+    if (appTableInfo && appTableInfo.sql && !appTableInfo.sql.includes('action_required')) {
+      console.log("Migrating applications table check constraint for action_required & in_progress status...");
+      await db.exec("PRAGMA foreign_keys=OFF;");
+      await db.exec("ALTER TABLE applications RENAME TO applications_old;");
+      await db.exec(`CREATE TABLE applications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        client_id INTEGER NOT NULL,
+        service_type TEXT CHECK(service_type IN (
+          'company_incorporation', 
+          'business_registration', 
+          'incorporated_trustee', 
+          'annual_returns', 
+          'post_incorporation', 
+          'compliance',
+          'other_services'
+        )) NOT NULL,
+        status TEXT CHECK(status IN (
+          'submitted', 
+          'under_review', 
+          'add_info_required', 
+          'action_required', 
+          'in_progress', 
+          'processing', 
+          'approved', 
+          'completed', 
+          'rejected', 
+          'pending'
+        )) DEFAULT 'submitted',
+        assigned_to INTEGER,
+        details TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL
+      );`);
+      await db.exec("INSERT INTO applications SELECT * FROM applications_old;");
+      await db.exec("DROP TABLE applications_old;");
+      await db.exec("PRAGMA foreign_keys=ON;");
+      console.log("Applications table migration completed.");
+    }
+
     // Ensure messages columns exist for file sharing in chat
     try {
       await db.exec("ALTER TABLE messages ADD COLUMN file_url TEXT");

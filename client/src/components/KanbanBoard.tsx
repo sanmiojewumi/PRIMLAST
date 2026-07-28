@@ -822,6 +822,23 @@ const KanbanBoard: React.FC = () => {
                         <p style={{ fontSize: '0.8rem', color: '#fff', marginTop: '2px', lineHeight: '1.4' }}>
                           {msg.message_text}
                         </p>
+                        {msg.file_url && (
+                          <div style={{ marginTop: '6px', padding: '6px 10px', background: 'rgba(0,0,0,0.25)', border: '1px solid var(--border-color)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                            <span style={{ fontSize: '0.75rem', color: '#fff', fontWeight: '600' }}>
+                              {msg.filename || 'Attached Correspondence'}
+                            </span>
+                            <a 
+                              href={`${API_BASE}${msg.file_url}`} 
+                              download={msg.filename || 'Correspondence_Attachment'}
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              style={{ color: 'var(--accent-red)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', fontWeight: '600' }}
+                            >
+                              <Download size={12} />
+                              <span>Download</span>
+                            </a>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, API_BASE } from '../context/AuthContext';
-import { MessageSquare, Send, FileText, Paperclip } from 'lucide-react';
+import { MessageSquare, Send, FileText, Paperclip, Download } from 'lucide-react';
 import type { Application, Message } from '../types';
 
 interface ChatRoomProps {
@@ -386,36 +386,54 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId }) => {
                           <div 
                             style={{ 
                               marginTop: '8px', 
-                              padding: '8px 12px', 
-                              background: 'rgba(255, 255, 255, 0.05)', 
-                              border: '1px solid rgba(255, 255, 255, 0.1)', 
-                              borderRadius: '6px', 
+                              padding: '10px 12px', 
+                              background: 'rgba(0, 0, 0, 0.25)', 
+                              border: '1px solid rgba(255, 255, 255, 0.15)', 
+                              borderRadius: '8px', 
                               display: 'flex', 
                               alignItems: 'center', 
-                              gap: '8px' 
+                              justifyContent: 'space-between',
+                              gap: '12px',
+                              maxWidth: '340px'
                             }}
                           >
-                            <FileText size={18} style={{ color: 'var(--accent-red)' }} />
-                            <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                              <a 
-                                href={`${API_BASE}${msg.file_url}`} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                style={{ 
-                                  fontSize: '0.8rem', 
-                                  color: '#fff', 
-                                  textDecoration: 'none', 
-                                  fontWeight: '600',
-                                  textOverflow: 'ellipsis',
-                                  overflow: 'hidden',
-                                  whiteSpace: 'nowrap',
-                                  maxWidth: '200px'
-                                }}
-                              >
-                                {msg.filename || 'Attached File'}
-                              </a>
-                              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Click to download</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                              <FileText size={20} style={{ color: 'var(--accent-red)', flexShrink: 0 }} />
+                              <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                <span 
+                                  style={{ 
+                                    fontSize: '0.8rem', 
+                                    color: '#fff', 
+                                    fontWeight: '600',
+                                    textOverflow: 'ellipsis',
+                                    overflow: 'hidden',
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                >
+                                  {msg.filename || 'Attached Correspondence'}
+                                </span>
+                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Correspondence File</span>
+                              </div>
                             </div>
+                            <a 
+                              href={`${API_BASE}${msg.file_url}`} 
+                              download={msg.filename || 'Correspondence_Attachment'}
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="btn-secondary"
+                              style={{ 
+                                padding: '4px 12px', 
+                                fontSize: '0.75rem', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '4px',
+                                textDecoration: 'none',
+                                flexShrink: 0
+                              }}
+                            >
+                              <Download size={14} />
+                              <span>Download</span>
+                            </a>
                           </div>
                         )}
                       </div>

@@ -54,6 +54,7 @@ const uploadsDir = path.resolve(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
+app.use('/uploads', express.static(uploadsDir));
 
 // Router Imports
 import authRouter from './routes/auth';

@@ -27,9 +27,13 @@ CREATE TABLE IF NOT EXISTS applications (
     'submitted', 
     'under_review', 
     'add_info_required', 
+    'action_required', 
+    'in_progress', 
     'processing', 
+    'approved', 
     'completed', 
-    'rejected'
+    'rejected', 
+    'pending'
   )) DEFAULT 'submitted',
   assigned_to INTEGER,
   details TEXT NOT NULL, -- JSON string storing service-specific questionnaire data
@@ -78,13 +82,16 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- Index creation for speed and performance
+-- Index creation for speed, performance and database query perfection
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_applications_client ON applications(client_id);
 CREATE INDEX IF NOT EXISTS idx_applications_assigned ON applications(assigned_to);
 CREATE INDEX IF NOT EXISTS idx_documents_app ON documents(application_id);
+CREATE INDEX IF NOT EXISTS idx_documents_user ON documents(user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_app ON messages(application_id);
+CREATE INDEX IF NOT EXISTS idx_messages_unread ON messages(receiver_id, is_read);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at DESC);
 
 CREATE TABLE IF NOT EXISTS profiles (
   user_id INTEGER PRIMARY KEY,
