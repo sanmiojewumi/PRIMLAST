@@ -1,11 +1,15 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import type { User } from '../types';
 
-export const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:5000/api'
-  : window.location.hostname.includes('lhr.life')
-    ? 'https://e5bd6a13aab9f8.lhr.life/api'
-    : `${window.location.protocol}//${window.location.hostname}:5000/api`;
+export const API_BASE = (import.meta as any).env?.VITE_API_URL 
+  ? (import.meta as any).env.VITE_API_URL
+  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000/api'
+    : (window.location.hostname.includes('localtunnel.me') || window.location.hostname.includes('loca.lt'))
+      ? 'https://bitter-pianos-press.loca.lt/api'
+      : window.location.hostname.includes('lhr.life')
+        ? 'https://e5bd6a13aab9f8.lhr.life/api'
+        : 'https://bitter-pianos-press.loca.lt/api';
 
 interface AuthContextType {
   user: User | null;
