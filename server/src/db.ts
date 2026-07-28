@@ -4,9 +4,13 @@ import path from 'path';
 import fs from 'fs';
 import bcrypt from 'bcryptjs';
 
-const dbPath = process.env.VERCEL
-  ? path.join('/tmp', 'primeflow.db')
-  : path.resolve(__dirname, '..', process.env.DATABASE_PATH || 'primeflow.db');
+const dbDir = process.env.VERCEL
+  ? '/tmp'
+  : (process.env.RENDER && fs.existsSync('/var/data'))
+    ? '/var/data'
+    : path.resolve(__dirname, '..');
+
+const dbPath = path.join(dbDir, process.env.DATABASE_PATH || 'primeflow.db');
 
 let dbInstance: Database | null = null;
 
