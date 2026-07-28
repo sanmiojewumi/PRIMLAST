@@ -7,7 +7,7 @@ export const API_BASE = (import.meta as any).env?.VITE_API_URL
     ? 'http://localhost:5000/api'
     : window.location.hostname.includes('vercel.app')
       ? '/api'
-      : 'https://aa4abb99b9bbc2.lhr.life/api';
+      : 'https://44350de6b0c276.lhr.life/api';
 
 interface AuthContextType {
   user: User | null;

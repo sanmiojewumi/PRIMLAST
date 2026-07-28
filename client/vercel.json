@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://aa4abb99b9bbc2.lhr.life/api/$1"
+      "destination": "https://44350de6b0c276.lhr.life/api/$1"
     },
     {
       "source": "/(.*)",
