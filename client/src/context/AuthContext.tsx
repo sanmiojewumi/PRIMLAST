@@ -52,7 +52,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         body: JSON.stringify({ email, password })
       });
 
-      const data = await res.json();
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch (e) {
+        throw new Error(`Server returned HTTP status ${res.status}.`);
+      }
       
       if (!res.ok) {
         throw new Error(data.error || 'Login failed');
@@ -62,6 +67,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('primeflow_user', JSON.stringify(data.user));
       setToken(data.token);
       setUser(data.user);
+    } catch (err: any) {
+      if (err.name === 'TypeError' && err.message?.toLowerCase().includes('fetch')) {
+        throw new Error('Connection failed. Please check network connectivity or API status.');
+      }
+      throw err;
     } finally {
       setLoading(false);
     }
