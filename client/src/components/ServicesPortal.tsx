@@ -306,6 +306,33 @@ const ServicesPortal: React.FC = () => {
 
   // Compliance required files state
   const [complianceRequiredFiles, setComplianceRequiredFiles] = useState<Record<string, File[]>>({});
+  // Incorporation required files state
+  const [incorporationRequiredFiles, setIncorporationRequiredFiles] = useState<Record<string, File[]>>({});
+
+  const getIncorporationRequiredDocs = (service: ServiceType): { key: string; label: string; isRequired: boolean }[] => {
+    if (service === 'company_incorporation') {
+      return [
+        { key: "director_id", label: "19. Director / Shareholder Means of Identification (NIN / Passport / Driver License / Voter Card)", isRequired: true },
+        { key: "director_signature", label: "20. Director / Shareholder Official Signature Specimen", isRequired: true },
+        { key: "company_logo_supporting", label: "21. Company Logo / Letterhead / CAC Supporting Documents (Optional)", isRequired: false }
+      ];
+    }
+    if (service === 'business_registration') {
+      return [
+        { key: "proprietor_id", label: "19. Proprietor Means of Identification (NIN / National ID / Driver License)", isRequired: true },
+        { key: "proprietor_signature", label: "20. Proprietor Official Signature Specimen", isRequired: true },
+        { key: "business_premises", label: "21. Business Premises / Utility Bill / Supporting Documents (Optional)", isRequired: false }
+      ];
+    }
+    if (service === 'incorporated_trustee') {
+      return [
+        { key: "trustee_id", label: "19. Trustee Means of Identification (NIN / Passport / Driver License / Voter Card)", isRequired: true },
+        { key: "trustee_signature", label: "20. Trustee Official Signature Specimen", isRequired: true },
+        { key: "constitution_supporting", label: "21. Association Constitution & Supporting Documents (Optional)", isRequired: false }
+      ];
+    }
+    return [];
+  };
 
   const getComplianceRequiredDocs = (): string[] => {
     const docs = new Set<string>();
@@ -705,8 +732,19 @@ const ServicesPortal: React.FC = () => {
       }
     }
 
+    if (['company_incorporation', 'business_registration', 'incorporated_trustee'].includes(selectedService!)) {
+      const incDocs = getIncorporationRequiredDocs(selectedService!).filter(d => d.isRequired);
+      for (const doc of incDocs) {
+        const files = incorporationRequiredFiles[doc.key] || [];
+        if (files.length === 0) {
+          setError(`Please select and upload at least one file for: ${doc.label}`);
+          return;
+        }
+      }
+    }
+
     if (selectedService === 'compliance') {
-      const requiredDocs = ['Signature', 'NIN slip', 'CAC document', 'company letter head'];
+      const requiredDocs = getComplianceRequiredDocs();
       for (const docType of requiredDocs) {
         const files = complianceRequiredFiles[docType] || [];
         if (files.length === 0) {
@@ -904,7 +942,32 @@ const ServicesPortal: React.FC = () => {
       const uploadedFilesList: { name: string; size: number; category?: string }[] = [];
 
       // 2. Loop and upload files sequentially
-      if (['post_incorporation', 'compliance', 'other_services'].includes(selectedService)) {
+      if (['company_incorporation', 'business_registration', 'incorporated_trustee'].includes(selectedService)) {
+        const incDocs = getIncorporationRequiredDocs(selectedService);
+        for (const doc of incDocs) {
+          const files = incorporationRequiredFiles[doc.key] || [];
+          for (const file of files) {
+            const formData = new FormData();
+            const renamedFile = new File([file], `[${doc.key}] ${file.name}`, { type: file.type });
+            formData.append('file', renamedFile);
+            formData.append('application_id', newAppId.toString());
+
+            const uploadRes = await fetch(`${API_BASE}/documents/upload`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              },
+              body: formData
+            });
+
+            const uploadData = await uploadRes.json();
+            if (!uploadRes.ok) {
+              throw new Error(`Application submitted, but file "${file.name}" for "${doc.label}" failed: ${uploadData.error}`);
+            }
+            uploadedFilesList.push({ name: file.name, size: file.size, category: doc.key });
+          }
+        }
+      } else if (['post_incorporation', 'compliance', 'other_services'].includes(selectedService)) {
         if (['post_incorporation', 'other_services'].includes(selectedService)) {
           const activeSubServices = selectedService === 'post_incorporation' ? selectedSubServices : selectedOtherServices;
           for (const sub of activeSubServices) {
@@ -1254,7 +1317,7 @@ const ServicesPortal: React.FC = () => {
                   <>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                       <div className="form-group">
-                        <label className="form-label">*Company name option 1:*</label>
+                        <label className="form-label">1. Primary Proposed Entity Name (Option 1):</label>
                         <input
                           type="text"
                           required
@@ -1265,7 +1328,7 @@ const ServicesPortal: React.FC = () => {
                         />
                       </div>
                       <div className="form-group">
-                        <label className="form-label">*Company name option 2:*</label>
+                        <label className="form-label">2. Alternative Proposed Entity Name (Option 2):</label>
                         <input
                           type="text"
                           required
@@ -1279,11 +1342,11 @@ const ServicesPortal: React.FC = () => {
 
                     <div className="form-group">
                       <label className="form-label">
-                        {selectedService === 'company_incorporation' ? '10. Nature of Business:' : '10. OBJECTIVES:'}
+                        {selectedService === 'company_incorporation' ? '3. Principal Nature of Business:' : '3. Aims & Objectives of Entity:'}
                       </label>
                       <textarea
                         required
-                        placeholder={selectedService === 'company_incorporation' ? "Describe the nature of business..." : "Describe the objectives of the entity..."}
+                        placeholder={selectedService === 'company_incorporation' ? "Describe the principal nature of business..." : "Describe the aims & objectives of the entity..."}
                         className="form-input"
                         style={{ minHeight: '80px', resize: 'vertical' }}
                         value={natureOfBusiness}
@@ -1293,9 +1356,9 @@ const ServicesPortal: React.FC = () => {
 
                     <div className="form-group">
                       <label className="form-label">
-                        {selectedService === 'company_incorporation' ? '11. Business functional Email:' : 
-                         selectedService === 'business_registration' ? '11. BUSINESS functional Email:' : 
-                         '11. Association functional Email:'}
+                        {selectedService === 'company_incorporation' ? '4. Official Business Functional Email:' : 
+                         selectedService === 'business_registration' ? '4. Official Business Functional Email:' : 
+                         '4. Official Association Functional Email:'}
                       </label>
                       <input
                         type="email"
@@ -1310,7 +1373,7 @@ const ServicesPortal: React.FC = () => {
                     {selectedService === 'company_incorporation' && (
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                         <div className="form-group">
-                          <label className="form-label">Authorized Share Capital (NGN)</label>
+                          <label className="form-label">5. Authorized Share Capital (NGN):</label>
                           <select 
                             className="form-select"
                             value={shareCapital}
@@ -1322,12 +1385,12 @@ const ServicesPortal: React.FC = () => {
                           </select>
                         </div>
                         <div className="form-group">
-                          <label className="form-label">12. Share capital allotment</label>
+                          <label className="form-label">6. Share Capital Allotment Status:</label>
                           <input
                             type="text"
                             readOnly
                             className="form-input"
-                            value="100% share capital allotment"
+                            value="100% Share Capital Allotment"
                             style={{ backgroundColor: 'rgba(255,255,255,0.03)', color: 'var(--text-secondary)' }}
                           />
                         </div>
@@ -1591,7 +1654,7 @@ const ServicesPortal: React.FC = () => {
                         
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                           <div className="form-group">
-                            <label className="form-label">Surname:</label>
+                            <label className="form-label">7. Director #{index + 1} Surname:</label>
                             <input
                               type="text"
                               required
@@ -1606,7 +1669,7 @@ const ServicesPortal: React.FC = () => {
                             />
                           </div>
                           <div className="form-group">
-                            <label className="form-label">First name:</label>
+                            <label className="form-label">8. Director #{index + 1} First Name:</label>
                             <input
                               type="text"
                               required
@@ -1621,7 +1684,7 @@ const ServicesPortal: React.FC = () => {
                             />
                           </div>
                           <div className="form-group">
-                            <label className="form-label">Other name:</label>
+                            <label className="form-label">9. Director #{index + 1} Other Name:</label>
                             <input
                               type="text"
                               placeholder="e.g. Olusegun"
@@ -1638,7 +1701,7 @@ const ServicesPortal: React.FC = () => {
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                           <div className="form-group">
-                            <label className="form-label">Date of birth:</label>
+                            <label className="form-label">10. Director #{index + 1} Date of Birth:</label>
                             <input
                               type="date"
                               required
@@ -1653,7 +1716,7 @@ const ServicesPortal: React.FC = () => {
                             />
                           </div>
                           <div className="form-group">
-                            <label className="form-label">Gender:</label>
+                            <label className="form-label">11. Director #{index + 1} Gender:</label>
                             <select 
                               className="form-select"
                               value={d.gender}
@@ -1668,7 +1731,7 @@ const ServicesPortal: React.FC = () => {
                             </select>
                           </div>
                           <div className="form-group">
-                            <label className="form-label">Share Allotment (Units):</label>
+                            <label className="form-label">12. Share Allotment (Units):</label>
                             <input
                               type="number"
                               required
@@ -1685,7 +1748,7 @@ const ServicesPortal: React.FC = () => {
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                           <div className="form-group">
-                            <label className="form-label">Email:</label>
+                            <label className="form-label">13. Director #{index + 1} Email:</label>
                             <input
                               type="email"
                               required
@@ -1700,7 +1763,7 @@ const ServicesPortal: React.FC = () => {
                             />
                           </div>
                           <div className="form-group">
-                            <label className="form-label">Phone number:</label>
+                            <label className="form-label">14. Director #{index + 1} Phone Number:</label>
                             <input
                               type="text"
                               required
@@ -1728,10 +1791,10 @@ const ServicesPortal: React.FC = () => {
 
                     {/* Business Address */}
                     <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '12px', marginTop: '12px', textAlign: 'left' }}>
-                      <h5 style={{ color: '#fff', fontSize: '0.85rem', marginBottom: '8px' }}>YOUR REGISTERED COMPANY ADDRESS:</h5>
+                      <h5 style={{ color: '#fff', fontSize: '0.85rem', marginBottom: '8px' }}>REGISTERED COMPANY OFFICE ADDRESS:</h5>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '8px' }}>
                         <div className="form-group">
-                          <label className="form-label">State:</label>
+                          <label className="form-label">15. Registered Office State:</label>
                           <select
                             required
                             className="form-select"
@@ -1748,7 +1811,7 @@ const ServicesPortal: React.FC = () => {
                           </select>
                         </div>
                         <div className="form-group">
-                          <label className="form-label">LGA:</label>
+                          <label className="form-label">16. Local Government Area (LGA):</label>
                           <select
                             required
                             className="form-select"
@@ -1765,7 +1828,7 @@ const ServicesPortal: React.FC = () => {
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                         <div className="form-group">
-                          <label className="form-label">City/Town/Village:</label>
+                          <label className="form-label">17. City / Town / Village:</label>
                           <input
                             type="text"
                             required
@@ -1776,7 +1839,7 @@ const ServicesPortal: React.FC = () => {
                           />
                         </div>
                         <div className="form-group">
-                          <label className="form-label">Street Name:</label>
+                          <label className="form-label">18. House Number & Street Name:</label>
                           <input
                             type="text"
                             required
@@ -3149,175 +3212,192 @@ const ServicesPortal: React.FC = () => {
                 )}
 
                 {/* Document Upload Zone */}
-                {['post_incorporation', 'compliance', 'other_services'].includes(selectedService!) ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <h5 style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                      {selectedService === 'post_incorporation' 
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <h5 style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                    {['company_incorporation', 'business_registration', 'incorporated_trustee'].includes(selectedService!)
+                      ? 'Upload Required Registration Documents & Means of Identification'
+                      : selectedService === 'post_incorporation' 
                         ? 'Upload Supporting Documents per Selected Service' 
                         : selectedService === 'other_services'
                           ? 'Upload Supporting Documents for Licenses/Publications'
                           : 'Upload Required Compliance Documents'}
-                    </h5>
-                    
-                    {(selectedService === 'post_incorporation' 
-                      ? selectedSubServices.map(sub => ({ key: sub, label: sub, isCompliance: false }))
-                      : selectedService === 'other_services'
-                        ? getOtherRequiredDocsList().map(item => ({ key: item.key, label: item.label, isCompliance: item.isCustom }))
-                        : getComplianceRequiredDocs().map(doc => ({ key: doc, label: doc, isCompliance: true }))
-                    ).map((item) => {
-                      const sub = item.key;
-                      const isComp = item.isCompliance;
-                      const files = (isComp
+                  </h5>
+                  
+                  {(
+                    ['company_incorporation', 'business_registration', 'incorporated_trustee'].includes(selectedService!)
+                      ? getIncorporationRequiredDocs(selectedService!).map(item => ({ key: item.key, label: item.label, fileCategory: 'incorporation', isRequired: item.isRequired }))
+                      : selectedService === 'post_incorporation' 
+                        ? selectedSubServices.map(sub => ({ key: sub, label: sub, fileCategory: 'sub', isRequired: false }))
+                        : selectedService === 'other_services'
+                          ? getOtherRequiredDocsList().map(item => ({ key: item.key, label: item.label, fileCategory: item.isCustom ? 'compliance' : 'sub', isRequired: false }))
+                          : getComplianceRequiredDocs().map(doc => ({ key: doc, label: doc, fileCategory: 'compliance', isRequired: true }))
+                  ).map((item) => {
+                    const sub = item.key;
+                    const cat = item.fileCategory;
+                    const files = (cat === 'incorporation'
+                      ? incorporationRequiredFiles[sub]
+                      : cat === 'compliance'
                         ? complianceRequiredFiles[sub]
                         : subServiceFiles[sub]) || [];
-                      return (
-                        <div key={item.label} className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#fff' }}>
-                              {item.label} {isComp ? '(Required)' : 'Documents'}
-                            </span>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                              {files.length} file(s) attached
-                            </span>
-                          </div>
-                          
-                          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                            <input
-                              type="file"
-                              id={`upload-${sub}`}
-                              multiple
-                              style={{ display: 'none' }}
-                              onChange={(e) => {
-                                if (e.target.files) {
-                                  const filesArray = Array.from(e.target.files);
-                                  const validFiles = filesArray.filter(file => {
-                                    if (file.size > 5 * 1024 * 1024) {
-                                      setError(`File "${file.name}" exceeds the 5MB security limit.`);
-                                      return false;
-                                    }
-                                    return true;
-                                  });
-                                  if (isComp) {
-                                    setComplianceRequiredFiles(prev => ({
-                                      ...prev,
-                                      [sub]: [...(prev[sub] || []), ...validFiles]
-                                    }));
-                                  } else {
-                                    setSubServiceFiles(prev => ({
-                                      ...prev,
-                                      [sub]: [...(prev[sub] || []), ...validFiles]
-                                    }));
-                                  }
-                                  setError(null);
-                                }
-                              }}
-                            />
-                            <label
-                              htmlFor={`upload-${sub}`}
-                              className="btn-secondary"
-                              style={{ padding: '6px 16px', fontSize: '0.75rem', cursor: 'pointer', margin: 0 }}
-                            >
-                              Select Files
-                            </label>
-                          </div>
-                          
-                          {files.length > 0 && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
-                              {files.map((file, fileIdx) => (
-                                <div
-                                  key={fileIdx}
-                                  style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    padding: '6px 10px',
-                                    background: 'rgba(255,255,255,0.01)',
-                                    border: '1px solid var(--border-color)',
-                                    borderRadius: '4px',
-                                    fontSize: '0.75rem'
-                                  }}
-                                >
-                                  <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '280px' }}>
-                                    {file.name}
-                                  </span>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                                      {(file.size / 1024).toFixed(1)} KB
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        if (isComp) {
-                                          setComplianceRequiredFiles(prev => ({
-                                            ...prev,
-                                            [sub]: (prev[sub] || []).filter((_, i) => i !== fileIdx)
-                                          }));
-                                        } else {
-                                          setSubServiceFiles(prev => ({
-                                            ...prev,
-                                            [sub]: (prev[sub] || []).filter((_, i) => i !== fileIdx)
-                                          }));
-                                        }
-                                      }}
-                                      style={{ background: 'none', border: 'none', color: '#fc8181', cursor: 'pointer', display: 'flex' }}
-                                      title="Remove file"
-                                    >
-                                      <Trash2 size={12} />
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                    return (
+                      <div key={item.label} className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#fff' }}>
+                            {item.label} {item.isRequired ? '(Required)' : '(Optional)'}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            {files.length} file(s) attached
+                          </span>
                         </div>
-                      );
-                    })}
+                        
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                          <input
+                            type="file"
+                            id={`upload-${sub}`}
+                            multiple
+                            style={{ display: 'none' }}
+                            onChange={(e) => {
+                              if (e.target.files) {
+                                const filesArray = Array.from(e.target.files);
+                                const validFiles = filesArray.filter(file => {
+                                  if (file.size > 5 * 1024 * 1024) {
+                                    setError(`File "${file.name}" exceeds the 5MB security limit.`);
+                                    return false;
+                                  }
+                                  return true;
+                                });
+                                if (cat === 'incorporation') {
+                                  setIncorporationRequiredFiles(prev => ({
+                                    ...prev,
+                                    [sub]: [...(prev[sub] || []), ...validFiles]
+                                  }));
+                                } else if (cat === 'compliance') {
+                                  setComplianceRequiredFiles(prev => ({
+                                    ...prev,
+                                    [sub]: [...(prev[sub] || []), ...validFiles]
+                                  }));
+                                } else {
+                                  setSubServiceFiles(prev => ({
+                                    ...prev,
+                                    [sub]: [...(prev[sub] || []), ...validFiles]
+                                  }));
+                                }
+                                setError(null);
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor={`upload-${sub}`}
+                            className="btn-secondary"
+                            style={{ padding: '6px 16px', fontSize: '0.75rem', cursor: 'pointer', margin: 0 }}
+                          >
+                            Select Files
+                          </label>
+                        </div>
+                        
+                        {files.length > 0 && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                            {files.map((file, fileIdx) => (
+                              <div
+                                key={fileIdx}
+                                style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  padding: '6px 10px',
+                                  background: 'rgba(255,255,255,0.01)',
+                                  border: '1px solid var(--border-color)',
+                                  borderRadius: '4px',
+                                  fontSize: '0.75rem'
+                                }}
+                              >
+                                <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '280px' }}>
+                                  {file.name}
+                                </span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                                    {(file.size / 1024).toFixed(1)} KB
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (cat === 'incorporation') {
+                                        setIncorporationRequiredFiles(prev => ({
+                                          ...prev,
+                                          [sub]: (prev[sub] || []).filter((_, i) => i !== fileIdx)
+                                        }));
+                                      } else if (cat === 'compliance') {
+                                        setComplianceRequiredFiles(prev => ({
+                                          ...prev,
+                                          [sub]: (prev[sub] || []).filter((_, i) => i !== fileIdx)
+                                        }));
+                                      } else {
+                                        setSubServiceFiles(prev => ({
+                                          ...prev,
+                                          [sub]: (prev[sub] || []).filter((_, i) => i !== fileIdx)
+                                        }));
+                                      }
+                                    }}
+                                    style={{ background: 'none', border: 'none', color: '#fc8181', cursor: 'pointer', display: 'flex' }}
+                                    title="Remove file"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Additional Optional Multi-File Upload Queue */}
+                <div 
+                  style={{ 
+                    border: '1px dashed var(--border-color)', 
+                    borderRadius: '8px', 
+                    padding: '20px', 
+                    textAlign: 'center', 
+                    background: 'rgba(0,0,0,0.1)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginTop: '10px'
+                  }}
+                >
+                  <Upload size={24} style={{ color: uploadFiles.length > 0 ? 'var(--accent-red)' : 'var(--text-muted)' }} />
+                  <div>
+                    <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#fff' }}>
+                      22. Additional Supporting Files (Optional Multi-Select Upload)
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginTop: '2px' }}>
+                      PDF, DOCX, JPG, PNG up to 5MB maximum per file
+                    </span>
                   </div>
-                ) : (
-                  <div 
-                    style={{ 
-                      border: '1px dashed var(--border-color)', 
-                      borderRadius: '8px', 
-                      padding: '24px', 
-                      textAlign: 'center', 
-                      background: 'rgba(0,0,0,0.1)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}
+                  <input 
+                    type="file" 
+                    id="doc-upload" 
+                    multiple
+                    onChange={handleFileChange}
+                    style={{ display: 'none' }}
+                  />
+                  <label 
+                    htmlFor="doc-upload"
+                    className="btn-secondary"
+                    style={{ padding: '6px 18px', fontSize: '0.75rem', cursor: 'pointer', marginTop: '4px' }}
                   >
-                    <Upload size={28} style={{ color: uploadFiles.length > 0 ? 'var(--accent-red)' : 'var(--text-muted)' }} />
-                    <div>
-                      <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#fff' }}>
-                        Attach supporting files (Multi-select allowed)
-                      </span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginTop: '2px' }}>
-                        PDF, DOCX, JPG, PNG up to 5MB maximum per file
-                      </span>
-                    </div>
-                    <input 
-                      type="file" 
-                      id="doc-upload" 
-                      multiple
-                      onChange={handleFileChange}
-                      style={{ display: 'none' }}
-                    />
-                    <label 
-                      htmlFor="doc-upload"
-                      className="btn-secondary"
-                      style={{ padding: '8px 20px', fontSize: '0.8rem', cursor: 'pointer', marginTop: '4px' }}
-                    >
-                      Select Files
-                    </label>
-                  </div>
-                )}
+                    Select Additional Files
+                  </label>
+                </div>
 
                 {/* Upload Queue list */}
-                {selectedService !== 'post_incorporation' && selectedService !== 'compliance' && uploadFiles.length > 0 && (
+                {uploadFiles.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <h5 style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
-                      Files in Queue ({uploadFiles.length})
+                      Additional Files in Queue ({uploadFiles.length})
                     </h5>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
                       {uploadFiles.map((file, idx) => (
