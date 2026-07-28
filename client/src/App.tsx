@@ -135,18 +135,52 @@ const App: React.FC = () => {
     }
   }, [user, token]);
 
-  const handleAcknowledgeAdminNotif = (goToServices = false) => {
-    if (adminNotificationModal && user) {
-      const acknowledgedKey = `acknowledged_admin_notif_${user.id}`;
-      const acknowledgedStr = localStorage.getItem(acknowledgedKey) || '{}';
-      let acknowledgedMap: Record<number, string> = {};
-      try { acknowledgedMap = JSON.parse(acknowledgedStr); } catch (e) {}
-      acknowledgedMap[adminNotificationModal.appId] = adminNotificationModal.updatedAt;
-      localStorage.setItem(acknowledgedKey, JSON.stringify(acknowledgedMap));
-      setAdminNotificationModal(null);
-      if (goToServices) {
+  const [clientReplyText, setClientReplyText] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
+
+  const handleAcknowledgeAdminNotif = async (targetDestination: 'services' | 'chat' | 'dismiss' = 'dismiss') => {
+    if (!adminNotificationModal || !user) return;
+
+    if (targetDestination !== 'dismiss' && clientReplyText.trim()) {
+      setSendingReply(true);
+      try {
+        await fetch(`${API_BASE}/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            application_id: adminNotificationModal.appId,
+            message_text: `[CLIENT REPLY TO ADMIN REQUEST] ${clientReplyText.trim()}`
+          })
+        });
+      } catch (err) {
+        console.error('Failed to send reply to admin:', err);
+      } finally {
+        setSendingReply(false);
+      }
+    }
+
+    const acknowledgedKey = `acknowledged_admin_notif_${user.id}`;
+    const acknowledgedStr = localStorage.getItem(acknowledgedKey) || '{}';
+    let acknowledgedMap: Record<number, string> = {};
+    try { acknowledgedMap = JSON.parse(acknowledgedStr); } catch (e) {}
+    acknowledgedMap[adminNotificationModal.appId] = adminNotificationModal.updatedAt;
+    localStorage.setItem(acknowledgedKey, JSON.stringify(acknowledgedMap));
+
+    setAdminNotificationModal(null);
+    setClientReplyText('');
+
+    if (targetDestination === 'services') {
+      const sType = adminNotificationModal.serviceType.toLowerCase();
+      if (['compliance', 'scuml', 'pencom', 'itf', 'nsitf', 'tcc', 'bpp'].some(k => sType.includes(k))) {
+        setActiveTab('compliance');
+      } else {
         setActiveTab('services');
       }
+    } else if (targetDestination === 'chat') {
+      setActiveTab('chat');
     }
   };
 
@@ -1267,7 +1301,7 @@ const App: React.FC = () => {
               </div>
               <button 
                 type="button"
-                onClick={() => handleAcknowledgeAdminNotif(false)}
+                onClick={() => handleAcknowledgeAdminNotif('dismiss')}
                 style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
               >
                 <X size={20} />
@@ -1301,22 +1335,49 @@ const App: React.FC = () => {
                 </p>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
+              {/* Interactive Client Reply Field */}
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: '0.75rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <MessageSquare size={14} style={{ color: 'var(--accent-red)' }} />
+                  <span>Reply / Respond to Admin Request:</span>
+                </label>
+                <textarea
+                  placeholder="Type your response to admin request or document notes here (Optional)..."
+                  className="form-input"
+                  style={{ minHeight: '75px', fontSize: '0.85rem', resize: 'vertical' }}
+                  value={clientReplyText}
+                  onChange={(e) => setClientReplyText(e.target.value)}
+                />
+              </div>
+
+              {/* Action & Routing Buttons */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px', flexWrap: 'wrap' }}>
                 <button
                   type="button"
-                  onClick={() => handleAcknowledgeAdminNotif(false)}
+                  onClick={() => handleAcknowledgeAdminNotif('dismiss')}
                   className="btn-secondary"
-                  style={{ padding: '8px 16px', fontSize: '0.8rem' }}
+                  style={{ padding: '8px 14px', fontSize: '0.8rem' }}
                 >
                   Dismiss
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleAcknowledgeAdminNotif(true)}
-                  className="btn-primary"
-                  style={{ padding: '8px 20px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  disabled={sendingReply}
+                  onClick={() => handleAcknowledgeAdminNotif('chat')}
+                  className="btn-secondary"
+                  style={{ padding: '8px 16px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  <span>Acknowledge & View Filing</span>
+                  <MessageSquare size={14} />
+                  <span>{clientReplyText.trim() ? 'Send Reply & Open Chat' : 'Open Live Chat'}</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={sendingReply}
+                  onClick={() => handleAcknowledgeAdminNotif('services')}
+                  className="btn-primary"
+                  style={{ padding: '8px 18px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <span>{clientReplyText.trim() ? 'Send Reply & View Filing' : 'Go to Filing Uploads'}</span>
                   <ArrowRight size={14} />
                 </button>
               </div>
