@@ -3,7 +3,11 @@ import { useAuth, API_BASE } from '../context/AuthContext';
 import { MessageSquare, Send, FileText, Paperclip } from 'lucide-react';
 import type { Application, Message } from '../types';
 
-const ChatRoom: React.FC = () => {
+interface ChatRoomProps {
+  initialAppId?: number | null;
+}
+
+const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId }) => {
   const { user, token } = useAuth();
   const [applications, setApplications] = useState<Application[]>([]);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
@@ -35,10 +39,21 @@ const ChatRoom: React.FC = () => {
           const data = await res.json();
           setApplications(data);
           if (data.length > 0) {
-            // Select first application by default
-            setSelectedApp(data[0]);
-            // Auto expand client of the default selected application
-            setExpandedClients({ [data[0].client_id]: true });
+            if (initialAppId) {
+              const matched = data.find((a: Application) => a.id === initialAppId);
+              if (matched) {
+                setSelectedApp(matched);
+                if (matched.client_id) {
+                  setExpandedClients({ [matched.client_id]: true });
+                }
+              } else {
+                setSelectedApp(data[0]);
+                setExpandedClients({ [data[0].client_id]: true });
+              }
+            } else {
+              setSelectedApp(data[0]);
+              setExpandedClients({ [data[0].client_id]: true });
+            }
           }
         }
       } catch (err) {

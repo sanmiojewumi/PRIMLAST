@@ -135,6 +135,9 @@ const App: React.FC = () => {
     }
   }, [user, token]);
 
+  // Target flagged application ID for direct popup navigation
+  const [targetAppId, setTargetAppId] = useState<number | null>(null);
+
   const [clientReplyText, setClientReplyText] = useState('');
   const [sendingReply, setSendingReply] = useState(false);
 
@@ -169,10 +172,12 @@ const App: React.FC = () => {
     acknowledgedMap[adminNotificationModal.appId] = adminNotificationModal.updatedAt;
     localStorage.setItem(acknowledgedKey, JSON.stringify(acknowledgedMap));
 
+    const currentFlaggedId = adminNotificationModal.appId;
     setAdminNotificationModal(null);
     setClientReplyText('');
 
     if (targetDestination === 'services') {
+      setTargetAppId(currentFlaggedId);
       const sType = adminNotificationModal.serviceType.toLowerCase();
       if (['compliance', 'scuml', 'pencom', 'itf', 'nsitf', 'tcc', 'bpp'].some(k => sType.includes(k))) {
         setActiveTab('compliance');
@@ -180,6 +185,7 @@ const App: React.FC = () => {
         setActiveTab('services');
       }
     } else if (targetDestination === 'chat') {
+      setTargetAppId(currentFlaggedId);
       setActiveTab('chat');
     }
   };
@@ -1269,12 +1275,12 @@ const App: React.FC = () => {
             </div>
           )}
           {activeTab === 'dashboard' && <DashboardOverview />}
-          {activeTab === 'services' && user.role === 'client' && <ServicesPortal />}
+          {activeTab === 'services' && user.role === 'client' && <ServicesPortal targetAppId={targetAppId} />}
           {activeTab === 'compliance' && user.role === 'client' && <ComplianceDashboard />}
           {activeTab === 'advisor' && user.role === 'client' && <AIAdvisor />}
           {activeTab === 'knowledge' && user.role === 'client' && <KnowledgeHub />}
           {activeTab === 'kanban' && user.role !== 'client' && <KanbanBoard />}
-          {activeTab === 'chat' && <ChatRoom />}
+          {activeTab === 'chat' && <ChatRoom initialAppId={targetAppId} />}
           {activeTab === 'admin' && ['admin', 'supervisor'].includes(user.role) && <AdminPortal />}
         </main>
       </div>

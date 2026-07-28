@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth, API_BASE } from '../context/AuthContext';
 import { 
   Building2, 
@@ -113,8 +113,38 @@ const COMPLIANCE_DOCS_MAP: Record<string, string[]> = {
 };
 
 
-const ServicesPortal: React.FC = () => {
+interface ServicesPortalProps {
+  targetAppId?: number | null;
+}
+
+const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
   const { token } = useAuth();
+
+  const [flaggedApplication, setFlaggedApplication] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (targetAppId && token) {
+      const fetchFlaggedApp = async () => {
+        try {
+          const res = await fetch(`${API_BASE}/services/applications`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const apps = await res.json();
+            const found = apps.find((a: any) => a.id === targetAppId);
+            if (found) {
+              setFlaggedApplication(found);
+              setSelectedService(found.service_type as ServiceType);
+              setFormStep(3); // Jump straight to Step 3 Attachments & Document Uploads!
+            }
+          }
+        } catch (err) {
+          console.error('Error loading target flagged application:', err);
+        }
+      };
+      fetchFlaggedApp();
+    }
+  }, [targetAppId, token]);
 
   // Dynamic Directors state for Company Incorporation
   interface DirectorInfo {
@@ -1289,9 +1319,40 @@ const ServicesPortal: React.FC = () => {
               }}>
                 <Upload size={18} />
               </div>
-              <span style={{ fontSize: '0.75rem', color: formStep >= 3 ? '#fff' : 'var(--text-secondary)', fontWeight: '600' }}>Attachments</span>
             </div>
           </div>
+
+          {flaggedApplication && (
+            <div className="animate-fade-in" style={{
+              padding: '16px 20px',
+              background: 'rgba(229, 62, 62, 0.1)',
+              border: '1px solid var(--accent-red)',
+              borderRadius: '10px',
+              marginBottom: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              textAlign: 'left'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <AlertCircle size={20} style={{ color: 'var(--accent-red)' }} />
+                  <h4 style={{ color: '#fff', fontSize: '1rem', margin: 0, fontWeight: '700' }}>
+                    Flagged Application Response: Application #{flaggedApplication.id} ({flaggedApplication.service_type.replace(/_/g, ' ').toUpperCase()})
+                  </h4>
+                </div>
+                <span className="badge badge-action_required" style={{ fontSize: '0.75rem' }}>
+                  {flaggedApplication.status.replace(/_/g, ' ').toUpperCase()}
+                </span>
+              </div>
+              <p style={{ fontSize: '0.85rem', color: '#e2e8f0', margin: 0, lineHeight: '1.4' }}>
+                <strong>Admin Request / Note:</strong> {typeof flaggedApplication.details === 'string' ? flaggedApplication.details : JSON.stringify(flaggedApplication.details)}
+              </p>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                Upload any requested missing documents below to update application #{flaggedApplication.id} for CAC / Regulatory approval.
+              </span>
+            </div>
+          )}
 
           {error && (
             <div style={{ padding: '12px', background: 'rgba(229,62,62,0.08)', border: '1px solid var(--accent-red)', borderRadius: '8px', color: 'var(--accent-red)', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', marginBottom: '20px' }}>
