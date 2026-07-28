@@ -1,1 +1,12 @@
-{"rewrites": [{"source": "/api/(.*)", "destination": "https://bitter-pianos-press.loca.lt/api/$1"}, {"source": "/(.*)", "destination": "/index.html"}]}
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://public-pugs-beam.loca.lt/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

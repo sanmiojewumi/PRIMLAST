@@ -7,11 +7,7 @@ export const API_BASE = (import.meta as any).env?.VITE_API_URL
     ? 'http://localhost:5000/api'
     : window.location.hostname.includes('vercel.app')
       ? '/api'
-      : (window.location.hostname.includes('localtunnel.me') || window.location.hostname.includes('loca.lt'))
-        ? 'https://bitter-pianos-press.loca.lt/api'
-        : window.location.hostname.includes('lhr.life')
-          ? 'https://e5bd6a13aab9f8.lhr.life/api'
-          : '/api';
+      : 'https://public-pugs-beam.loca.lt/api';
 
 interface AuthContextType {
   user: User | null;
@@ -48,7 +44,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'bypass-tunnel-reminder': 'true'
+        },
         body: JSON.stringify({ email, password })
       });
 
