@@ -1,0 +1,9 @@
+[
+  {
+    "to": "client@primeflow.com",
+    "toName": "Babajide Sowande",
+    "subject": "[PrimeFlow Alert] Admin Action Request & Reaction on Application #46 (COMPANY INCORPORATION)",
+    "body": "Dear Babajide Sowande,\n\nThis is an alert from PrimeFlow Admin:\n\nYour application #46 (COMPANY INCORPORATION) has received an update/action request from PrimeFlow Admin.\n\nUpdated Status: UNDER REVIEW\nDetails / Notes: {\"companyNameOption1\":\"xxxx\",\"companyNameOption2\":\"xxx\",\"proposedNames\":[\"xxxx\",\"xxx\"],\"directors\":[{\"surname\":\"dd\",\"firstName\":\"ddd\",\"otherName\":\"ddd\",\"email\":\"sanmioje1@gmail.com\",\"phone\":\"123456789\",\"gender\":\"Male\",\"dob\":\"2008-07-16\",\"shareAllotment\":\"500000\"}],\"address\":{\"state\":\"Jigawa\",\"lga\":\"Ringim\",\"city\":\"werty\",\"streetName\":\"ffff\"},\"natureOfBusiness\":\"xx\",\"functionalEmail\":\"sanmioje1@gmail.com\",\"shareCapital\":\"1,000,000\"}\n\nPlease log in to your PrimeFlow Portal to review this notification.\n\nBest regards,\nPrimeFlow Team",
+    "timestamp": "2026-07-28T21:58:13.276Z"
+  }
+]

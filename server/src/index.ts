@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import { getDb } from './db';
+import multer from 'multer';
 
 // Load environment variables
 dotenv.config();
@@ -125,7 +126,8 @@ async function startServer() {
 }
 
 // Support class declarations in this scope for multer errors check
-import multer from 'multer';
+if (!process.env.VERCEL) {
+  startServer();
+}
 
-startServer();
 export default app;
