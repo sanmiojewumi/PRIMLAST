@@ -4,7 +4,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://public-pugs-beam.loca.lt/api/$1"
+      "destination": "https://aa4abb99b9bbc2.lhr.life/api/$1"
     },
     {
       "source": "/(.*)",
