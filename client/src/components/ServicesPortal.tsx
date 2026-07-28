@@ -155,6 +155,15 @@ const ServicesPortal: React.FC = () => {
   const [submittingSurvey, setSubmittingSurvey] = useState<boolean>(false);
   const [showSurveyModal, setShowSurveyModal] = useState<boolean>(false);
   
+  // Upload Result Modal State
+  const [uploadResultModal, setUploadResultModal] = useState<{
+    success: boolean;
+    message: string;
+    files: { name: string; size: number; category?: string }[];
+    appId?: number;
+    triggerSurvey?: boolean;
+  } | null>(null);
+  
   // Navigation & Page State
   const [selectedService, setSelectedService] = useState<ServiceType | null>(null);
   const [formStep, setFormStep] = useState<number>(1);
@@ -305,7 +314,7 @@ const ServicesPortal: React.FC = () => {
       subDocs.forEach(d => docs.add(d));
     });
     if (docs.size === 0) {
-      return ['Passport photography', 'Signature', 'NIN slip', 'CAC document', 'company letter head'];
+      return ['Signature', 'NIN slip', 'CAC document', 'company letter head'];
     }
     return Array.from(docs);
   };
@@ -697,7 +706,7 @@ const ServicesPortal: React.FC = () => {
     }
 
     if (selectedService === 'compliance') {
-      const requiredDocs = ['Passport photography', 'Signature', 'NIN slip', 'CAC document', 'company letter head'];
+      const requiredDocs = ['Signature', 'NIN slip', 'CAC document', 'company letter head'];
       for (const docType of requiredDocs) {
         const files = complianceRequiredFiles[docType] || [];
         if (files.length === 0) {
@@ -892,6 +901,7 @@ const ServicesPortal: React.FC = () => {
       if (!appRes.ok) throw new Error(appData.error || 'Failed to submit application');
 
       const newAppId = appData.id;
+      const uploadedFilesList: { name: string; size: number; category?: string }[] = [];
 
       // 2. Loop and upload files sequentially
       if (['post_incorporation', 'compliance', 'other_services'].includes(selectedService)) {
@@ -920,6 +930,7 @@ const ServicesPortal: React.FC = () => {
                   if (!uploadRes.ok) {
                     throw new Error(`Application submitted, but file "${file.name}" for "${docType}" failed: ${uploadData.error}`);
                   }
+                  uploadedFilesList.push({ name: file.name, size: file.size, category: `${sub} - ${docType}` });
                 }
               }
             } else {
@@ -942,6 +953,7 @@ const ServicesPortal: React.FC = () => {
                 if (!uploadRes.ok) {
                   throw new Error(`Application submitted, but file "${file.name}" for "${sub}" failed: ${uploadData.error}`);
                 }
+                uploadedFilesList.push({ name: file.name, size: file.size, category: sub });
               }
             }
           }
@@ -968,6 +980,7 @@ const ServicesPortal: React.FC = () => {
               if (!uploadRes.ok) {
                 throw new Error(`Application submitted, but file "${file.name}" for "${docType}" failed: ${uploadData.error}`);
               }
+              uploadedFilesList.push({ name: file.name, size: file.size, category: docType });
             }
           }
         }
@@ -989,13 +1002,20 @@ const ServicesPortal: React.FC = () => {
           if (!uploadRes.ok) {
             throw new Error(`Application submitted, but file "${file.name}" upload failed: ${uploadData.error}`);
           }
+          uploadedFilesList.push({ name: file.name, size: file.size, category: 'Supporting File' });
         }
       }
 
       setSuccessMsg(`Service application submitted successfully! Reference ID: #${newAppId}`);
       
-      // Trigger Satisfaction Survey Modal
-      setShowSurveyModal(true);
+      // Trigger Upload Result Pop Up Modal FIRST (Survey comes up after user acknowledges upload result!)
+      setUploadResultModal({
+        success: true,
+        message: `Application #${newAppId} submitted successfully! ${uploadedFilesList.length > 0 ? `${uploadedFilesList.length} document(s) uploaded and attached.` : 'No file attachments needed.'}`,
+        files: uploadedFilesList,
+        appId: newAppId,
+        triggerSurvey: true
+      });
       setSurveyUsability(5);
       setSurveySpeed(5);
       setSurveyClarity('Yes');
@@ -1031,7 +1051,6 @@ const ServicesPortal: React.FC = () => {
       setCompNokPhone('');
       setCompBvn('');
       setComplianceRequiredFiles({
-        'Passport photography': [],
         'Signature': [],
         'NIN slip': [],
         'CAC document': [],
@@ -1062,6 +1081,12 @@ const ServicesPortal: React.FC = () => {
 
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred.');
+      setUploadResultModal({
+        success: false,
+        message: err.message || 'Document upload or application submission failed. Please check your attachments and try again.',
+        files: [],
+        triggerSurvey: false
+      });
     } finally {
       setLoading(false);
     }
@@ -1369,7 +1394,9 @@ const ServicesPortal: React.FC = () => {
                                 <>
                                   <option value="Change of Directors">Change of Directors</option>
                                   <option value="Change of Registered Address">Change of Company Address</option>
+                                  <option value="Share Capital Allotment">Share Capital Allotment / Return of Allotment</option>
                                   <option value="Increase Share Capital">Increase in Share Capital</option>
+                                  <option value="Increase & Allotment of Shares">Increase & Allotment of Shares</option>
                                 </>
                               )}
                             </select>
@@ -3114,8 +3141,8 @@ const ServicesPortal: React.FC = () => {
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
                       <strong>Means of identification needed:</strong> {
                         selectedService === 'business_registration' 
-                          ? 'national I\'d and passport photography.' 
-                          : 'international passport, driver licence, national I\'d card, voter card.'
+                          ? 'national ID card, NIN slip, or valid identity document.' 
+                          : 'international passport, driver licence, national ID card, voter card.'
                       }
                     </p>
                   </div>
@@ -3437,6 +3464,107 @@ const ServicesPortal: React.FC = () => {
 
           </form>
 
+        </div>
+      )}
+
+      {/* ── UPLOAD RESULT POPUP MODAL ───────────────────────────────────── */}
+      {uploadResultModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 10000,
+          padding: '20px'
+        }}>
+          <div className="glass-panel animate-fade-in" style={{
+            maxWidth: '520px',
+            width: '100%',
+            padding: '28px',
+            borderRadius: '16px',
+            textAlign: 'left',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.8)',
+            border: uploadResultModal.success ? '1px solid rgba(72,187,120,0.4)' : '1px solid rgba(252,129,129,0.4)',
+            background: '#0D1B2A',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '18px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {uploadResultModal.success ? (
+                  <CheckCircle2 size={28} style={{ color: '#48bb78' }} />
+                ) : (
+                  <AlertCircle size={28} style={{ color: '#fc8181' }} />
+                )}
+                <div>
+                  <h3 style={{ color: '#fff', fontSize: '1.2rem', margin: 0, fontWeight: '700' }}>
+                    {uploadResultModal.success ? 'Upload Status: Successful' : 'Upload Status: Unsuccessful'}
+                  </h3>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    {uploadResultModal.appId ? `Filing Application #${uploadResultModal.appId}` : 'Document Attachment Notification'}
+                  </span>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => {
+                  const trigger = uploadResultModal.triggerSurvey;
+                  setUploadResultModal(null);
+                  if (trigger) setShowSurveyModal(true);
+                }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.9rem', color: uploadResultModal.success ? '#e2e8f0' : '#fc8181', margin: 0, lineHeight: '1.5', fontWeight: '500' }}>
+              {uploadResultModal.message}
+            </p>
+
+            {uploadResultModal.files && uploadResultModal.files.length > 0 && (
+              <div style={{ padding: '14px', background: 'rgba(0,0,0,0.25)', border: '1px solid var(--border-color)', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Uploaded Files ({uploadResultModal.files.length})
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '160px', overflowY: 'auto' }}>
+                  {uploadResultModal.files.map((f, idx) => (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', color: '#fff', background: 'rgba(255,255,255,0.03)', padding: '6px 10px', borderRadius: '6px' }}>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '320px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <FileText size={14} style={{ color: 'var(--accent-red)' }} />
+                        {f.category ? `[${f.category}] ` : ''}{f.name}
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: '#48bb78', fontWeight: '600' }}>
+                        {(f.size / 1024).toFixed(1)} KB ✓
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '6px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const trigger = uploadResultModal.triggerSurvey;
+                  setUploadResultModal(null);
+                  if (trigger) setShowSurveyModal(true);
+                }}
+                className="btn-primary"
+                style={{ padding: '10px 24px', fontSize: '0.85rem' }}
+              >
+                {uploadResultModal.triggerSurvey ? 'Proceed to Feedback' : 'Acknowledge & Close'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
