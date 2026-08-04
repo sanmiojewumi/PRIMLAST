@@ -79,13 +79,13 @@ import messagesRouter from './routes/messages';
 import adminRouter from './routes/admin';
 import complianceRouter from './routes/compliance';
 
-// API Routing
-app.use('/api/auth', authLimiter, authRouter);
-app.use('/api/services', servicesRouter);
-app.use('/api/documents', documentsRouter);
-app.use('/api/messages', messagesRouter);
-app.use('/api/admin', adminRouter);
-app.use('/api/compliance', complianceRouter);
+// API Routing (Supports both /api/... and serverless /... routes)
+app.use(['/api/auth', '/auth'], authLimiter, authRouter);
+app.use(['/api/services', '/services'], servicesRouter);
+app.use(['/api/documents', '/documents'], documentsRouter);
+app.use(['/api/messages', '/messages'], messagesRouter);
+app.use(['/api/admin', '/admin'], adminRouter);
+app.use(['/api/compliance', '/compliance'], complianceRouter);
 
 // Base route for connectivity checks
 app.get(['/health', '/api/health'], (req, res) => {
