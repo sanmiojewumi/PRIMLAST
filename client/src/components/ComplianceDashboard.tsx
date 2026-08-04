@@ -126,9 +126,14 @@ const ComplianceDashboard: React.FC = () => {
       {/* Page header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h2 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: '800', margin: '0 0 6px', fontFamily: "'Outfit', sans-serif" }}>
-            Compliance Dashboard
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h2 className="flashing-compliance-text" style={{ color: '#fff', fontSize: '1.5rem', fontWeight: '800', margin: '0 0 6px', fontFamily: "'Outfit', sans-serif" }}>
+              Compliance Dashboard
+            </h2>
+            <span className="flashing-compliance-badge">
+              LIVE MONITORING
+            </span>
+          </div>
           <p style={{ color: '#64748b', fontSize: '0.88rem', margin: 0 }}>
             Live view of your business compliance health — powered by your secure database
           </p>
