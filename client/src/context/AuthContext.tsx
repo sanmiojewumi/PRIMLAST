@@ -5,11 +5,7 @@ export const API_BASE = (import.meta as any).env?.VITE_API_URL
   ? (import.meta as any).env.VITE_API_URL
   : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:5000/api'
-    : window.location.hostname.includes('onrender.com')
-      ? '/api'
-      : window.location.hostname.includes('vercel.app')
-        ? '/api'
-        : 'https://44350de6b0c276.lhr.life/api';
+    : '/api';
 
 async function parseResponse(res: Response) {
   const text = await res.text();

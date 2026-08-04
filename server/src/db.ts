@@ -4,7 +4,8 @@ import path from 'path';
 import fs from 'fs';
 import bcrypt from 'bcryptjs';
 
-const dbDir = process.env.VERCEL
+const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV || process.env.NOW_REGION);
+const dbDir = isVercel
   ? '/tmp'
   : (process.env.RENDER && fs.existsSync('/var/data'))
     ? '/var/data'
