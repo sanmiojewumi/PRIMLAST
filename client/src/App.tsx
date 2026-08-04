@@ -359,6 +359,7 @@ const App: React.FC = () => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
   
   // Verification states
   const [verificationMode, setVerificationMode] = useState(false);
@@ -369,6 +370,7 @@ const App: React.FC = () => {
     setVerificationMode(false);
     setVerificationCode('');
     setPhone('');
+    setConfirmPassword('');
     setAuthError(null);
     setAuthSuccess(null);
   }, [authView]);
@@ -396,6 +398,11 @@ const App: React.FC = () => {
         await login(email, password);
       } else if (authView === 'register') {
         if (!verificationMode) {
+          if (password !== confirmPassword) {
+            setAuthError('Passwords do not match. Please re-enter your password to confirm.');
+            setSubmitting(false);
+            return;
+          }
           // Request Code
           const code = await register(name, email, password, phone);
           setSimulatedOTP(code);
@@ -406,12 +413,19 @@ const App: React.FC = () => {
           await registerVerify(email, verificationCode);
           setVerificationMode(false);
           setVerificationCode('');
+          setConfirmPassword('');
         }
       } else if (authView === 'reset') {
+        if (password !== confirmPassword) {
+          setAuthError('Passwords do not match. Please re-enter your password to confirm.');
+          setSubmitting(false);
+          return;
+        }
         const msg = await resetPassword(email, password); // password field holds new password in reset mode
         setAuthSuccess(msg);
         setEmail('');
         setPassword('');
+        setConfirmPassword('');
         setTimeout(() => setAuthView('login'), 3000);
       }
     } catch (err: any) {
@@ -538,6 +552,19 @@ const App: React.FC = () => {
                         </button>
                       </div>
                     </div>
+                    {(authView === 'register' || authView === 'reset') && (
+                      <div className="form-group animate-fade-in">
+                        <label className="form-label" style={{ color: '#374151' }}>
+                          Confirm {authView === 'reset' ? 'New Password' : 'Password'}
+                        </label>
+                        <input
+                          type={showPassword ? 'text' : 'password'} required
+                          placeholder="Re-enter password to confirm"
+                          className="form-input" style={{ width: '100%' }}
+                          value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+                        />
+                      </div>
+                    )}
                   </>
                 )}
 

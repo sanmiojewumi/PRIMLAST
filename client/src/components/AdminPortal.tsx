@@ -19,6 +19,7 @@ const AdminPortal: React.FC = () => {
   const [accountName, setAccountName] = useState('');
   const [accountEmail, setAccountEmail] = useState('');
   const [accountPassword, setAccountPassword] = useState('');
+  const [accountConfirmPassword, setAccountConfirmPassword] = useState('');
   const [accountPhone, setAccountPhone] = useState('');
   const [accountRole, setAccountRole] = useState('client');
   const [creatingAccount, setCreatingAccount] = useState(false);
@@ -146,6 +147,12 @@ const AdminPortal: React.FC = () => {
     setAccountSuccess(null);
     setAccountError(null);
 
+    if (accountPassword !== accountConfirmPassword) {
+      setAccountError('Passwords do not match. Please re-enter password to confirm.');
+      setCreatingAccount(false);
+      return;
+    }
+
     try {
       const endpoint = `${API_BASE}/admin/users`;
       const res = await fetch(endpoint, {
@@ -170,6 +177,7 @@ const AdminPortal: React.FC = () => {
         setAccountName('');
         setAccountEmail('');
         setAccountPassword('');
+        setAccountConfirmPassword('');
         setAccountPhone('');
         fetchUsers();
         fetchLogs();
@@ -642,6 +650,19 @@ const AdminPortal: React.FC = () => {
                     value={accountPassword} 
                     onChange={(e) => setAccountPassword(e.target.value)} 
                     placeholder="••••••••"
+                  />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Confirm Initial Password</label>
+                  <input 
+                    type="password" 
+                    required 
+                    className="form-input" 
+                    style={{ padding: '8px 12px', fontSize: '0.85rem' }}
+                    value={accountConfirmPassword} 
+                    onChange={(e) => setAccountConfirmPassword(e.target.value)} 
+                    placeholder="Re-enter password to confirm"
                   />
                 </div>
 
