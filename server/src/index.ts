@@ -29,12 +29,15 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" } // Required to allow download/image requests
 }));
 
+const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV || process.env.NOW_REGION);
+
 // Maximum Security: 3. Setup global rate limiter to prevent denial of service (DoS) and brute force
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 300, // limit each IP to 300 requests per windowMs
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false, default: false },
   message: { error: 'Too many requests from this IP, please try again after 15 minutes' }
 });
 app.use(limiter);
@@ -42,7 +45,8 @@ app.use(limiter);
 // Specific stricter rate limiter for Auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: process.env.NODE_ENV === 'production' ? 30 : 1000, // Max 1000 attempts in development
+  max: 1000,
+  validate: { xForwardedForHeader: false, default: false },
   message: { error: 'Too many authentication attempts, please try again later' }
 });
 
@@ -51,9 +55,13 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Ensure upload folders exist and serve static files securely
-const uploadsDir = path.resolve(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+const uploadsDir = isVercel ? '/tmp/uploads' : path.resolve(__dirname, '..', 'uploads');
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+} catch (e) {
+  console.warn("Uploads directory notice:", e);
 }
 app.use('/uploads', express.static(uploadsDir));
 
