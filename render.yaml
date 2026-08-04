@@ -1,13 +1,11 @@
 services:
   - type: web
-    name: primeflow-server
+    name: primeflow-platform
     env: node
-    rootDir: server
-    buildCommand: npm install && npm run build
+    buildCommand: npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 5000
-
+        value: 10000
