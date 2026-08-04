@@ -57,6 +57,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         data = await res.json();
       } catch (e) {
+        if (res.status === 503) {
+          throw new Error('Service is initializing or temporarily unavailable. Please try again in a few seconds.');
+        }
         throw new Error(`Server returned HTTP status ${res.status}.`);
       }
       

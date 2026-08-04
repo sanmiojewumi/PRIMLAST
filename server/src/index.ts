@@ -57,6 +57,20 @@ if (!fs.existsSync(uploadsDir)) {
 }
 app.use('/uploads', express.static(uploadsDir));
 
+// Middleware to ensure DB connection is ready for all serverless & proxy environments
+app.use(async (req: Request, res: Response, next: NextFunction) => {
+  if (req.path === '/health' || req.path === '/api/health') {
+    return next();
+  }
+  try {
+    await getDb();
+    next();
+  } catch (err: any) {
+    console.error('Database middleware error:', err);
+    res.status(503).json({ error: 'Database service initializing or temporarily unavailable. Please retry.' });
+  }
+});
+
 // Router Imports
 import authRouter from './routes/auth';
 import servicesRouter from './routes/services';
@@ -74,8 +88,8 @@ app.use('/api/admin', adminRouter);
 app.use('/api/compliance', complianceRouter);
 
 // Base route for connectivity checks
-app.get('/health', (req, res) => {
-   res.status(200).json({ status: 'healthy', timestamp: new Date() });
+app.get(['/health', '/api/health'], (req, res) => {
+  res.status(200).json({ status: 'healthy', timestamp: new Date() });
 });
 
 // Global Error Handler for uncaught middleware exceptions (e.g. Multer upload errors, JSON syntax)

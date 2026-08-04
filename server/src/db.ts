@@ -13,25 +13,35 @@ const dbDir = process.env.VERCEL
 const dbPath = path.join(dbDir, process.env.DATABASE_PATH || 'primeflow.db');
 
 let dbInstance: Database | null = null;
+let dbInitPromise: Promise<Database> | null = null;
 
 export async function getDb(): Promise<Database> {
   if (dbInstance) {
     return dbInstance;
   }
 
-  // Open database connection
-  dbInstance = await open({
-    filename: dbPath,
-    driver: sqlite3.Database
-  });
+  if (!dbInitPromise) {
+    dbInitPromise = (async () => {
+      try {
+        if (!fs.existsSync(dbDir)) {
+          fs.mkdirSync(dbDir, { recursive: true });
+        }
+        const db = await open({
+          filename: dbPath,
+          driver: sqlite3.Database
+        });
+        await db.run('PRAGMA foreign_keys = ON');
+        await initializeDatabase(db);
+        dbInstance = db;
+        return db;
+      } catch (err) {
+        dbInitPromise = null;
+        throw err;
+      }
+    })();
+  }
 
-  // Enable foreign keys
-  await dbInstance.run('PRAGMA foreign_keys = ON');
-
-  // Initialize schema if tables don't exist
-  await initializeDatabase(dbInstance);
-
-  return dbInstance;
+  return dbInitPromise;
 }
 
 async function initializeDatabase(db: Database) {
