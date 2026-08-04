@@ -102,7 +102,7 @@ const FEATURES = [
   { icon: ShieldCheck, title: 'Regulatory Expertise', desc: 'Deep knowledge of CAC, NRS, SCUML, PENCOM, NSITF, and more.' },
   { icon: Lock, title: 'Secure Processes', desc: 'Encrypted document handling and secure client portal for total peace of mind.' },
   { icon: Users, title: 'Dedicated Consultants', desc: 'A personal consultant assigned to every client for focused attention.' },
-  { icon: Layers, title: 'Trusted Partner', desc: '200+ businesses registered and thriving across Nigeria.' },
+  { icon: Layers, title: 'Trusted Partner', desc: '700+ businesses registered and thriving across Nigeria.' },
 ];
 
 const TESTIMONIALS = [
@@ -121,6 +121,7 @@ const BLOG_POSTS = [
 
 const TRUST_AGENCIES = [
   { name: 'CAC', full: 'Corporate Affairs Commission' },
+  { name: 'IRS', full: 'Internal Revenue Service' },
   { name: 'NRS', full: 'Nigeria Revenue Service' },
   { name: 'SCUML', full: 'Special Control Unit Against Money Laundering' },
   { name: 'PENCOM', full: 'National Pension Commission' },
@@ -134,8 +135,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
   const [testimonialIdx, setTestimonialIdx] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { ref: statsRef, inView: statsInView } = useInView(0.3);
-  const c1 = useCounter(200, 2200, statsInView);
-  const c2 = useCounter(100, 2000, statsInView);
+  const c1 = useCounter(700, 2200, statsInView);
+  const c2 = useCounter(400, 2000, statsInView);
   const c3 = useCounter(10, 1800, statsInView);
   const c4 = useCounter(98, 2500, statsInView);
 
@@ -416,7 +417,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
           <FadeSection>
             <div className="section-header">
               <div className="section-badge">Testimonials</div>
-              <h2 className="section-title">Trusted by 200+ Businesses</h2>
+              <h2 className="section-title">Trusted by 700+ Businesses</h2>
               <p className="section-subtitle">Here's what our clients say about working with Primeflow</p>
             </div>
           </FadeSection>
@@ -511,7 +512,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
               Ready to Register<br />Your Business?
             </h2>
             <p style={{ color: '#94a3b8', fontSize: '1rem', marginBottom: '36px', maxWidth: '500px', margin: '0 auto 36px' }}>
-              Join 200+ businesses that trust Primeflow for their corporate needs. Get your free consultation today.
+              Join 700+ businesses that trust Primeflow for their corporate needs. Get your free consultation today.
             </p>
             <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
               <button onClick={() => onShowAuth('register')} className="landing-btn-primary landing-btn-large">
