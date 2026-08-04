@@ -191,7 +191,7 @@ const KnowledgeHub: React.FC = () => {
             <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '16px', lineHeight: '1.5' }}>
               Primeflow's certified experts are ready to handle all your {selectedArticle.category.toLowerCase()} needs professionally and efficiently.
             </p>
-            <a href="https://wa.me/2347066714961" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
+            <a href="https://wa.me/2347072928256" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
               Contact Primeflow <ArrowRight size={16} />
             </a>
           </div>

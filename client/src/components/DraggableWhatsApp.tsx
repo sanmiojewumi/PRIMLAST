@@ -84,7 +84,7 @@ export const DraggableWhatsApp: React.FC = () => {
 
   return (
     <a
-      href="https://wa.me/2347066714961"
+      href="https://wa.me/2347072928256"
       target="_blank"
       rel="noopener noreferrer"
       className="whatsapp-fab"

@@ -248,7 +248,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
             <button onClick={() => onShowAuth('register')} className="landing-btn-primary landing-btn-large">
               Start Your Registration <ArrowRight size={18} />
             </button>
-            <a href="https://wa.me/2347066714961" target="_blank" rel="noopener noreferrer" className="landing-btn-ghost landing-btn-large">
+            <a href="https://wa.me/2347072928256" target="_blank" rel="noopener noreferrer" className="landing-btn-ghost landing-btn-large">
               <Play size={16} style={{ fill: 'currentColor' }} />
               Book Free Consultation
             </a>
@@ -518,7 +518,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
               <button onClick={() => onShowAuth('register')} className="landing-btn-primary landing-btn-large">
                 Start Registration <ArrowRight size={18} />
               </button>
-              <a href="https://wa.me/2347066714961" target="_blank" rel="noopener noreferrer" className="landing-btn-ghost landing-btn-large">
+              <a href="https://wa.me/2347072928256" target="_blank" rel="noopener noreferrer" className="landing-btn-ghost landing-btn-large">
                 WhatsApp Us
               </a>
             </div>
@@ -554,13 +554,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
                 <div className="contact-item">
                   <div className="contact-icon"><Phone size={20} style={{ color: '#D71920' }} /></div>
                   <div>
-                    <div style={{ fontWeight: '700', color: '#fff', marginBottom: '4px' }}>Call & WhatsApp Support</div>
+                    <div style={{ fontWeight: '700', color: '#fff', marginBottom: '4px' }}>Call, SMS & WhatsApp Official Helpline</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <a href="https://wa.me/2347072928256" target="_blank" rel="noopener noreferrer" style={{ color: '#D71920', fontWeight: '600', fontSize: '0.95rem', textDecoration: 'none' }}>
-                        📞 +234 707 292 8256 (Call / WA)
-                      </a>
-                      <a href="https://wa.me/2347066714961" target="_blank" rel="noopener noreferrer" style={{ color: '#94a3b8', fontWeight: '600', fontSize: '0.85rem', textDecoration: 'none' }}>
-                        📱 +234 706 671 4961 (WA Only)
+                      <a href="https://wa.me/2347072928256" target="_blank" rel="noopener noreferrer" style={{ color: '#D71920', fontWeight: '700', fontSize: '1rem', textDecoration: 'none' }}>
+                        📞 +234 707 292 8256 (Calls, SMS & WhatsApp)
                       </a>
                     </div>
                   </div>

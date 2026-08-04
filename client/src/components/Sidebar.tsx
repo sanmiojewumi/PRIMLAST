@@ -11,7 +11,6 @@ import {
   ChevronRight,
   X,
   Mail,
-  MessageCircle,
   PhoneCall,
   Home,
   Sparkles,
@@ -210,19 +209,10 @@ const Sidebar: React.FC<SidebarProps> = ({
             href="https://wa.me/2347072928256" 
             target="_blank" 
             rel="noopener noreferrer" 
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'var(--accent-red)', fontSize: '0.75rem', fontWeight: '600' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'var(--accent-red)', fontSize: '0.78rem', fontWeight: '700' }}
           >
             <PhoneCall size={14} />
-            <span>+234 707 292 8256 (Call / WA)</span>
-          </a>
-          <a 
-            href="https://wa.me/2347066714961" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'var(--text-secondary)', fontSize: '0.72rem', fontWeight: '500' }}
-          >
-            <MessageCircle size={14} />
-            <span>+234 706 671 4961 (WA Only)</span>
+            <span>+234 707 292 8256 (Call, SMS & WA)</span>
           </a>
           <a 
             href="mailto:primeflowconsultingservices@gmail.com" 

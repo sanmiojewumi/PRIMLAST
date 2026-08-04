@@ -697,7 +697,7 @@ const App: React.FC = () => {
               </span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                 <div>Email: <a href="mailto:primeflowconsultingservices@gmail.com" style={{ color: '#fff', textDecoration: 'none' }}>primeflowconsultingservices@gmail.com</a></div>
-                <div>WhatsApp: <a href="https://wa.me/2347066714961" target="_blank" rel="noopener noreferrer" style={{ color: '#48bb78', fontWeight: '600', textDecoration: 'none' }}>07066714961</a></div>
+                <div>Call, SMS & WhatsApp: <a href="https://wa.me/2347072928256" target="_blank" rel="noopener noreferrer" style={{ color: '#48bb78', fontWeight: '600', textDecoration: 'none' }}>+234 707 292 8256</a></div>
               </div>
             </div>
           </div>
@@ -958,7 +958,7 @@ const App: React.FC = () => {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                 <div>primeflowconsultingservices@gmail.com</div>
-                <div>WhatsApp Support: <a href="https://wa.me/2347066714961" target="_blank" rel="noopener noreferrer" style={{ color: '#48bb78', textDecoration: 'none', fontWeight: '500' }}>07066714961</a></div>
+                <div>Helpline: <a href="https://wa.me/2347072928256" target="_blank" rel="noopener noreferrer" style={{ color: '#48bb78', textDecoration: 'none', fontWeight: '500' }}>+234 707 292 8256 (Call, SMS & WA)</a></div>
               </div>
             </div>
 

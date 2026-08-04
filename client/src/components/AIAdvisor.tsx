@@ -53,11 +53,11 @@ const KB: Record<string, { patterns: string[]; response: string }> = {
   },
   pricing: {
     patterns: ['price', 'cost', 'how much', 'fee', 'charge', 'rate', 'quotation', 'quote'],
-    response: "**Service Pricing Guide** 💵\n\n| Service | Starting From |\n|---------|---------------|\n| Business Name Registration | ₦35,000 |\n| Company Incorporation | ₦85,000 |\n| Annual Returns | ₦30,000 |\n| SCUML Registration | ₦40,000 |\n| PENCOM Compliance | ₦50,000 |\n| NSITF Registration | ₦45,000 |\n| Trademark Registration | ₦120,000/class |\n| Tax Filing (Annual) | ₦60,000/year |\n| Bookkeeping (Monthly) | ₦45,000/month |\n\n*All prices include VAT and government fees unless otherwise stated.*\n\n💬 **Need a custom quote?** Contact us at:\n📞 **Call & WhatsApp:** +234 707 292 8256\n📱 **WhatsApp Only:** +234 706 671 4961\n\nWe offer **package deals** for businesses that need multiple services!"
+    response: "**Service Pricing Guide** 💵\n\n| Service | Starting From |\n|---------|---------------|\n| Business Name Registration | ₦35,000 |\n| Company Incorporation | ₦85,000 |\n| Annual Returns | ₦30,000 |\n| SCUML Registration | ₦40,000 |\n| PENCOM Compliance | ₦50,000 |\n| NSITF Registration | ₦45,000 |\n| Trademark Registration | ₦120,000/class |\n| Tax Filing (Annual) | ₦60,000/year |\n| Bookkeeping (Monthly) | ₦45,000/month |\n\n*All prices include VAT and government fees unless otherwise stated.*\n\n💬 **Need a custom quote?** Contact us at:\n📞 **Call, SMS & WhatsApp:** [+234 707 292 8256](https://wa.me/2347072928256)\n\nWe offer **package deals** for businesses that need multiple services!"
   },
   contact: {
     patterns: ['contact', 'call', 'reach', 'speak', 'human', 'agent', 'consultant', 'whatsapp', 'phone', 'email'],
-    response: "**Contact Primeflow** 📞\n\nOur expert consultants are ready to help!\n\n📞 **Call & WhatsApp:** [+234 707 292 8256](https://wa.me/2347072928256)\n📱 **WhatsApp Only:** [+234 706 671 4961](https://wa.me/2347066714961)\n📧 **Email:** primeflowconsultingservices@gmail.com\n📍 **Office:** Suite 29, Ejimuz Plaza, Aso Savings Road, Kubwa, Abuja\n\n🕐 **Business Hours:**\nMonday – Friday: 8am – 5pm\nSaturday: 10am – 2pm\n\nYou can also **create a free account** and use our secure client portal to submit applications, chat with consultants, and track your progress in real-time!"
+    response: "**Contact Primeflow** 📞\n\nOur expert consultants are ready to help!\n\n📞 **Call, SMS & WhatsApp:** [+234 707 292 8256](https://wa.me/2347072928256)\n📧 **Email:** primeflowconsultingservices@gmail.com\n📍 **Office:** Suite 29, Ejimuz Plaza, Aso Savings Road, Kubwa, Abuja\n\n🕐 **Business Hours:**\nMonday – Friday: 8am – 5pm\nSaturday: 10am – 2pm\n\nYou can also **create a free account** and use our secure client portal to submit applications, chat with consultants, and track your progress in real-time!"
   },
   cac: {
     patterns: ['cac', 'corporate affairs commission', 'registration number', 'rc number'],
@@ -332,7 +332,7 @@ const AIAdvisor: React.FC = () => {
             </form>
             <p style={{ color: '#475569', fontSize: '0.7rem', marginTop: '10px', textAlign: 'center' }}>
               AI responses are informational. For legal advice, consult our certified team. 
-              <a href="https://wa.me/2347066714961" target="_blank" rel="noopener noreferrer" style={{ color: '#D71920', textDecoration: 'none', marginLeft: '4px' }}>Chat with a human →</a>
+              <a href="https://wa.me/2347072928256" target="_blank" rel="noopener noreferrer" style={{ color: '#D71920', textDecoration: 'none', marginLeft: '4px' }}>Chat with a human →</a>
             </p>
           </div>
         </div>
