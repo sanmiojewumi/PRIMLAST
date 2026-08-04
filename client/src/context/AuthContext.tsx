@@ -11,6 +11,25 @@ export const API_BASE = (import.meta as any).env?.VITE_API_URL
         ? '/api'
         : 'https://44350de6b0c276.lhr.life/api';
 
+async function parseResponse(res: Response) {
+  const text = await res.text();
+  let data: any = {};
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    if (res.status === 503 || res.status === 502 || res.status === 504) {
+      throw new Error('Server is currently spinning up or temporarily unavailable. Please retry in a few seconds.');
+    }
+    if (!res.ok) {
+      throw new Error(`Server returned HTTP status ${res.status}.`);
+    }
+  }
+  if (!res.ok) {
+    throw new Error(data.error || data.message || `Request failed with status ${res.status}`);
+  }
+  return data;
+}
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
@@ -44,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
+      let res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -53,19 +72,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         body: JSON.stringify({ email, password })
       });
 
-      let data: any = {};
-      try {
-        data = await res.json();
-      } catch (e) {
-        if (res.status === 503) {
-          throw new Error('Service is initializing or temporarily unavailable. Please try again in a few seconds.');
-        }
-        throw new Error(`Server returned HTTP status ${res.status}.`);
+      // Auto-retry once if server was spinning up (502/503/504)
+      if (res.status === 503 || res.status === 502 || res.status === 504) {
+        await new Promise(r => setTimeout(r, 1500));
+        res = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'bypass-tunnel-reminder': 'true'
+          },
+          body: JSON.stringify({ email, password })
+        });
       }
-      
-      if (!res.ok) {
-        throw new Error(data.error || 'Login failed');
-      }
+
+      const data = await parseResponse(res);
 
       localStorage.setItem('primeflow_token', data.token);
       localStorage.setItem('primeflow_user', JSON.stringify(data.user));
@@ -84,19 +104,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (name: string, email: string, password: string, phone: string): Promise<string> => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/auth/register-request`, {
+      let res = await fetch(`${API_BASE}/auth/register-request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password, phone })
       });
 
-      const data = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(data.error || 'Registration request failed');
+      if (res.status === 503 || res.status === 502 || res.status === 504) {
+        await new Promise(r => setTimeout(r, 1500));
+        res = await fetch(`${API_BASE}/auth/register-request`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password, phone })
+        });
       }
 
+      const data = await parseResponse(res);
       return data.code; // Simulated OTP code
+    } catch (err: any) {
+      if (err.name === 'TypeError' && err.message?.toLowerCase().includes('fetch')) {
+        throw new Error('Connection failed. Please check network connectivity or API status.');
+      }
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -105,22 +134,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const registerVerify = async (email: string, code: string): Promise<void> => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/auth/register-verify`, {
+      let res = await fetch(`${API_BASE}/auth/register-verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code })
       });
 
-      const data = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(data.error || 'Verification failed');
+      if (res.status === 503 || res.status === 502 || res.status === 504) {
+        await new Promise(r => setTimeout(r, 1500));
+        res = await fetch(`${API_BASE}/auth/register-verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, code })
+        });
       }
+
+      const data = await parseResponse(res);
 
       localStorage.setItem('primeflow_token', data.token);
       localStorage.setItem('primeflow_user', JSON.stringify(data.user));
       setToken(data.token);
       setUser(data.user);
+    } catch (err: any) {
+      if (err.name === 'TypeError' && err.message?.toLowerCase().includes('fetch')) {
+        throw new Error('Connection failed. Please check network connectivity or API status.');
+      }
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -135,16 +174,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const resetPassword = async (email: string, newPassword: string): Promise<string> => {
     try {
-      const res = await fetch(`${API_BASE}/auth/reset-password`, {
+      let res = await fetch(`${API_BASE}/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, newPassword })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Reset failed');
+
+      if (res.status === 503 || res.status === 502 || res.status === 504) {
+        await new Promise(r => setTimeout(r, 1500));
+        res = await fetch(`${API_BASE}/auth/reset-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, newPassword })
+        });
+      }
+
+      const data = await parseResponse(res);
       return data.message || 'Password reset request complete.';
     } catch (err: any) {
-      throw new Error(err.message);
+      if (err.name === 'TypeError' && err.message?.toLowerCase().includes('fetch')) {
+        throw new Error('Connection failed. Please check network connectivity or API status.');
+      }
+      throw err;
     }
   };
 
