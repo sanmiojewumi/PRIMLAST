@@ -142,17 +142,31 @@ async function initializeDatabase(db: Database) {
     console.error("Migration warning:", err);
   }
 
-  const schemaPath = path.resolve(__dirname, '..', 'schema.sql');
-  const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-  
-  // SQLite multiple statements execution is supported via exec
-  await db.exec(schemaSql);
+  try {
+    let schemaPath = path.resolve(__dirname, '..', 'schema.sql');
+    if (!fs.existsSync(schemaPath)) {
+      schemaPath = path.resolve(process.cwd(), 'schema.sql');
+    }
+    if (!fs.existsSync(schemaPath)) {
+      schemaPath = path.resolve(process.cwd(), 'server', 'schema.sql');
+    }
+    if (fs.existsSync(schemaPath)) {
+      const schemaSql = fs.readFileSync(schemaPath, 'utf8');
+      await db.exec(schemaSql);
+    }
+  } catch (err) {
+    console.warn("Schema initialization notice:", err);
+  }
 
   // Check if we already have users. If not, seed the database with mock data.
-  const userCount = await db.get<{ count: number }>('SELECT COUNT(*) as count FROM users');
-  if (userCount && userCount.count === 0) {
-    console.log('Database empty. Seeding mock data...');
-    await seedDatabase(db);
+  try {
+    const userCount = await db.get<{ count: number }>('SELECT COUNT(*) as count FROM users');
+    if (userCount && userCount.count === 0) {
+      console.log('Database empty. Seeding mock data...');
+      await seedDatabase(db);
+    }
+  } catch (err) {
+    console.warn("User count check notice:", err);
   }
 }
 

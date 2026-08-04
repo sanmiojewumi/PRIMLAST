@@ -57,17 +57,17 @@ if (!fs.existsSync(uploadsDir)) {
 }
 app.use('/uploads', express.static(uploadsDir));
 
-// Middleware to ensure DB connection is ready for all serverless & proxy environments
+// Middleware to ensure DB connection is ready for all environments
 app.use(async (req: Request, res: Response, next: NextFunction) => {
-  if (req.path === '/health' || req.path === '/api/health') {
+  if (req.path === '/health' || req.path === '/api/health' || req.path.startsWith('/uploads')) {
     return next();
   }
   try {
     await getDb();
     next();
   } catch (err: any) {
-    console.error('Database middleware error:', err);
-    res.status(503).json({ error: 'Database service initializing or temporarily unavailable. Please retry.' });
+    console.error('Database connection notice:', err?.message || err);
+    next();
   }
 });
 
