@@ -280,7 +280,7 @@ router.put('/notifications/:id/read', authenticateJWT as any, async (req: AuthRe
      return;
   }
 
-  const notificationId = parseInt(req.params.id as string);
+  const notificationId = parseInt((req.params as any).id as string);
 
   try {
     const db = await getDb();

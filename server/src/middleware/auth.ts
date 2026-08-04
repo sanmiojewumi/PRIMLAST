@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'primeflow_super_secure_jwt_secret_key_2026_abuja';
 
-export interface AuthRequest extends Request {
+export interface AuthRequest<P = any, ResBody = any, ReqBody = any, ReqQuery = any> extends Request<P, ResBody, ReqBody, ReqQuery> {
   user?: {
     id: number;
     email: string;
@@ -11,6 +11,9 @@ export interface AuthRequest extends Request {
     name: string;
     permissions?: any;
   };
+  params: P;
+  body: ReqBody;
+  query: ReqQuery;
 }
 
 export function authenticateJWT(req: AuthRequest, res: Response, next: NextFunction) {
