@@ -142,11 +142,11 @@ const Sidebar: React.FC<SidebarProps> = ({
           return (
             <React.Fragment key={item.id}>
               <button
+                key={item.id}
                 onClick={() => {
                   setActiveTab(item.id);
                   if (setMobileOpen) setMobileOpen(false);
                 }}
-                className={item.id === 'compliance' ? 'flashing-compliance-card' : ''}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -157,23 +157,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                   borderRadius: '8px',
                   border: 'none',
                   background: isActive ? 'var(--accent-red-dim)' : 'transparent',
-                  color: isActive ? 'var(--accent-red)' : (item.id === 'compliance' ? '#fff' : 'var(--text-secondary)'),
+                  color: isActive ? 'var(--accent-red)' : 'var(--text-secondary)',
                   cursor: 'pointer',
                   textAlign: 'left',
-                  fontWeight: (isActive || item.id === 'compliance') ? '600' : '400',
+                  fontWeight: isActive ? '600' : '400',
                   transition: 'all 0.2s ease',
-                  borderLeft: isActive ? '3px solid var(--accent-red)' : (item.id === 'compliance' ? '3px solid #D71920' : '3px solid transparent')
+                  borderLeft: isActive ? '3px solid var(--accent-red)' : '3px solid transparent'
                 }}
               >
-                <Icon size={20} className={item.id === 'compliance' ? 'flashing-compliance-text' : ''} />
+                <Icon size={20} />
                 {!collapsed && (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '6px' }}>
-                    <span className={item.id === 'compliance' ? 'flashing-compliance-text' : ''}>{item.name}</span>
-                    {item.id === 'compliance' && (
-                      <span className="flashing-compliance-badge">
-                        ACTION
-                      </span>
-                    )}
+                    <span>{item.name}</span>
                   </div>
                 )}
               </button>

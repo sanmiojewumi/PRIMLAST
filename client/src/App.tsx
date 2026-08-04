@@ -1265,22 +1265,22 @@ const App: React.FC = () => {
                 {user.role === 'client' ? (
                   <div 
                     onClick={() => setActiveTab('compliance')}
-                    className="glass-panel-interactive animate-fade-in flashing-compliance-card"
+                    className="glass-panel-interactive animate-fade-in"
                     style={{ padding: '24px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '12px', cursor: 'pointer' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <ShieldCheck size={24} className="flashing-compliance-text" />
-                        <h3 className="flashing-compliance-text" style={{ color: '#fff', fontSize: '1.1rem', margin: 0, fontWeight: '700' }}>Corporate Compliance Hub</h3>
+                        <ShieldCheck size={24} style={{ color: 'var(--accent-red)' }} />
+                        <h3 style={{ color: '#fff', fontSize: '1.1rem', margin: 0, fontWeight: '700' }}>Corporate Compliance Hub</h3>
                       </div>
-                      <span className="flashing-compliance-badge">
-                        ACTION REQUIRED
+                      <span className="badge badge-warning" style={{ fontSize: '0.65rem', padding: '3px 8px' }}>
+                        COMPLIANCE
                       </span>
                     </div>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.5' }}>
                       Access your annual regulatory compliance status, tax clearances, Pencom, ITF, and SCUML filings.
                     </p>
-                    <span className="flashing-compliance-text" style={{ fontSize: '0.8rem', color: 'var(--accent-red)', fontWeight: '600', alignSelf: 'flex-start', marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--accent-red)', fontWeight: '600', alignSelf: 'flex-start', marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       View Compliance Status <ArrowRight size={14} />
                     </span>
                   </div>

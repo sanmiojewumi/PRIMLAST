@@ -1210,7 +1210,7 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
                     setError(null);
                     setSuccessMsg(null);
                   }}
-                  className={`glass-panel-interactive ${service.id === 'compliance' ? 'flashing-compliance-card' : ''}`}
+                  className="glass-panel-interactive"
                   style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
@@ -1224,14 +1224,9 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
                     }}>
                       <Icon size={24} />
                     </div>
-                    {service.id === 'compliance' && (
-                      <span className="flashing-compliance-badge">
-                        HIGH PRIORITY
-                      </span>
-                    )}
                   </div>
                   <div>
-                    <h4 className={service.id === 'compliance' ? 'flashing-compliance-text' : ''} style={{ color: '#fff', fontSize: '1.1rem', marginBottom: '6px' }}>{service.title}</h4>
+                    <h4 style={{ color: '#fff', fontSize: '1.1rem', marginBottom: '6px' }}>{service.title}</h4>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.4' }}>{service.description}</p>
                   </div>
                 </div>

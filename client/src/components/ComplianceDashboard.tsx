@@ -127,10 +127,10 @@ const ComplianceDashboard: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h2 className="flashing-compliance-text" style={{ color: '#fff', fontSize: '1.5rem', fontWeight: '800', margin: '0 0 6px', fontFamily: "'Outfit', sans-serif" }}>
+            <h2 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: '800', margin: '0 0 6px', fontFamily: "'Outfit', sans-serif" }}>
               Compliance Dashboard
             </h2>
-            <span className="flashing-compliance-badge">
+            <span className="badge badge-success" style={{ fontSize: '0.65rem', padding: '3px 8px' }}>
               LIVE MONITORING
             </span>
           </div>
