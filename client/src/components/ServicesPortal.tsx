@@ -361,6 +361,13 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
         { key: "constitution_supporting", label: "21. Association Constitution & Supporting Documents (Optional)", isRequired: false }
       ];
     }
+    if (service === 'annual_returns') {
+      return [
+        { key: "cac_certificate", label: "1. CAC Registration Certificate (BN / RC / IT Certificate)", isRequired: true },
+        { key: "status_report", label: "2. CAC Status Report / Particulars of Directors & Trustees", isRequired: true },
+        { key: "previous_filing", label: "3. Previous Annual Return Acknowledgement / Audited Accounts (Optional)", isRequired: false }
+      ];
+    }
     return [];
   };
 
@@ -1795,19 +1802,65 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
                               <option value="Female">Female</option>
                             </select>
                           </div>
-                          <div className="form-group">
-                            <label className="form-label">12. Share Allotment (Units):</label>
-                            <input
-                              type="number"
-                              required
-                              className="form-input"
-                              value={d.shareAllotment}
-                              onChange={(e) => {
-                                const updated = [...directors];
-                                updated[index].shareAllotment = e.target.value;
-                                setDirectors(updated);
-                              }}
-                            />
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <div className="form-group">
+                              <label className="form-label">12a. % Share Capital Allotment:</label>
+                              <select 
+                                className="form-select"
+                                value={(() => {
+                                  const totalCapNum = parseFloat(shareCapital.replace(/,/g, '')) || 1000000;
+                                  const dUnits = parseFloat(d.shareAllotment || '0') || 0;
+                                  if (totalCapNum <= 0) return '50';
+                                  const rawPct = Math.round((dUnits / totalCapNum) * 100);
+                                  return rawPct.toString();
+                                })()}
+                                onChange={(e) => {
+                                  const pctVal = parseFloat(e.target.value) || 0;
+                                  const totalCapNum = parseFloat(shareCapital.replace(/,/g, '')) || 1000000;
+                                  const calculatedUnits = Math.round((totalCapNum * pctVal) / 100);
+                                  const updated = [...directors];
+                                  updated[index].shareAllotment = calculatedUnits.toString();
+                                  setDirectors(updated);
+                                }}
+                              >
+                                <option value="0">Select Percentage (0% - 100%)</option>
+                                <option value="5">5% Share Allocation</option>
+                                <option value="10">10% Share Allocation</option>
+                                <option value="15">15% Share Allocation</option>
+                                <option value="20">20% Share Allocation</option>
+                                <option value="25">25% Share Allocation</option>
+                                <option value="30">30% Share Allocation</option>
+                                <option value="35">35% Share Allocation</option>
+                                <option value="40">40% Share Allocation</option>
+                                <option value="45">45% Share Allocation</option>
+                                <option value="50">50% Share Allocation</option>
+                                <option value="55">55% Share Allocation</option>
+                                <option value="60">60% Share Allocation</option>
+                                <option value="65">65% Share Allocation</option>
+                                <option value="70">70% Share Allocation</option>
+                                <option value="75">75% Share Allocation</option>
+                                <option value="80">80% Share Allocation</option>
+                                <option value="85">85% Share Allocation</option>
+                                <option value="90">90% Share Allocation</option>
+                                <option value="95">95% Share Allocation</option>
+                                <option value="100">100% Share Allocation</option>
+                              </select>
+                            </div>
+
+                            <div className="form-group">
+                              <label className="form-label">12b. Share Allotment (Units):</label>
+                              <input
+                                type="number"
+                                required
+                                className="form-input"
+                                value={d.shareAllotment}
+                                onChange={(e) => {
+                                  const updated = [...directors];
+                                  updated[index].shareAllotment = e.target.value;
+                                  setDirectors(updated);
+                                }}
+                              />
+                            </div>
                           </div>
                         </div>
 
@@ -3336,7 +3389,7 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
                   </h5>
                   
                   {(
-                    ['company_incorporation', 'business_registration', 'incorporated_trustee'].includes(selectedService!)
+                    ['company_incorporation', 'business_registration', 'incorporated_trustee', 'annual_returns'].includes(selectedService!)
                       ? getIncorporationRequiredDocs(selectedService!).map(item => ({ key: item.key, label: item.label, fileCategory: 'incorporation', isRequired: item.isRequired }))
                       : selectedService === 'post_incorporation' 
                         ? selectedSubServices.map(sub => ({ key: sub, label: sub, fileCategory: 'sub', isRequired: false }))
