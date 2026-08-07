@@ -102,10 +102,18 @@ router.post('/register-request', async (req, res) => {
      return;
   }
 
-  // Basic email validation
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-     res.status(400).json({ error: 'Invalid email format' });
+  // Strict RFC 5322 Email Validation
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(email.trim())) {
+     res.status(400).json({ error: 'Please enter a valid official email address (e.g. name@domain.com)' });
+     return;
+  }
+
+  // Block disposable / fake temporary email providers
+  const disposableDomains = ['mailinator.com', 'tempmail.com', '10minutemail.com', 'dispostable.com', 'yopmail.com', 'guerrillamail.com', 'trashmail.com', 'sharklasers.com', 'temp-mail.org', 'getnada.com'];
+  const domain = email.trim().toLowerCase().split('@')[1];
+  if (disposableDomains.includes(domain)) {
+     res.status(400).json({ error: 'Disposable or temporary email addresses are not allowed. Please use a verified official email address.' });
      return;
   }
 

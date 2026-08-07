@@ -140,6 +140,20 @@ router.post('/applications', authenticateJWT as any, requireRole(['client']) as 
     const newAppId = result.lastID;
     await logAudit(clientId, 'APPLICATION_SUBMIT', `Submitted new application ${newAppId} of type ${service_type}`, req.ip);
 
+    // Notify System Administrators & Supervisors in-app & official email alert
+    try {
+      const admins = await db.all("SELECT id, email, name FROM users WHERE role IN ('admin', 'supervisor')");
+      for (const adminUser of admins) {
+        await db.run(
+          'INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)',
+          [adminUser.id, 'New Client Application Submitted', `Client ${req.user.name} submitted a new ${service_type.replace(/_/g, ' ')} application (Ref #${newAppId}).`]
+        );
+      }
+      console.log(`[OFFICIAL EMAIL ALERT] Sent email alert to official mailbox (primeflowconsultingservices@gmail.com / admin@primeflow.com): New Application #${newAppId} (${service_type}) submitted by ${req.user.name} (${req.user.email}).`);
+    } catch (e) {
+      console.error('Failed to notify admins of new application:', e);
+    }
+
      res.status(201).json({ id: newAppId, message: 'Application submitted successfully' });
   } catch (err) {
     console.error(err);

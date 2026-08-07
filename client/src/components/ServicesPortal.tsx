@@ -730,6 +730,7 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
   const handleNextStep = () => {
     if (validateStep()) {
       setFormStep(prev => prev + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -737,6 +738,7 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
     setError(null);
     if (formStep > 1) {
       setFormStep(prev => prev - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       setSelectedService(null);
     }
@@ -1851,6 +1853,53 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
                     >
                       + Add Another Director / Shareholder
                     </button>
+
+                    {/* Share Capital Allotment Allocation Manager */}
+                    {(() => {
+                      const totalCapNum = parseFloat(shareCapital.replace(/,/g, '')) || 1000000;
+                      const totalAllotted = directors.reduce((sum, d) => sum + (parseFloat(d.shareAllotment || '0') || 0), 0);
+                      const unallotted = totalCapNum - totalAllotted;
+                      return (
+                        <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(215, 25, 32, 0.3)', borderRadius: '10px', padding: '16px', margin: '16px 0', textAlign: 'left' }}>
+                          <h5 style={{ color: '#fff', fontSize: '0.9rem', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Building2 size={18} style={{ color: 'var(--accent-red)' }} /> SHARE CAPITAL ALLOTMENT ALLOCATION SUMMARY
+                          </h5>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', fontSize: '0.82rem', marginBottom: '12px' }}>
+                            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '6px' }}>
+                              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.75rem' }}>Total Authorized Share Capital</span>
+                              <strong style={{ color: '#fff', fontSize: '0.95rem' }}>₦{totalCapNum.toLocaleString()}</strong>
+                            </div>
+                            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '6px' }}>
+                              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.75rem' }}>Total Allotted Shares</span>
+                              <strong style={{ color: '#48bb78', fontSize: '0.95rem' }}>{totalAllotted.toLocaleString()} Units</strong>
+                            </div>
+                            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '6px' }}>
+                              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.75rem' }}>Unallotted Balance</span>
+                              <strong style={{ color: unallotted === 0 ? '#48bb78' : (unallotted < 0 ? '#f56565' : '#ecc94b'), fontSize: '0.95rem' }}>
+                                {unallotted.toLocaleString()} Units
+                              </strong>
+                            </div>
+                          </div>
+
+                          {directors.map((d, i) => {
+                            const dUnits = parseFloat(d.shareAllotment || '0') || 0;
+                            const pct = totalCapNum > 0 ? ((dUnits / totalCapNum) * 100).toFixed(1) : '0';
+                            return (
+                              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                <span style={{ color: '#e2e8f0' }}>Director #{i + 1}: {d.firstName || d.surname ? `${d.firstName} ${d.surname}` : `Shareholder ${i + 1}`}</span>
+                                <span style={{ color: 'var(--accent-red)', fontWeight: '700' }}>{dUnits.toLocaleString()} shares ({pct}%)</span>
+                              </div>
+                            );
+                          })}
+
+                          {unallotted !== 0 && (
+                            <div style={{ fontSize: '0.75rem', color: unallotted < 0 ? '#f56565' : '#ecc94b', marginTop: '10px', fontWeight: '500' }}>
+                              ⚠️ {unallotted < 0 ? `Over-allocated by ${Math.abs(unallotted).toLocaleString()} units!` : `Please allocate the remaining ${unallotted.toLocaleString()} units among shareholders.`}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Business Address */}
                     <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '12px', marginTop: '12px', textAlign: 'left' }}>

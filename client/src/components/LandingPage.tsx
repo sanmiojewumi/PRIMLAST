@@ -347,8 +347,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
         </div>
       </section>
 
-      {/* ── WHY CHOOSE US ────────────────────────────────────────────────── */}
-      <section id="why-us" className="landing-section landing-section-alt">
+      {/* ── WHY CHOOSE US / ABOUT US ───────────────────────────────────────── */}
+      <section id="about" className="landing-section landing-section-alt">
         <div className="landing-container">
           <FadeSection>
             <div className="section-header">
@@ -644,21 +644,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
             </div>
             <div>
               <div className="footer-heading">Services</div>
-              {['Business Registration', 'Regulatory Compliance', 'Tax & Accounting', 'Business Advisory'].map(l => (
-                <a key={l} href="#services" className="footer-link">{l}</a>
-              ))}
+              <a href="#services" className="footer-link">Business Registration</a>
+              <a href="#services" className="footer-link">Regulatory Compliance</a>
+              <a href="#services" className="footer-link">Tax & Accounting</a>
+              <a href="#services" className="footer-link">Business Advisory</a>
             </div>
             <div>
               <div className="footer-heading">Company</div>
-              {['About Us', 'Our Team', 'Knowledge Hub', 'Contact'].map(l => (
-                <a key={l} href="#contact" className="footer-link">{l}</a>
-              ))}
+              <a href="#about" className="footer-link">About Us</a>
+              <a href="#testimonials" className="footer-link">Client Reviews</a>
+              <a href="#blog" className="footer-link">Knowledge Hub</a>
+              <a href="#contact" className="footer-link">Contact Us</a>
             </div>
             <div>
-              <div className="footer-heading">Legal</div>
-              {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map(l => (
-                <a key={l} href="#" className="footer-link">{l}</a>
-              ))}
+              <div className="footer-heading">Legal & Compliance</div>
+              <a href="#contact" onClick={(e) => { e.preventDefault(); alert("PrimeFlow Privacy Policy: All client data, incorporation documents, and identity records are strictly encrypted under standard Nigerian NDPR and CAC guidelines."); }} className="footer-link">Privacy Policy</a>
+              <a href="#contact" onClick={(e) => { e.preventDefault(); alert("PrimeFlow Terms of Service: All services are delivered in accordance with CAC regulations, FIRS requirements, and CAMA 2020 legal provisions."); }} className="footer-link">Terms of Service</a>
+              <a href="#contact" onClick={(e) => { e.preventDefault(); alert("PrimeFlow Cookie Policy: We use essential session cookies only to secure your active portal login and application state."); }} className="footer-link">Cookie Policy</a>
               <div className="footer-heading" style={{ marginTop: '20px' }}>Registered Agencies</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
                 {TRUST_AGENCIES.map(a => (

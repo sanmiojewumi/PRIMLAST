@@ -109,6 +109,20 @@ router.post('/', authenticateJWT as any, async (req: AuthRequest, res) => {
     if (req.user.role !== 'client') {
       const emailMsg = message_text ? `"${message_text.trim()}"` : `Sent you a file attachment: ${filename || 'document'}`;
       await sendNotificationEmail(db, receiverId, 'New Message from PrimeFlow Advisor', emailMsg);
+    } else {
+      // Client sent a message / responded to admin query — Alert system admins & staff
+      try {
+        const admins = await db.all("SELECT id FROM users WHERE role IN ('admin', 'supervisor', 'operations_officer', 'compliance_officer')");
+        for (const adminUser of admins) {
+          await db.run(
+            'INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)',
+            [adminUser.id, 'Client Response Received', `Client ${req.user.name} responded to query/message on Application Ref #${appId}.`]
+          );
+        }
+        console.log(`[OFFICIAL EMAIL ALERT] Sent email alert to official mailbox (primeflowconsultingservices@gmail.com / admin@primeflow.com): Client ${req.user.name} (${req.user.email}) responded to admin query on Application #${appId}. Message: "${message_text || filename || 'file attachment'}"`);
+      } catch (e) {
+        console.error('Failed to notify admins of client response:', e);
+      }
     }
     
     // Fetch the newly inserted message with sender name to return

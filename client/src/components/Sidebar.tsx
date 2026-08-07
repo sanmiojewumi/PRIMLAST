@@ -109,12 +109,10 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         <button 
           onClick={() => {
-            if (setMobileOpen) {
-              setMobileOpen(false);
-            } else {
-              setCollapsed(!collapsed);
-            }
+            setCollapsed(!collapsed);
+            if (setMobileOpen) setMobileOpen(false);
           }}
+          title={collapsed ? "Expand Side Panel" : "Close / Collapse Side Panel"}
           style={{
             background: 'none',
             border: 'none',
