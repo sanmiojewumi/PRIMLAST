@@ -90,6 +90,25 @@ app.use(['/api/compliance', '/compliance'], complianceRouter);
 app.use(['/api/billing', '/billing'], billingRouter);
 app.use(['/api/workflow', '/workflow'], workflowRouter);
 
+// Dedicated downloadable database documentation routes
+app.get(['/api/download-db-pdf', '/download-db-pdf'], (req, res) => {
+  const pdfPath = path.resolve(__dirname, '..', 'PrimeFlow_Database_Documentation_and_Replication_Guide.pdf');
+  if (fs.existsSync(pdfPath)) {
+    res.download(pdfPath, 'PrimeFlow_Database_Documentation_and_Replication_Guide.pdf');
+  } else {
+    res.status(404).json({ error: 'PDF documentation document not found' });
+  }
+});
+
+app.get(['/api/download-db-sql', '/download-db-sql'], (req, res) => {
+  const sqlPath = path.resolve(__dirname, '..', 'primeflow_database_setup.sql');
+  if (fs.existsSync(sqlPath)) {
+    res.download(sqlPath, 'primeflow_database_setup.sql');
+  } else {
+    res.status(404).json({ error: 'SQL configuration file not found' });
+  }
+});
+
 // Base route for connectivity checks
 app.get(['/health', '/api/health'], (req, res) => {
   res.status(200).json({ status: 'healthy', timestamp: new Date() });

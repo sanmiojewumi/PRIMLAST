@@ -611,7 +611,25 @@ const AdminPortal: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <a
+            href={`${API_BASE}/download-db-pdf`}
+            download="PrimeFlow_Database_Documentation_and_Replication_Guide.pdf"
+            className="btn-primary"
+            style={{ fontSize: '0.8rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            title="Download PDF Database Documentation Guide"
+          >
+            <FileText size={16} /> Download DB PDF Guide
+          </a>
+          <a
+            href={`${API_BASE}/download-db-sql`}
+            download="primeflow_database_setup.sql"
+            className="btn-secondary"
+            style={{ fontSize: '0.8rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            title="Download SQL Setup Configuration File"
+          >
+            <FileText size={16} /> Download .SQL Setup
+          </a>
           <button onClick={handleExportCSV} className="btn-secondary" style={{ fontSize: '0.8rem' }}>
             <FileSpreadsheet size={16} /> Export CSV
           </button>
