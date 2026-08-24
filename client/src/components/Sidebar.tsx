@@ -15,7 +15,9 @@ import {
   Home,
   Sparkles,
   ShieldCheck,
-  BookOpen
+  BookOpen,
+  Receipt,
+  Activity
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -48,7 +50,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'knowledge', name: 'Knowledge Hub', icon: BookOpen, roles: ['client'] },
     { id: 'chat', name: 'Clients Chat', icon: MessageSquare, roles: ['client', 'operations_officer', 'compliance_officer', 'admin', 'supervisor'] },
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard, roles: ['client', 'operations_officer', 'compliance_officer', 'admin', 'supervisor'] },
+    { id: 'billing', name: 'Invoices & Receipts', icon: Receipt, roles: ['client', 'admin', 'supervisor'] },
     { id: 'kanban', name: 'Kanban Board', icon: Layers, roles: ['operations_officer', 'compliance_officer', 'admin', 'supervisor'] },
+    { id: 'workflow', name: 'Workflow Tracker', icon: Activity, roles: ['operations_officer', 'compliance_officer', 'admin', 'supervisor'] },
     { id: 'admin', name: 'Admin Portal', icon: Users, roles: ['admin', 'supervisor'] },
   ];
 
@@ -74,11 +78,12 @@ const Sidebar: React.FC<SidebarProps> = ({
             style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
           >
             <img 
-              src="/logo.jpg" 
+              src="/logo.png" 
               alt="PrimeFlow Logo" 
+              className="brand-logo"
               style={{ 
-                width: '46px', 
-                height: '46px', 
+                width: '72px', 
+                height: '36px', 
                 borderRadius: '8px',
                 border: '1.5px solid rgba(0,0,0,0.06)',
                 boxShadow: '0 0 10px rgba(229, 62, 62, 0.15)'
@@ -92,14 +97,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         
         {collapsed && (
           <img 
-            src="/logo.jpg" 
+            src="/logo.png" 
             alt="PrimeFlow Logo" 
+            className="brand-logo"
             onClick={() => { setActiveTab('welcome'); if (setMobileOpen) setMobileOpen(false); }}
             title="Return to Homepage"
             style={{ 
-              width: '46px', 
-              height: '46px', 
-              borderRadius: '8px',
+              width: '52px', 
+              height: '28px', 
+              borderRadius: '6px',
               border: '1.5px solid var(--accent-red)',
               boxShadow: '0 0 8px var(--accent-red)',
               cursor: 'pointer'
@@ -170,33 +176,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                 )}
               </button>
-
-              {item.id === 'dashboard' && (
-                <button
-                  onClick={logout}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: collapsed ? 'center' : 'flex-start',
-                    gap: '12px',
-                    padding: '12px',
-                    width: '100%',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: 'transparent',
-                    color: 'var(--accent-red)',
-                    cursor: 'pointer',
-                    fontWeight: '500',
-                    textAlign: 'left',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-red-dim)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                >
-                  <LogOut size={20} />
-                  {!collapsed && <span>Logout</span>}
-                </button>
-              )}
             </React.Fragment>
           );
         })}
@@ -216,6 +195,15 @@ const Sidebar: React.FC<SidebarProps> = ({
           >
             <PhoneCall size={14} />
             <span>+234 707 292 8256 (Call, SMS & WA)</span>
+          </a>
+          <a 
+            href="https://wa.me/2347066714961" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'var(--text-secondary)', fontSize: '0.78rem', fontWeight: '600' }}
+          >
+            <PhoneCall size={14} />
+            <span>+234 706 671 4961 (WhatsApp)</span>
           </a>
           <a 
             href="mailto:primeflowconsultingservices@gmail.com" 
@@ -268,6 +256,31 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
 
+        <button
+          onClick={logout}
+          title="Logout"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            gap: '12px',
+            padding: '10px 12px',
+            width: '100%',
+            borderRadius: '8px',
+            border: 'none',
+            background: 'transparent',
+            color: 'var(--accent-red)',
+            cursor: 'pointer',
+            fontWeight: '500',
+            textAlign: 'left',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-red-dim)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+        >
+          <LogOut size={20} />
+          {!collapsed && <span>Logout</span>}
+        </button>
       </div>
     </aside>
   );

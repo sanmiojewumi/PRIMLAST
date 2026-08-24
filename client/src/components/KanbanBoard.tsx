@@ -30,6 +30,15 @@ const KanbanBoard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showAppData, setShowAppData] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [appInvoices, setAppInvoices] = useState<any[]>([]);
+  const [boardNotice, setBoardNotice] = useState<string | null>(null);
+  const [boardError, setBoardError] = useState<string | null>(null);
+
+  const flash = (ok: string | null, err: string | null) => {
+    setBoardNotice(ok);
+    setBoardError(err);
+    setTimeout(() => { setBoardNotice(null); setBoardError(null); }, 4000);
+  };
 
   const columns: { id: ApplicationStatus; title: string; color: string }[] = [
     { id: 'submitted', title: 'Submitted', color: '#ffffff' },
@@ -56,12 +65,11 @@ const KanbanBoard: React.FC = () => {
 
   const fetchStaff = async () => {
     try {
-      const res = await fetch(`${API_BASE}/admin/users`, {
+      const res = await fetch(`${API_BASE}/admin/staff-directory`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
-        // Filter out clients, only show officers and admins
         setStaffList(data.filter((u: User) => u.role !== 'client'));
       }
     } catch (err) {
@@ -85,12 +93,14 @@ const KanbanBoard: React.FC = () => {
   // Handle opening details modal
   const handleOpenDetails = async (app: Application) => {
     setSelectedApp(app);
-    setIsFullscreen(false);
+    // Admins (and other staff on this board) get the full workspace view, not the slim drawer.
+    setIsFullscreen(true);
     setNewStatus(app.status);
     setAssigneeId(app.assigned_to?.toString() || '');
     setAppDocs([]);
     setChatMessages([]);
     setShowAppData(false);
+    setAppInvoices([]);
 
     try {
       // 1. Fetch documents
@@ -110,6 +120,11 @@ const KanbanBoard: React.FC = () => {
         const msgData = await msgRes.json();
         setChatMessages(msgData);
       }
+
+      const invRes = await fetch(`${API_BASE}/billing/application/${app.id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (invRes.ok) setAppInvoices(await invRes.json());
     } catch (err) {
       console.error(err);
     }
@@ -128,12 +143,15 @@ const KanbanBoard: React.FC = () => {
         body: JSON.stringify({ status: newStatus })
       });
       if (res.ok) {
-        // Update local state
         setApplications(applications.map(a => a.id === selectedApp.id ? { ...a, status: newStatus } : a));
         setSelectedApp({ ...selectedApp, status: newStatus });
+        flash('Status updated. The client has been notified.', null);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        flash(null, data.error || 'Could not update status.');
       }
     } catch (err) {
-      console.error(err);
+      flash(null, 'Network error while updating status.');
     }
   };
 
@@ -154,9 +172,13 @@ const KanbanBoard: React.FC = () => {
         const targetStaffName = staffList.find(s => s.id === targetId)?.name || 'Unassigned';
         setApplications(applications.map(a => a.id === selectedApp.id ? { ...a, assigned_to: targetId, assignee_name: targetStaffName } : a));
         setSelectedApp({ ...selectedApp, assigned_to: targetId, assignee_name: targetStaffName });
+        flash(targetId ? `Assigned to ${targetStaffName}.` : 'Application unassigned.', null);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        flash(null, data.error || 'Could not assign staff.');
       }
     } catch (err) {
-      console.error(err);
+      flash(null, 'Network error while assigning staff.');
     }
   };
 
@@ -446,6 +468,18 @@ const KanbanBoard: React.FC = () => {
           </p>
         </div>
       </div>
+      {(boardNotice || boardError) && (
+        <div style={{
+          padding: '10px 14px',
+          borderRadius: '8px',
+          fontSize: '0.85rem',
+          background: boardError ? 'rgba(215,25,32,0.1)' : 'rgba(34,197,94,0.1)',
+          border: `1px solid ${boardError ? '#fc8181' : '#22c55e'}`,
+          color: boardError ? '#fc8181' : '#4ade80'
+        }}>
+          {boardError || boardNotice}
+        </div>
+      )}
 
       {/* Columns Container */}
       <div style={{ display: 'flex', gap: '16px', flex: 1, overflowX: 'auto', paddingBottom: '16px' }}>
@@ -506,7 +540,7 @@ const KanbanBoard: React.FC = () => {
                     >
                       <div>
                         <span style={{ fontSize: '0.7rem', color: 'var(--accent-red)', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.05em' }}>
-                          {app.service_type.replace('_', ' ')}
+                          {app.service_type.replace(/_/g, ' ')}
                         </span>
                         <h5 style={{ color: '#fff', fontSize: '0.85rem', marginTop: '3px', fontWeight: '600' }}>
                           {displayName || 'Regulatory Service'}
@@ -539,28 +573,11 @@ const KanbanBoard: React.FC = () => {
       {/* DETAIL INSPECTION DRAWER / MODAL */}
       {selectedApp && (
         <div 
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            background: 'rgba(0,0,0,0.7)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            justifyContent: 'flex-end',
-            zIndex: 200
-          }}
+          className={`kanban-detail-overlay${isFullscreen ? ' is-expanded' : ''}`}
         >
           {/* Main Modal body */}
           <div 
-            className="kanban-detail-modal"
-            style={isFullscreen ? {
-              width: '100vw',
-              height: '100vh',
-              animation: 'none',
-              borderLeft: 'none'
-            } : {}}
+            className={`kanban-detail-modal${isFullscreen ? ' is-expanded' : ''}`}
           >
             {/* Header */}
             <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -610,7 +627,8 @@ const KanbanBoard: React.FC = () => {
             </div>
  
             {/* Scrollable Content Body */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div className={`kanban-detail-body${isFullscreen ? ' is-expanded' : ''}`}>
+              <div className="kanban-detail-col">
               
               {/* Client Info Section */}
               <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -702,6 +720,52 @@ const KanbanBoard: React.FC = () => {
                 </div>
               </div>
  
+              <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                  <h4 style={{ fontSize: '0.9rem', color: '#fff', margin: 0 }}>Invoices & receipts</h4>
+                  {(user?.role === 'admin' || user?.role === 'supervisor') && (
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button className="btn-secondary" style={{ padding: '4px 8px', fontSize: '0.7rem' }} onClick={async () => {
+                        await fetch(`${API_BASE}/billing/generate`, {
+                          method: 'POST',
+                          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ application_id: selectedApp.id, doc_type: 'invoice', mode: 'automated' })
+                        });
+                        const invRes = await fetch(`${API_BASE}/billing/application/${selectedApp.id}`, { headers: { Authorization: `Bearer ${token}` } });
+                        if (invRes.ok) setAppInvoices(await invRes.json());
+                      }}>Auto invoice</button>
+                      <button className="btn-secondary" style={{ padding: '4px 8px', fontSize: '0.7rem' }} onClick={async () => {
+                        await fetch(`${API_BASE}/billing/generate`, {
+                          method: 'POST',
+                          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ application_id: selectedApp.id, doc_type: 'receipt', mode: 'automated' })
+                        });
+                        const invRes = await fetch(`${API_BASE}/billing/application/${selectedApp.id}`, { headers: { Authorization: `Bearer ${token}` } });
+                        if (invRes.ok) setAppInvoices(await invRes.json());
+                      }}>Auto receipt</button>
+                    </div>
+                  )}
+                </div>
+                {appInvoices.length === 0 ? (
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>No invoice attached yet.</div>
+                ) : appInvoices.map((inv: any) => (
+                  <div key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontSize: '0.8rem', color: '#fff', padding: '8px', border: '1px solid var(--border-color)', borderRadius: '6px' }}>
+                    <span>{inv.number} · {inv.doc_type} · {inv.payment_status || 'unpaid'}</span>
+                    {(user?.role === 'admin' || user?.role === 'supervisor') && inv.doc_type === 'invoice' && inv.payment_status !== 'paid' && (
+                      <button className="btn-primary" style={{ padding: '4px 8px', fontSize: '0.7rem' }} onClick={async () => {
+                        await fetch(`${API_BASE}/billing/pay/confirm`, {
+                          method: 'POST',
+                          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ invoice_id: inv.id, issue_receipt: true })
+                        });
+                        const invRes = await fetch(`${API_BASE}/billing/application/${selectedApp.id}`, { headers: { Authorization: `Bearer ${token}` } });
+                        if (invRes.ok) setAppInvoices(await invRes.json());
+                      }}>Confirm payment</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
               {/* Application Details Summary */}
               <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
@@ -735,6 +799,8 @@ const KanbanBoard: React.FC = () => {
                 )}
               </div>
 
+              </div>
+              <div className="kanban-detail-col">
               {/* Secure Document List / Certificate Upload */}
               <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
@@ -773,9 +839,18 @@ const KanbanBoard: React.FC = () => {
                           fontSize: '0.8rem'
                         }}
                       >
-                        <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '240px' }}>
-                          {doc.original_name}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                          {doc.kind === 'signature' && doc.filename && (
+                            <img
+                              src={`/uploads/${doc.filename}`}
+                              alt="Client signature"
+                              style={{ width: '72px', height: '36px', objectFit: 'contain', background: '#fff', borderRadius: '4px' }}
+                            />
+                          )}
+                          <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '240px' }}>
+                            {doc.kind === 'signature' ? 'Client Signature' : doc.original_name}
+                          </span>
+                        </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                             {(doc.size / 1024).toFixed(1)} KB
@@ -801,7 +876,7 @@ const KanbanBoard: React.FC = () => {
                 <h4 style={{ fontSize: '0.9rem', color: '#fff', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>Consultation Chat</h4>
                 
                 {/* Chat History */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto', padding: '4px' }}>
+                <div className="kanban-detail-chat-log">
                   {chatMessages.map((msg, idx) => {
                     const isSenderMe = msg.sender_id === user?.id;
                     return (
@@ -858,6 +933,7 @@ const KanbanBoard: React.FC = () => {
                     <Send size={16} />
                   </button>
                 </form>
+              </div>
               </div>
 
             </div>

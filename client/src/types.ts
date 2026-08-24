@@ -5,6 +5,7 @@ export interface User {
   role: 'client' | 'operations_officer' | 'compliance_officer' | 'admin' | 'supervisor';
   status: 'active' | 'pending';
   permissions?: any;
+  phone?: string;
   created_at?: string;
 }
 
@@ -34,6 +35,7 @@ export interface Application {
   assigned_to: number | null;
   assignee_name?: string;
   details: string; // JSON string
+  signature_count?: number;
   created_at: string;
   updated_at: string;
 }
@@ -42,11 +44,12 @@ export interface Document {
   id: number;
   application_id: number;
   user_id: number;
-  filename: string;
+  filename?: string;
   original_name: string;
   mime_type: string;
   size: number;
   is_approved: number; // 0 or 1
+  kind?: 'file' | 'signature';
   created_at: string;
 }
 

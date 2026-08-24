@@ -1,11 +1,22 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import type { User } from '../types';
 
-export const API_BASE = (import.meta as any).env?.VITE_API_URL 
-  ? (import.meta as any).env.VITE_API_URL
-  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:5000/api'
-    : '/api';
+export const API_BASE = (import.meta as any).env?.VITE_API_URL || '/api';
+
+/** Resolve avatar / upload paths whether API_BASE is relative or absolute. */
+export function mediaUrl(path: string) {
+  if (!path) return '';
+  if (/^(https?:|blob:|data:)/i.test(path)) return path;
+  if (API_BASE.startsWith('http')) {
+    try {
+      const origin = new URL(API_BASE).origin;
+      return path.startsWith('/') ? `${origin}${path}` : `${API_BASE.replace(/\/$/, '')}/${path}`;
+    } catch {
+      return path;
+    }
+  }
+  return path.startsWith('/') ? path : `${API_BASE.replace(/\/$/, '')}/${path}`;
+}
 
 async function parseResponse(res: Response) {
   const text = await res.text();

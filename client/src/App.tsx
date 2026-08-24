@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth, API_BASE } from './context/AuthContext';
+import { useAuth, API_BASE, mediaUrl } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import DashboardOverview from './components/DashboardOverview';
@@ -11,8 +11,11 @@ import LandingPage from './components/LandingPage';
 import AIAdvisor from './components/AIAdvisor';
 import ComplianceDashboard from './components/ComplianceDashboard';
 import KnowledgeHub from './components/KnowledgeHub';
+import BillingCenter from './components/BillingCenter';
+import WorkflowTracker from './components/WorkflowTracker';
 import DraggableWhatsApp from './components/DraggableWhatsApp';
-import { ShieldCheck, ArrowRight, Eye, EyeOff, Building2, FileCheck2, FolderHeart, ShieldAlert, RefreshCw, MessageSquare, Layers, X, Search, Bell } from 'lucide-react';
+import { navFromNotification } from './utils/notifications';
+import { ShieldCheck, ArrowRight, Eye, EyeOff, Building2, ShieldAlert, MessageSquare, Layers, X, Search, Bell } from 'lucide-react';
 
 const App: React.FC = () => {
   const { user, token, loading, login, register, registerVerify, resetPassword, logout } = useAuth();
@@ -65,6 +68,15 @@ const App: React.FC = () => {
     setAuthSuccess(null);
     setShowAuthModal(true);
   };
+
+  useEffect(() => {
+    if (!showAuthModal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowAuthModal(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showAuthModal]);
   
   // Profile modal states
   const [profileUserId, setProfileUserId] = useState<number | null>(null);
@@ -137,6 +149,7 @@ const App: React.FC = () => {
 
   // Target flagged application ID for direct popup navigation
   const [targetAppId, setTargetAppId] = useState<number | null>(null);
+  const [targetInvoiceId, setTargetInvoiceId] = useState<number | null>(null);
 
   const [clientReplyText, setClientReplyText] = useState('');
   const [sendingReply, setSendingReply] = useState(false);
@@ -206,7 +219,7 @@ const App: React.FC = () => {
     { name: 'PENCOM Compliance', type: 'Compliance', tab: 'compliance', action: 'pencom' },
     { name: 'NSITF Registration', type: 'Compliance', tab: 'compliance', action: 'nsitf' },
     { name: 'ITF Compliance', type: 'Compliance', tab: 'compliance', action: 'itf' },
-    { name: 'NRS Tax Clearance (FIRS)', type: 'Compliance', tab: 'compliance', action: 'nrs' },
+    { name: 'NRS Tax Clearance', type: 'Compliance', tab: 'compliance', action: 'nrs' },
     { name: "Driver's Licence", type: 'Other Service', tab: 'services', action: 'other_services', sub: "Driver's Licence" },
     { name: "Car Dealer's Licence", type: 'Other Service', tab: 'services', action: 'other_services', sub: "Car Dealer's Licence" },
     { name: 'Export Licence', type: 'Other Service', tab: 'services', action: 'other_services', sub: 'Export licence' },
@@ -236,8 +249,21 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
+    const onNav = (e: Event) => {
+      const detail = (e as CustomEvent).detail || {};
+      if (detail.tab) setActiveTab(detail.tab);
+      if (detail.appId) setTargetAppId(detail.appId);
+      if (detail.invoiceId) setTargetInvoiceId(detail.invoiceId);
+    };
+    window.addEventListener('primeflow-navigate', onNav as EventListener);
+    return () => window.removeEventListener('primeflow-navigate', onNav as EventListener);
+  }, []);
+
+  useEffect(() => {
     const fetchUnreadSummary = async () => {
-      if (!token) return;
+      if (!token || !user) return;
+      const ignoreKey = `primeflow_ignore_popup_${user.id}`;
+      if (sessionStorage.getItem(ignoreKey) === '1') return;
       try {
         const res = await fetch(`${API_BASE}/services/unread-summary`, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -254,7 +280,13 @@ const App: React.FC = () => {
       }
     };
     fetchUnreadSummary();
-  }, [token]);
+  }, [token, user]);
+
+  useEffect(() => {
+    if (showUnreadPopup && unreadSummary && unreadSummary.notifications.length === 0 && unreadSummary.messages.length === 0) {
+      setShowUnreadPopup(false);
+    }
+  }, [unreadSummary, showUnreadPopup]);
 
   const fetchProfile = async (id: number) => {
     setLoadingProfile(true);
@@ -398,6 +430,11 @@ const App: React.FC = () => {
         await login(email, password);
       } else if (authView === 'register') {
         if (!verificationMode) {
+          if (password.length < 8) {
+            setAuthError('Password must be at least 8 characters.');
+            setSubmitting(false);
+            return;
+          }
           if (password !== confirmPassword) {
             setAuthError('Passwords do not match. Please re-enter your password to confirm.');
             setSubmitting(false);
@@ -416,6 +453,11 @@ const App: React.FC = () => {
           setConfirmPassword('');
         }
       } else if (authView === 'reset') {
+        if (password.length < 8) {
+          setAuthError('Password must be at least 8 characters.');
+          setSubmitting(false);
+          return;
+        }
         if (password !== confirmPassword) {
           setAuthError('Passwords do not match. Please re-enter your password to confirm.');
           setSubmitting(false);
@@ -461,7 +503,8 @@ const App: React.FC = () => {
             <div
               className="glass-panel-light"
               style={{
-                width: '100%', maxWidth: '440px', padding: '36px',
+                width: '100%', maxWidth: '440px', padding: '32px 28px',
+                maxHeight: '92vh', overflowY: 'auto',
                 position: 'relative', display: 'flex', flexDirection: 'column', gap: '24px',
                 boxShadow: '0 30px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05)',
                 animation: 'fadeIn 0.3s ease'
@@ -479,7 +522,7 @@ const App: React.FC = () => {
                 title="Return to Homepage"
                 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '-8px', cursor: 'pointer' }}
               >
-                <img src="/logo.jpg" alt="Primeflow Logo" style={{ width: '40px', height: '40px', borderRadius: '8px' }} />
+                <img src="/logo.png" alt="Primeflow Logo" className="brand-logo" style={{ height: '40px', width: '88px', borderRadius: '8px' }} />
                 <h2 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#0F0F0F', fontFamily: "'Outfit', sans-serif" }}>
                   PRIME<span style={{ color: '#D71920' }}>FLOW</span>
                 </h2>
@@ -524,7 +567,7 @@ const App: React.FC = () => {
                     {authView === 'register' && (
                       <div className="form-group animate-fade-in">
                         <label className="form-label" style={{ color: '#374151' }}>Full Name</label>
-                        <input type="text" required placeholder="e.g. Babajide Sowande" className="form-input" value={name} onChange={e => setName(e.target.value)} />
+                        <input type="text" required minLength={2} placeholder="e.g. Babajide Sowande" className="form-input" value={name} onChange={e => setName(e.target.value)} />
                       </div>
                     )}
                     <div className="form-group">
@@ -544,6 +587,7 @@ const App: React.FC = () => {
                           type={showPassword ? 'text' : 'password'} required
                           placeholder={authView === 'reset' ? 'Enter new password' : '••••••••'}
                           className="form-input" style={{ width: '100%', paddingRight: '45px' }}
+                          minLength={authView === 'login' ? undefined : 8}
                           value={password} onChange={e => setPassword(e.target.value)}
                         />
                         <button type="button" onClick={() => setShowPassword(!showPassword)}
@@ -552,6 +596,9 @@ const App: React.FC = () => {
                         </button>
                       </div>
                     </div>
+                    {authView === 'register' && (
+                      <p style={{ margin: '-10px 0 0', fontSize: '0.72rem', color: '#64748b' }}>Password must be at least 8 characters.</p>
+                    )}
                     {(authView === 'register' || authView === 'reset') && (
                       <div className="form-group animate-fade-in">
                         <label className="form-label" style={{ color: '#374151' }}>
@@ -561,6 +608,7 @@ const App: React.FC = () => {
                           type={showPassword ? 'text' : 'password'} required
                           placeholder="Re-enter password to confirm"
                           className="form-input" style={{ width: '100%' }}
+                          minLength={8}
                           value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
                         />
                       </div>
@@ -614,387 +662,6 @@ const App: React.FC = () => {
     );
   }
 
-  // Old inline auth view — keep for fallback (unreachable now, replaced above)
-  if (false) {
-    return (
-      <div 
-        style={{ 
-          minHeight: '100vh', 
-          backgroundColor: 'var(--bg-primary)', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          padding: '40px 20px',
-          position: 'relative',
-          overflow: 'hidden'
-        }}
-      >
-        {/* Animated 3D Floating Bubbles */}
-        <div className="sphere-bubble bubble-1"></div>
-        <div className="sphere-bubble bubble-2"></div>
-        <div className="sphere-bubble bubble-3"></div>
-        <div className="sphere-bubble bubble-4"></div>
-
-        {/* Dual Column Layout */}
-        <div 
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
-            maxWidth: '1100px',
-            gap: '50px',
-            zIndex: 10,
-            flexWrap: 'wrap'
-          }}
-        >
-          {/* Left Column: Brand Hero and Key Services Menu Buttons */}
-          <div 
-            style={{ 
-              flex: '1.2 1 300px', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '28px',
-              animation: 'fadeIn 0.6s ease forwards'
-            }}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '8px' }}>
-              <img 
-                src="/logo.jpg" 
-                alt="PrimeFlow Logo" 
-                style={{ 
-                  width: '140px', 
-                  height: '140px', 
-                  borderRadius: '16px',
-                  boxShadow: '0 0 30px rgba(229, 62, 62, 0.45)',
-                  border: '2px solid rgba(255,255,255,0.15)',
-                  objectFit: 'cover'
-                }} 
-              />
-              <h1 style={{ fontSize: '2.6rem', fontWeight: '800', color: '#fff', letterSpacing: '0.05em', margin: 0 }}>
-                PRIME<span style={{ color: 'var(--accent-red)' }}>FLOW</span>
-              </h1>
-            </div>
-
-            <div>
-              <h2 style={{ fontSize: '1.6rem', color: '#fff', fontWeight: '700', marginBottom: '8px', lineHeight: '1.3' }}>
-                Premium Corporate Registry Portal
-              </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.5' }}>
-                Secure, digital compliance filings and corporate registrations managed directly by certified experts. Streamline your CAC regulatory submissions today.
-              </p>
-            </div>
-
-            {/* Quick Access Services Menu Buttons */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--accent-red)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                Core Platform Filings
-              </span>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div className="glass-panel-light" style={{ padding: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Building2 size={18} style={{ color: 'var(--accent-red)' }} />
-                  <span style={{ fontSize: '0.8rem', color: '#1e293b', fontWeight: '700' }}>Incorporation</span>
-                </div>
-                <div className="glass-panel-light" style={{ padding: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <FileCheck2 size={18} style={{ color: 'var(--accent-red)' }} />
-                  <span style={{ fontSize: '0.8rem', color: '#1e293b', fontWeight: '700' }}>Business Names</span>
-                </div>
-                <div className="glass-panel-light" style={{ padding: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <FolderHeart size={18} style={{ color: 'var(--accent-red)' }} />
-                  <span style={{ fontSize: '0.8rem', color: '#1e293b', fontWeight: '700' }}>NGOs & Trustees</span>
-                </div>
-                <div className="glass-panel-light" style={{ padding: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <ShieldAlert size={18} style={{ color: 'var(--accent-red)' }} />
-                  <span style={{ fontSize: '0.8rem', color: '#1e293b', fontWeight: '700' }}>Compliance Permits</span>
-                </div>
-                <div className="glass-panel-light" style={{ padding: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <RefreshCw size={18} style={{ color: 'var(--accent-red)' }} />
-                  <span style={{ fontSize: '0.8rem', color: '#1e293b', fontWeight: '700' }}>Annual Returns</span>
-                </div>
-                <div className="glass-panel-light" style={{ padding: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <MessageSquare size={18} style={{ color: 'var(--accent-red)' }} />
-                  <span style={{ fontSize: '0.8rem', color: '#1e293b', fontWeight: '700' }}>Consultant Chat</span>
-                </div>
-              </div>
-            </div>
-            {/* Correspondence Info */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '12px' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--accent-red)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                Official Correspondence
-              </span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                <div>Email: <a href="mailto:primeflowconsultingservices@gmail.com" style={{ color: '#fff', textDecoration: 'none' }}>primeflowconsultingservices@gmail.com</a></div>
-                <div>Call, SMS & WhatsApp: <a href="https://wa.me/2347072928256" target="_blank" rel="noopener noreferrer" style={{ color: '#48bb78', fontWeight: '600', textDecoration: 'none' }}>+234 707 292 8256</a></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Premium Auth Card */}
-          <div 
-            className="glass-panel-light" 
-            style={{ 
-              flex: '0.8 1 300px', 
-              padding: '36px', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '24px',
-              animation: 'fadeIn 0.6s ease 0.1s forwards',
-              background: 'rgba(255, 255, 255, 0.94)',
-              border: '1px solid rgba(0, 0, 0, 0.06)',
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)'
-            }}
-          >
-            {/* Pill Capsule Toggle Menu Buttons */}
-            <div style={{ display: 'flex', padding: '4px', background: 'rgba(0,0,0,0.04)', borderRadius: '24px', border: '1px solid rgba(0, 0, 0, 0.06)' }}>
-              <button
-                type="button"
-                onClick={() => { setAuthView('login'); setAuthError(null); }}
-                style={{
-                  flex: 1,
-                  padding: '8px 16px',
-                  borderRadius: '20px',
-                  border: 'none',
-                  fontSize: '0.8rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  background: authView === 'login' ? 'var(--accent-red)' : 'none',
-                  color: authView === 'login' ? '#fff' : '#4a5568',
-                  transition: 'all 0.25s ease'
-                }}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => { setAuthView('register'); setAuthError(null); }}
-                style={{
-                  flex: 1,
-                  padding: '8px 16px',
-                  borderRadius: '20px',
-                  border: 'none',
-                  fontSize: '0.8rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  background: authView === 'register' ? 'var(--accent-red)' : 'none',
-                  color: authView === 'register' ? '#fff' : '#4a5568',
-                  transition: 'all 0.25s ease'
-                }}
-              >
-                Create Account
-              </button>
-            </div>
-
-            {/* Form container */}
-            <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {authView === 'reset' && (
-                <h3 style={{ fontSize: '1.1rem', color: '#1e293b', textAlign: 'center', fontWeight: '700', margin: 0 }}>
-                  Reset Portal Password
-                </h3>
-              )}
-
-              {authError && (
-                <div style={{ padding: '10px 12px', background: 'rgba(229, 62, 62, 0.08)', border: '1px solid var(--accent-red)', borderRadius: '6px', color: 'var(--accent-red)', fontSize: '0.8rem', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <ShieldCheck size={16} />
-                  <span>{authError}</span>
-                </div>
-              )}
-
-              {authSuccess && (
-                <div style={{ padding: '10px 12px', background: 'rgba(72, 187, 120, 0.08)', border: '1px solid #48bb78', borderRadius: '6px', color: '#48bb78', fontSize: '0.8rem', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <ShieldCheck size={16} />
-                  <span>{authSuccess}</span>
-                </div>
-              )}
-
-              {!verificationMode && (
-                <>
-                  {authView === 'register' && (
-                    <div className="form-group animate-fade-in">
-                      <label className="form-label">Full Name</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. Babajide Sowande"
-                        className="form-input"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                      />
-                    </div>
-                  )}
-
-                  <div className="form-group">
-                    <label className="form-label">Email Address</label>
-                    <input
-                      type="email"
-                      required
-                      placeholder="e.g. client@primeflow.com"
-                      className="form-input"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-
-                  {authView === 'register' && (
-                    <div className="form-group animate-fade-in">
-                      <label className="form-label">Phone Number</label>
-                      <input
-                        type="tel"
-                        required
-                        placeholder="e.g. 07066714961"
-                        className="form-input"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                      />
-                    </div>
-                  )}
-
-                  <div className="form-group">
-                    <label className="form-label">
-                      {authView === 'reset' ? 'New Password' : 'Password'}
-                    </label>
-                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        required
-                        placeholder={authView === 'reset' ? 'Enter new password' : '••••••••'}
-                        className="form-input"
-                        style={{ width: '100%', paddingRight: '45px' }}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        style={{
-                          position: 'absolute',
-                          right: '12px',
-                          background: 'none',
-                          border: 'none',
-                          color: 'var(--text-secondary)',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: '4px'
-                        }}
-                      >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {authView === 'register' && verificationMode && (
-                <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div style={{ padding: '12px', background: 'rgba(229, 62, 62, 0.08)', border: '1px solid var(--accent-red)', borderRadius: '8px', fontSize: '0.8rem', color: '#fff', lineHeight: '1.4' }}>
-                    <strong style={{ color: 'var(--accent-red)' }}>Simulated Security Codes:</strong>
-                    <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)' }}>
-                      We simulated sending verification codes to <strong>{email}</strong> and phone <strong>{phone}</strong>.
-                    </p>
-                    <p style={{ margin: '6px 0 0 0', color: '#fff' }}>
-                      Simulation Code: <strong style={{ color: '#fff', fontSize: '1rem', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px' }}>{simulatedOTP}</strong>
-                    </p>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">6-Digit Verification Code</label>
-                    <input
-                      type="text"
-                      maxLength={6}
-                      required
-                      placeholder="e.g. 123456"
-                      className="form-input"
-                      style={{ letterSpacing: '0.5em', textAlign: 'center', fontSize: '1.2rem', fontWeight: '800' }}
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Simulation Role Selector Removed for Client Security */}
-
-              <button 
-                type="submit" 
-                className="btn-primary" 
-                style={{ width: '100%', justifyContent: 'center', marginTop: '10px' }}
-                disabled={submitting}
-              >
-                {submitting ? 'Verifying...' : (
-                  authView === 'login' ? 'Sign In' : (
-                    authView === 'register' ? (verificationMode ? 'Verify & Create Account' : 'Request Verification Code') : 'Reset Password'
-                  )
-                )}
-                <ArrowRight size={16} />
-              </button>
-
-              {authView === 'register' && verificationMode && (
-                <button
-                  type="button"
-                  onClick={() => setVerificationMode(false)}
-                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.75rem', cursor: 'pointer', textAlign: 'center', width: '100%', marginTop: '8px' }}
-                >
-                  ← Edit registration details
-                </button>
-              )}
-            </form>
-
-            {/* View toggle footer */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-              {authView === 'login' && (
-                <>
-                  <div>
-                    Forgot password?{' '}
-                    <button 
-                      onClick={() => { setAuthView('reset'); setAuthError(null); }}
-                      style={{ background: 'none', border: 'none', color: 'var(--accent-red)', cursor: 'pointer', fontWeight: '600' }}
-                    >
-                      Reset password
-                    </button>
-                  </div>
-                </>
-              )}
-
-              {authView === 'reset' && (
-                <div>
-                  Remember credentials?{' '}
-                  <button 
-                    onClick={() => { setAuthView('login'); setAuthError(null); }}
-                    style={{ background: 'none', border: 'none', color: 'var(--accent-red)', cursor: 'pointer', fontWeight: '600' }}
-                  >
-                    Sign in
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Brand Social Media & Support Info */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', color: 'var(--text-secondary)' }}>
-                <a href="https://facebook.com/primeflow" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', transition: 'color 0.2s' }} onMouseEnter={(e)=>e.currentTarget.style.color='#fff'} onMouseLeave={(e)=>e.currentTarget.style.color='inherit'} title="Facebook">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-                </a>
-                <a href="https://twitter.com/primeflow" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', transition: 'color 0.2s' }} onMouseEnter={(e)=>e.currentTarget.style.color='#fff'} onMouseLeave={(e)=>e.currentTarget.style.color='inherit'} title="Twitter">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
-                </a>
-                <a href="https://linkedin.com/company/primeflow" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', transition: 'color 0.2s' }} onMouseEnter={(e)=>e.currentTarget.style.color='#fff'} onMouseLeave={(e)=>e.currentTarget.style.color='inherit'} title="LinkedIn">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
-                </a>
-                <a href="https://instagram.com/primeflow" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', transition: 'color 0.2s' }} onMouseEnter={(e)=>e.currentTarget.style.color='#fff'} onMouseLeave={(e)=>e.currentTarget.style.color='inherit'} title="Instagram">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
-                </a>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                <div>primeflowconsultingservices@gmail.com</div>
-                <div>Helpline: <a href="https://wa.me/2347072928256" target="_blank" rel="noopener noreferrer" style={{ color: '#48bb78', textDecoration: 'none', fontWeight: '500' }}>+234 707 292 8256 (Call, SMS & WA)</a></div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // Authenticated Shell View
   return (
     <div className="app-shell-container">
@@ -1039,10 +706,10 @@ const App: React.FC = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundImage: 'url(/logo.jpg)',
+          backgroundImage: 'url(/logo.png)',
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center center',
-          backgroundSize: '420px 420px',
+          backgroundSize: 'contain',
           opacity: 0.025,
           pointerEvents: 'none',
           zIndex: 0
@@ -1056,7 +723,7 @@ const App: React.FC = () => {
               <div style={{ position: 'relative', marginBottom: '24px' }}>
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(26,111,232,0.4) 0%, rgba(215,25,32,0.2) 50%, transparent 70%)', filter: 'blur(28px)', opacity: 0.7, zIndex: 1 }} />
                 <img 
-                  src="/logo.jpg" 
+                  src="/logo.png" 
                   alt="PrimeFlow Brand Logo" 
                   className="welcome-dashboard-logo"
                   style={{ 
@@ -1314,6 +981,10 @@ const App: React.FC = () => {
           {activeTab === 'kanban' && user.role !== 'client' && <KanbanBoard />}
           {activeTab === 'chat' && <ChatRoom initialAppId={targetAppId} />}
           {activeTab === 'admin' && ['admin', 'supervisor'].includes(user.role) && <AdminPortal />}
+          {activeTab === 'billing' && (user.role === 'client' || ['admin', 'supervisor'].includes(user.role)) && (
+            <BillingCenter focusInvoiceId={targetInvoiceId} />
+          )}
+          {activeTab === 'workflow' && user.role !== 'client' && <WorkflowTracker />}
         </main>
       </div>
 
@@ -1333,7 +1004,7 @@ const App: React.FC = () => {
                     New Admin Action Request & Reaction
                   </h3>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                    Filing Application #${adminNotificationModal.appId}
+                    Filing Application #{adminNotificationModal.appId}
                   </span>
                 </div>
               </div>
@@ -1356,9 +1027,9 @@ const App: React.FC = () => {
                   fontWeight: '700',
                   padding: '4px 10px',
                   borderRadius: '12px',
-                  background: adminNotificationModal.status === 'action_required' ? 'rgba(229,62,62,0.2)' : 'rgba(72,187,120,0.2)',
-                  color: adminNotificationModal.status === 'action_required' ? '#fc8181' : '#48bb78',
-                  border: adminNotificationModal.status === 'action_required' ? '1px solid #fc8181' : '1px solid #48bb78'
+                  background: adminNotificationModal.status === 'add_info_required' ? 'rgba(229,62,62,0.2)' : 'rgba(72,187,120,0.2)',
+                  color: adminNotificationModal.status === 'add_info_required' ? '#fc8181' : '#48bb78',
+                  border: adminNotificationModal.status === 'add_info_required' ? '1px solid #fc8181' : '1px solid #48bb78'
                 }}>
                   {adminNotificationModal.status.replace(/_/g, ' ').toUpperCase()}
                 </span>
@@ -1437,7 +1108,7 @@ const App: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 999,
+          zIndex: 10050,
           padding: '20px',
           animation: 'fadeIn 0.25s ease'
         }}>
@@ -1496,7 +1167,7 @@ const App: React.FC = () => {
                       position: 'relative'
                     }}>
                       <img 
-                        src={avatarFile ? URL.createObjectURL(avatarFile) : (profAvatar ? `${API_BASE}${profAvatar}?t=${Date.now()}` : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150')} 
+                        src={avatarFile ? URL.createObjectURL(avatarFile) : (profAvatar ? `${mediaUrl(profAvatar)}?t=${Date.now()}` : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150')} 
                         alt="Avatar"
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
@@ -1734,8 +1405,12 @@ const App: React.FC = () => {
                 <h3 style={{ fontSize: '1.2rem', color: '#fff', margin: 0 }}>Pending Updates</h3>
               </div>
               <button 
-                onClick={() => setShowUnreadPopup(false)}
+                onClick={() => {
+                  if (user) sessionStorage.setItem(`primeflow_ignore_popup_${user.id}`, '1');
+                  setShowUnreadPopup(false);
+                }}
                 style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px' }}
+                title="Ignore"
               >
                 <X size={20} />
               </button>
@@ -1752,29 +1427,31 @@ const App: React.FC = () => {
                     {unreadSummary.messages.map((msg: any) => (
                       <div 
                         key={msg.id}
-                        onClick={() => {
-                          setShowUnreadPopup(false);
-                          setActiveTab('chat');
-                        }}
                         style={{ 
                           padding: '10px 12px', 
                           background: 'rgba(255,255,255,0.02)', 
                           border: '1px solid var(--border-color)', 
                           borderRadius: '8px',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'background 0.2s'
+                          textAlign: 'left'
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                           <span style={{ fontSize: '0.8rem', color: '#fff', fontWeight: '600' }}>{msg.sender_name}</span>
                           <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{msg.service_type?.replace(/_/g, ' ')}</span>
                         </div>
-                        <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 8px' }}>
                           {msg.message_text}
                         </p>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button className="btn-primary" style={{ padding: '6px 10px', fontSize: '0.75rem' }} onClick={() => {
+                            setShowUnreadPopup(false);
+                            setTargetAppId(msg.application_id);
+                            setActiveTab('chat');
+                          }}>Open</button>
+                          <button className="btn-secondary" style={{ padding: '6px 10px', fontSize: '0.75rem' }} onClick={() => {
+                            setUnreadSummary((prev) => prev ? { ...prev, messages: prev.messages.filter((m: any) => m.id !== msg.id) } : prev);
+                          }}>Ignore</button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1802,9 +1479,29 @@ const App: React.FC = () => {
                         <span style={{ fontSize: '0.8rem', color: '#fff', fontWeight: '600', display: 'block', marginBottom: '4px' }}>
                           {notif.title}
                         </span>
-                        <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 8px' }}>
                           {notif.message}
                         </p>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button className="btn-primary" style={{ padding: '6px 10px', fontSize: '0.75rem' }} onClick={() => {
+                            fetch(`${API_BASE}/services/notifications/${notif.id}/read`, {
+                              method: 'PUT',
+                              headers: { Authorization: `Bearer ${token}` }
+                            }).catch(() => {});
+                            const dest = navFromNotification(notif, user?.role);
+                            setShowUnreadPopup(false);
+                            if (dest.appId) setTargetAppId(dest.appId);
+                            if (dest.invoiceId) setTargetInvoiceId(dest.invoiceId);
+                            setActiveTab(dest.tab);
+                          }}>Open</button>
+                          <button className="btn-secondary" style={{ padding: '6px 10px', fontSize: '0.75rem' }} onClick={() => {
+                            fetch(`${API_BASE}/services/notifications/${notif.id}/read`, {
+                              method: 'PUT',
+                              headers: { Authorization: `Bearer ${token}` }
+                            }).catch(() => {});
+                            setUnreadSummary((prev) => prev ? { ...prev, notifications: prev.notifications.filter((n: any) => n.id !== notif.id) } : prev);
+                          }}>Ignore</button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1812,20 +1509,41 @@ const App: React.FC = () => {
               )}
             </div>
 
-            <button 
-              className="btn-primary" 
-              onClick={() => {
-                setShowUnreadPopup(false);
-                // Mark all read
-                fetch(`${API_BASE}/services/notifications/read-all`, {
-                  method: 'PUT',
-                  headers: { 'Authorization': `Bearer ${token}` }
-                }).catch(err => console.error(err));
-              }}
-              style={{ width: '100%', padding: '12px', borderRadius: '8px', fontSize: '0.9rem', fontWeight: '600', cursor: 'pointer', marginTop: '8px' }}
-            >
-              Acknowledge All
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                className="btn-secondary" 
+                onClick={() => {
+                  if (user) sessionStorage.setItem(`primeflow_ignore_popup_${user.id}`, '1');
+                  setShowUnreadPopup(false);
+                }}
+                style={{ flex: 1, padding: '12px', borderRadius: '8px', fontSize: '0.9rem', fontWeight: '600', cursor: 'pointer' }}
+              >
+                Ignore
+              </button>
+              <button 
+                className="btn-primary" 
+                onClick={() => {
+                  const first = unreadSummary.notifications[0] || unreadSummary.messages[0];
+                  if (first?.message_text) {
+                    setTargetAppId(first.application_id);
+                    setActiveTab('chat');
+                  } else if (first) {
+                    const dest = navFromNotification(first, user?.role);
+                    if (dest.appId) setTargetAppId(dest.appId);
+                    if (dest.invoiceId) setTargetInvoiceId(dest.invoiceId);
+                    setActiveTab(dest.tab);
+                    fetch(`${API_BASE}/services/notifications/${first.id}/read`, {
+                      method: 'PUT',
+                      headers: { Authorization: `Bearer ${token}` }
+                    }).catch(() => {});
+                  }
+                  setShowUnreadPopup(false);
+                }}
+                style={{ flex: 1, padding: '12px', borderRadius: '8px', fontSize: '0.9rem', fontWeight: '600', cursor: 'pointer' }}
+              >
+                Open
+              </button>
+            </div>
           </div>
         </div>
       )}

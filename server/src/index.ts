@@ -86,6 +86,8 @@ import documentsRouter from './routes/documents';
 import messagesRouter from './routes/messages';
 import adminRouter from './routes/admin';
 import complianceRouter from './routes/compliance';
+import billingRouter from './routes/billing';
+import workflowRouter from './routes/workflow';
 
 // API Routing (Supports both /api/... and serverless /... routes)
 app.use(['/api/auth', '/auth'], authLimiter, authRouter);
@@ -94,6 +96,8 @@ app.use(['/api/documents', '/documents'], documentsRouter);
 app.use(['/api/messages', '/messages'], messagesRouter);
 app.use(['/api/admin', '/admin'], adminRouter);
 app.use(['/api/compliance', '/compliance'], complianceRouter);
+app.use(['/api/billing', '/billing'], billingRouter);
+app.use(['/api/workflow', '/workflow'], workflowRouter);
 
 // Base route for connectivity checks
 app.get(['/health', '/api/health'], (req, res) => {

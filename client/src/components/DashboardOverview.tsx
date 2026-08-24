@@ -9,6 +9,8 @@ import {
   TrendingUp
 } from 'lucide-react';
 import type { AdminStats, Application } from '../types';
+import SignaturePad from './SignaturePad';
+import { printBillingDocument } from '../utils/notifications';
 
 const DashboardOverview: React.FC = () => {
   const { user, token } = useAuth();
@@ -16,6 +18,10 @@ const DashboardOverview: React.FC = () => {
   const [clientApps, setClientApps] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [profileLocation, setProfileLocation] = useState<{ state: string; lga: string } | null>(null);
+  const [clientInvoices, setClientInvoices] = useState<any[]>([]);
+  const [signAppId, setSignAppId] = useState<number | null>(null);
+  const [lateSignature, setLateSignature] = useState<string | null>(null);
+  const [signNotice, setSignNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user || !token) return;
@@ -54,6 +60,10 @@ const DashboardOverview: React.FC = () => {
             const data = await res.json();
             setClientApps(data);
           }
+          const invRes = await fetch(`${API_BASE}/billing/invoices`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (invRes.ok) setClientInvoices(await invRes.json());
         } else {
           // Fetch global admin/staff statistics
           const res = await fetch(`${API_BASE}/admin/stats`, {
@@ -89,6 +99,18 @@ const DashboardOverview: React.FC = () => {
   const actionRequiredClientApps = clientApps.filter(a => a.status === 'add_info_required').length;
 
   const isClient = user?.role === 'client';
+  const infoRequiredStaff = stats?.byStatus?.find(s => s.status === 'add_info_required')?.count ?? 0;
+  const monthData = (stats?.monthlySubmissions || []).filter(m => m.month);
+  const chartMax = Math.max(...monthData.map(m => Number(m.count) || 0), 1);
+  const chartPoints = monthData.map((m, i) => {
+    const x = monthData.length === 1 ? 250 : 25 + (i * 450) / (monthData.length - 1);
+    const y = 180 - ((Number(m.count) || 0) / chartMax) * 150;
+    return { x, y, label: m.month.slice(5) };
+  });
+  const chartLine = chartPoints.map(p => `${p.x},${p.y}`).join(' ');
+  const chartArea = chartPoints.length
+    ? `${chartPoints.map(p => `${p.x},${p.y}`).join(' ')} ${chartPoints[chartPoints.length - 1].x},180 ${chartPoints[0].x},180`
+    : '';
 
   return (
     <div className="animate-fade-in page-container">
@@ -96,13 +118,15 @@ const DashboardOverview: React.FC = () => {
       {/* Welcome banner */}
       <div 
         className="glass-panel" 
-        style={{ 
+          style={{ 
           padding: '24px', 
           borderLeft: '4px solid var(--accent-red)', 
           background: 'linear-gradient(90deg, rgba(20, 20, 24, 0.9) 0%, rgba(229, 62, 62, 0.03) 100%)',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px'
         }}
       >
         <div>
@@ -166,10 +190,10 @@ const DashboardOverview: React.FC = () => {
           <div>
             <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Action Required</div>
             <div style={{ fontSize: '1.75rem', fontWeight: '800', color: '#fff', marginTop: '2px' }}>
-              {isClient ? actionRequiredClientApps : stats?.metrics.totalClients /* represent total users registered */}
+              {isClient ? actionRequiredClientApps : infoRequiredStaff}
             </div>
             <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '1px' }}>
-              {isClient ? 'Uploads/Comments needed' : 'Registered customer profiles'}
+              {isClient ? 'Uploads/Comments needed' : 'Filings waiting on client info'}
             </div>
           </div>
         </div>
@@ -188,45 +212,37 @@ const DashboardOverview: React.FC = () => {
                 <TrendingUp size={20} style={{ color: 'var(--accent-red)' }} />
                 <h4 style={{ fontSize: '1.1rem', color: '#fff' }}>Application Volume History</h4>
               </div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}> Abuja CAC submissions (6 Months)</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}> Monthly submissions</span>
             </div>
 
-            {/* Custom SVG line chart to avoid charting package dependency */}
             <div style={{ position: 'relative', height: '200px', width: '100%' }}>
+              {chartPoints.length === 0 ? (
+                <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                  No filing volume yet. New submissions will appear here.
+                </div>
+              ) : (
+                <>
               <svg viewBox="0 0 500 200" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-                {/* Grid Lines */}
                 <line x1="0" y1="180" x2="500" y2="180" stroke="var(--border-color)" strokeWidth="1" />
                 <line x1="0" y1="130" x2="500" y2="130" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" />
                 <line x1="0" y1="80" x2="500" y2="80" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" />
                 <line x1="0" y1="30" x2="500" y2="30" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4 4" />
-
-                {/* The Line - Coordinates mapped to months (Jan: 5, Feb: 8, Mar: 15, Apr: 11, May: 20, Jun: 25) */}
-                <path
-                  d="M 25 150 L 100 135 L 175 100 L 250 115 L 325 60 L 400 30 L 475 20"
+                <polyline
+                  points={chartLine}
                   fill="none"
                   stroke="var(--accent-red)"
                   strokeWidth="3.5"
                   strokeLinecap="round"
                   style={{ filter: 'drop-shadow(0 0 6px rgba(229, 62, 62, 0.4))' }}
                 />
-
-                {/* Shading Area below path */}
-                <path
-                  d="M 25 150 L 100 135 L 175 100 L 250 115 L 325 60 L 400 30 L 475 20 L 475 180 L 25 180 Z"
+                <polygon
+                  points={chartArea}
                   fill="url(#chart-gradient)"
                   opacity="0.12"
                 />
-
-                {/* Nodes */}
-                <circle cx="25" cy="150" r="5" fill="#fff" stroke="var(--accent-red)" strokeWidth="2.5" />
-                <circle cx="100" cy="135" r="5" fill="#fff" stroke="var(--accent-red)" strokeWidth="2.5" />
-                <circle cx="175" cy="100" r="5" fill="#fff" stroke="var(--accent-red)" strokeWidth="2.5" />
-                <circle cx="250" cy="115" r="5" fill="#fff" stroke="var(--accent-red)" strokeWidth="2.5" />
-                <circle cx="325" cy="60" r="5" fill="#fff" stroke="var(--accent-red)" strokeWidth="2.5" />
-                <circle cx="400" cy="30" r="5" fill="#fff" stroke="var(--accent-red)" strokeWidth="2.5" />
-                <circle cx="475" cy="20" r="5" fill="#fff" stroke="var(--accent-red)" strokeWidth="2.5" />
-
-                {/* Gradients */}
+                {chartPoints.map((p, i) => (
+                  <circle key={i} cx={p.x} cy={p.y} r="5" fill="#fff" stroke="var(--accent-red)" strokeWidth="2.5" />
+                ))}
                 <defs>
                   <linearGradient id="chart-gradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="var(--accent-red)" />
@@ -234,17 +250,11 @@ const DashboardOverview: React.FC = () => {
                   </linearGradient>
                 </defs>
               </svg>
-
-              {/* Labels */}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                <span>Jan</span>
-                <span>Feb</span>
-                <span>Mar</span>
-                <span>Apr</span>
-                <span>May</span>
-                <span>Jun</span>
-                <span>Jul (est)</span>
+                {chartPoints.map((p, i) => <span key={i}>{p.label}</span>)}
               </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -272,14 +282,14 @@ const DashboardOverview: React.FC = () => {
                     >
                       <div>
                         <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#fff', display: 'block' }}>
-                          {app.service_type.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                          {app.service_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                         </span>
                         <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                           Updated: {new Date(app.updated_at).toLocaleDateString()}
                         </span>
                       </div>
                       <span className={`badge badge-${app.status}`}>
-                        {app.status.replace('_', ' ')}
+                        {app.status.replace(/_/g, ' ')}
                       </span>
                     </div>
                   ))
@@ -303,7 +313,7 @@ const DashboardOverview: React.FC = () => {
                     }}
                   >
                     <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                      {stat.service_type.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                      {stat.service_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                     </span>
                     <span style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--accent-red)' }}>
                       {stat.count} {stat.count === 1 ? 'record' : 'records'}
@@ -313,6 +323,62 @@ const DashboardOverview: React.FC = () => {
               )}
             </div>
           </div>
+
+          {isClient && (
+            <div className="glass-panel" style={{ padding: '24px' }}>
+              <h4 style={{ fontSize: '1.1rem', color: '#fff', marginBottom: '8px' }}>Invoices & receipts</h4>
+              {clientInvoices.length === 0 ? (
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No billing documents yet.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {clientInvoices.map((row) => (
+                    <div key={row.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: '8px', color: '#fff', fontSize: '0.85rem', alignItems: 'center' }}>
+                      <span>{row.number} · {row.doc_type} · NGN {Number(row.amount).toLocaleString()}</span>
+                      <button className="btn-secondary" style={{ padding: '4px 8px' }} onClick={() => printBillingDocument(row)}>View / Download</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {isClient && clientApps.some(a => !a.signature_count) && (
+            <div className="glass-panel" style={{ padding: '24px' }}>
+              <h4 style={{ fontSize: '1.1rem', color: '#fff', marginBottom: '8px' }}>Add missing signature</h4>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Filings without a signature can be signed here. Admin receives it with the case documents.</p>
+              <select className="form-select" value={signAppId ?? ''} onChange={(e) => setSignAppId(Number(e.target.value))}>
+                <option value="">Select a filing</option>
+                {clientApps.filter(a => !a.signature_count).map(a => (
+                  <option key={a.id} value={a.id}>#{a.id} · {a.service_type.replace(/_/g, ' ')}</option>
+                ))}
+              </select>
+              <div style={{ marginTop: '12px' }}>
+                <SignaturePad value={lateSignature} onChange={setLateSignature} />
+              </div>
+              {signNotice && <div style={{ color: '#4ade80', fontSize: '0.8rem', marginTop: '8px' }}>{signNotice}</div>}
+              <button
+                className="btn-primary"
+                style={{ marginTop: '12px' }}
+                onClick={async () => {
+                  if (!signAppId || !lateSignature) return;
+                  const res = await fetch(`${API_BASE}/documents/signature`, {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ application_id: signAppId, image: lateSignature })
+                  });
+                  if (res.ok) {
+                    setSignNotice('Signature sent to admin with this filing.');
+                    setLateSignature(null);
+                    setClientApps(apps => apps.map(a => a.id === signAppId ? { ...a, signature_count: 1 } : a));
+                  } else {
+                    setSignNotice('Could not save signature.');
+                  }
+                }}
+              >
+                Submit signature
+              </button>
+            </div>
+          )}
 
         </div>
 

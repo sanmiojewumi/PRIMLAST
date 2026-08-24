@@ -297,7 +297,9 @@ const ComplianceDashboard: React.FC = () => {
                 {item.status !== 'compliant' ? (
                   <a 
                     href={`https://wa.me/2347072928256?text=${encodeURIComponent(
-                      `Hello Primeflow, my name is ${user?.name || 'Client'}. I would like to fix my ${item.title} compliance on the system.`
+                      item.item_key === 'nsitf'
+                        ? 'Hello Primeflow, I would like to process my NSITF Compliance Registration.'
+                        : `Hello Primeflow, my name is ${user?.name || 'Client'}. I would like to fix my ${item.title} compliance on the system.`
                     )}`}
                     target="_blank" 
                     rel="noopener noreferrer"

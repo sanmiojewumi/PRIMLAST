@@ -63,7 +63,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId }) => {
       }
     };
     fetchApps();
-  }, [token]);
+  }, [token, initialAppId]);
 
   // Fetch messages when selected application changes
   useEffect(() => {
@@ -171,7 +171,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId }) => {
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, overflowY: 'auto' }}>
           {(() => {
-            if (user?.role === 'admin') {
+            if (user?.role !== 'client') {
               // Group applications by client_id
               const clientGroups: { [key: number]: { clientName: string; apps: Application[] } } = {};
               applications.forEach(app => {
@@ -258,10 +258,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId }) => {
                               onMouseLeave={(e) => !isSelected && (e.currentTarget.style.background = 'transparent')}
                             >
                               <span style={{ fontSize: '0.72rem', fontWeight: '600', textTransform: 'capitalize' }}>
-                                {app.service_type.replace('_', ' ')}
+                                {app.service_type.replace(/_/g, ' ')}
                               </span>
                               <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>
-                                Ref: #{app.id} • {app.status.replace('_', ' ')}
+                                Ref: #{app.id} • {app.status.replace(/_/g, ' ')}
                               </span>
                             </button>
                           );
@@ -304,7 +304,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId }) => {
                     onMouseLeave={(e) => !isSelected && (e.currentTarget.style.background = 'transparent')}
                   >
                     <span style={{ fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      {app.service_type.replace('_', ' ')}
+                      {app.service_type.replace(/_/g, ' ')}
                     </span>
                     <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
                       Ref ID: #{app.id}
@@ -325,14 +325,14 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId }) => {
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h4 style={{ color: '#fff', fontSize: '1rem' }}>
-                  {selectedApp.service_type.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())} Consultation
+                  {selectedApp.service_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} Consultation
                 </h4>
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
                   Assigned Consultant: {selectedApp.assignee_name || 'Awaiting Operations Officer assignment'}
                 </span>
               </div>
               <span className={`badge badge-${selectedApp.status}`} style={{ fontSize: '0.7rem' }}>
-                {selectedApp.status.replace('_', ' ')}
+                {selectedApp.status.replace(/_/g, ' ')}
               </span>
             </div>
 

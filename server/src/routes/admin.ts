@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 const router = Router();
 
 // GET SYSTEM STATISTICS (Admins and Staff)
-router.get('/stats', authenticateJWT as any, requireRole(['admin', 'operations_officer', 'compliance_officer']) as any, async (req: AuthRequest, res) => {
+router.get('/stats', authenticateJWT as any, requireRole(['admin', 'operations_officer', 'compliance_officer', 'supervisor']) as any, async (req: AuthRequest, res) => {
   try {
     const db = await getDb();
 
@@ -63,12 +63,31 @@ router.get('/stats', authenticateJWT as any, requireRole(['admin', 'operations_o
   }
 });
 
+// Lightweight staff list for assignment dropdowns (no full admin directory)
+router.get('/staff-directory', authenticateJWT as any, requireRole(['admin', 'operations_officer', 'compliance_officer', 'supervisor']) as any, async (req: AuthRequest, res) => {
+  try {
+    const db = await getDb();
+    const staff = await db.all(
+      `SELECT id, name, email, role, status FROM users
+       WHERE role != 'client' AND status = 'active'
+       ORDER BY name ASC`
+    );
+    res.status(200).json(staff);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // GET ALL USERS (Admin and authorized Supervisors)
 router.get('/users', authenticateJWT as any, requirePermission('can_view_users') as any, async (req: AuthRequest, res) => {
   try {
     const db = await getDb();
     const users = await db.all(
-      'SELECT id, name, email, role, status, permissions, created_at FROM users ORDER BY role ASC, name ASC'
+      `SELECT u.id, u.name, u.email, u.role, u.status, u.permissions, u.created_at, p.phone
+       FROM users u
+       LEFT JOIN profiles p ON p.user_id = u.id
+       ORDER BY u.role ASC, u.name ASC`
     );
     const parsed = users.map((u: any) => ({
       ...u,
@@ -180,9 +199,19 @@ router.post('/users', authenticateJWT as any, requirePermission('can_create_staf
     return;
   }
 
+  if (password.length < 8) {
+    res.status(400).json({ error: 'Password must be at least 8 characters long' });
+    return;
+  }
+
   const validRoles = ['client', 'operations_officer', 'compliance_officer', 'supervisor', 'admin'];
   if (!validRoles.includes(role)) {
     res.status(400).json({ error: 'Invalid role specified' });
+    return;
+  }
+
+  if (role === 'admin' && req.user?.role !== 'admin') {
+    res.status(403).json({ error: 'Only system administrators can create admin accounts' });
     return;
   }
 
@@ -249,6 +278,11 @@ router.put('/users/:id', authenticateJWT as any, requirePermission('can_update_u
       }
     }
 
+    if (role === 'admin' && req.user?.role !== 'admin' && existing.role !== 'admin') {
+      res.status(403).json({ error: 'Only system administrators can promote users to admin' });
+      return;
+    }
+
     const updatedName = name !== undefined ? name.trim() : existing.name;
     const updatedEmail = email !== undefined ? email.trim().toLowerCase() : existing.email;
     const updatedRole = role !== undefined ? role : existing.role;
@@ -256,7 +290,11 @@ router.put('/users/:id', authenticateJWT as any, requirePermission('can_update_u
     const permsJson = permissions !== undefined ? (permissions ? JSON.stringify(permissions) : null) : existing.permissions;
 
     let passwordHash = existing.password_hash;
-    if (password && password.trim().length >= 6) {
+    if (password && password.trim().length > 0) {
+      if (password.trim().length < 8) {
+        res.status(400).json({ error: 'Password must be at least 8 characters long' });
+        return;
+      }
       const salt = await bcrypt.genSalt(10);
       passwordHash = await bcrypt.hash(password.trim(), salt);
     }

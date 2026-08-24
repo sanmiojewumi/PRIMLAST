@@ -25,14 +25,26 @@ const AdminPortal: React.FC = () => {
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [accountSuccess, setAccountSuccess] = useState<string | null>(null);
   const [accountError, setAccountError] = useState<string | null>(null);
-  const [staffPermissions] = useState({
+  const [staffPermissions, setStaffPermissions] = useState({
     can_view_users: true,
     can_update_user_status: true,
-    can_delete_users: true,
-    can_delete_applications: true,
+    can_delete_users: false,
+    can_delete_applications: false,
     can_view_logs: true,
-    can_create_staff: true
+    can_create_staff: false
   });
+  const [editPermissions, setEditPermissions] = useState<Record<string, boolean>>({});
+  const [editUserError, setEditUserError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const PERM_OPTIONS: { key: string; label: string }[] = [
+    { key: 'can_view_users', label: 'View users' },
+    { key: 'can_update_user_status', label: 'Edit users / status' },
+    { key: 'can_create_staff', label: 'Create accounts' },
+    { key: 'can_delete_users', label: 'Delete users' },
+    { key: 'can_delete_applications', label: 'Delete filings' },
+    { key: 'can_view_logs', label: 'View audit logs' }
+  ];
 
   // Edit User Modal State
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -55,6 +67,8 @@ const AdminPortal: React.FC = () => {
   // Search & Filter for Applications section
   const [appSearchQuery, setAppSearchQuery] = useState('');
   const [appStatusFilter, setAppStatusFilter] = useState('all');
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [logSearchQuery, setLogSearchQuery] = useState('');
 
   const hasPermission = (permName: string) => {
     if (!activeUser) return false;
@@ -86,9 +100,12 @@ const AdminPortal: React.FC = () => {
       });
       if (res.ok) {
         setUsers(await res.json());
+      } else {
+        setError('Could not load user directory.');
       }
     } catch (err) {
       console.error(err);
+      setError('Could not load user directory.');
     } finally {
       setLoadingUsers(false);
     }
@@ -147,6 +164,11 @@ const AdminPortal: React.FC = () => {
     setAccountSuccess(null);
     setAccountError(null);
 
+    if (accountPassword.length < 8) {
+      setAccountError('Password must be at least 8 characters.');
+      setCreatingAccount(false);
+      return;
+    }
     if (accountPassword !== accountConfirmPassword) {
       setAccountError('Passwords do not match. Please re-enter password to confirm.');
       setCreatingAccount(false);
@@ -173,7 +195,7 @@ const AdminPortal: React.FC = () => {
 
       const data = await res.json();
       if (res.ok) {
-        setAccountSuccess(`Account (${accountRole.replace('_', ' ')}) created successfully!`);
+        setAccountSuccess(`Account (${accountRole.replace(/_/g, ' ')}) created successfully!`);
         setAccountName('');
         setAccountEmail('');
         setAccountPassword('');
@@ -200,6 +222,15 @@ const AdminPortal: React.FC = () => {
     setEditStatus(u.status || 'active');
     setEditPhone((u as any).phone || '');
     setEditPassword('');
+    setEditUserError(null);
+    setEditPermissions(u.permissions || {
+      can_view_users: true,
+      can_update_user_status: true,
+      can_delete_users: false,
+      can_delete_applications: false,
+      can_view_logs: true,
+      can_create_staff: false
+    });
   };
 
   // Save Edit User Account
@@ -207,6 +238,13 @@ const AdminPortal: React.FC = () => {
     e.preventDefault();
     if (!editingUser) return;
     setSavingUser(true);
+    setEditUserError(null);
+
+    if (editPassword.trim() && editPassword.trim().length < 8) {
+      setEditUserError('New password must be at least 8 characters.');
+      setSavingUser(false);
+      return;
+    }
 
     try {
       const res = await fetch(`${API_BASE}/admin/users/${editingUser.id}`, {
@@ -221,20 +259,23 @@ const AdminPortal: React.FC = () => {
           role: editRole,
           status: editStatus,
           phone: editPhone,
-          password: editPassword.trim() ? editPassword.trim() : undefined
+          password: editPassword.trim() ? editPassword.trim() : undefined,
+          permissions: editRole === 'supervisor' ? editPermissions : null
         })
       });
 
       const data = await res.json();
       if (res.ok) {
         setEditingUser(null);
+        setNotice('User account updated.');
+        setTimeout(() => setNotice(null), 4000);
         fetchUsers();
         fetchLogs();
       } else {
-        alert(data.error || 'Failed to update user account.');
+        setEditUserError(data.error || 'Failed to update user account.');
       }
     } catch (err) {
-      alert('Network error. Failed to update user account.');
+      setEditUserError('Network error. Failed to update user account.');
     } finally {
       setSavingUser(false);
     }
@@ -258,11 +299,13 @@ const AdminPortal: React.FC = () => {
         fetchApplications();
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to delete user account.');
+        setError(data.error || 'Failed to delete user account.');
+        setTimeout(() => setError(null), 4000);
       }
     } catch (err) {
       console.error(err);
-      alert('Network error. Failed to delete user account.');
+      setError('Network error. Failed to delete user account.');
+      setTimeout(() => setError(null), 4000);
     }
   };
 
@@ -325,13 +368,17 @@ const AdminPortal: React.FC = () => {
       const data = await res.json();
       if (res.ok) {
         setEditingApp(null);
+        setNotice('Application updated. The client has been notified.');
+        setTimeout(() => setNotice(null), 4000);
         fetchApplications();
         fetchLogs();
       } else {
-        alert(data.error || 'Failed to update application.');
+        setError(data.error || 'Failed to update application.');
+        setTimeout(() => setError(null), 4000);
       }
     } catch (err) {
-      alert('Network error. Failed to update application.');
+      setError('Network error. Failed to update application.');
+      setTimeout(() => setError(null), 4000);
     } finally {
       setSavingApp(false);
     }
@@ -352,17 +399,20 @@ const AdminPortal: React.FC = () => {
         fetchLogs();
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to delete application.');
+        setError(data.error || 'Failed to delete application.');
+        setTimeout(() => setError(null), 4000);
       }
     } catch (err) {
-      alert('Network error. Failed to delete application.');
+      setError('Network error. Failed to delete application.');
+      setTimeout(() => setError(null), 4000);
     }
   };
 
   // Export applications to CSV
   const handleExportCSV = () => {
     if (apps.length === 0) {
-      alert('No application records found to export.');
+      setError('No application records found to export.');
+      setTimeout(() => setError(null), 4000);
       return;
     }
 
@@ -536,6 +586,16 @@ const AdminPortal: React.FC = () => {
   });
 
   const staffMembers = users.filter(u => u.role !== 'client');
+  const userQuery = userSearchQuery.trim().toLowerCase();
+  const visibleUsers = users.filter(u => {
+    if (!userQuery) return true;
+    return [u.name, u.email, u.role.replace(/_/g, ' '), (u as any).phone || ''].some(v => String(v).toLowerCase().includes(userQuery));
+  });
+  const logQuery = logSearchQuery.trim().toLowerCase();
+  const visibleLogs = auditLogs.filter(log => {
+    if (!logQuery) return true;
+    return [log.action, log.details, log.user_name || '', log.ip_address || ''].some(v => String(v).toLowerCase().includes(logQuery));
+  });
 
   return (
     <div className="animate-fade-in theme-colored page-theme-glow page-container">
@@ -563,6 +623,12 @@ const AdminPortal: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {notice && (
+        <div style={{ padding: '12px', background: 'rgba(34,197,94,0.1)', border: '1px solid #22c55e', borderRadius: '8px', color: '#4ade80', fontSize: '0.85rem' }}>
+          {notice}
+        </div>
+      )}
 
       {error && (
         <div style={{ padding: '12px', background: 'rgba(229,62,62,0.08)', border: '1px solid var(--accent-red)', borderRadius: '8px', color: 'var(--accent-red)', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem' }}>
@@ -598,7 +664,7 @@ const AdminPortal: React.FC = () => {
                     <option value="operations_officer">Operations Officer (Consultant)</option>
                     <option value="compliance_officer">Compliance Officer (Filer)</option>
                     <option value="supervisor">Supervisor (Manager)</option>
-                    <option value="admin">System Administrator</option>
+                    {activeUser?.role === 'admin' && <option value="admin">System Administrator</option>}
                   </select>
                 </div>
 
@@ -649,7 +715,8 @@ const AdminPortal: React.FC = () => {
                     style={{ padding: '8px 12px', fontSize: '0.85rem' }}
                     value={accountPassword} 
                     onChange={(e) => setAccountPassword(e.target.value)} 
-                    placeholder="••••••••"
+                    placeholder="Min. 8 characters"
+                    minLength={8}
                   />
                 </div>
 
@@ -663,8 +730,27 @@ const AdminPortal: React.FC = () => {
                     value={accountConfirmPassword} 
                     onChange={(e) => setAccountConfirmPassword(e.target.value)} 
                     placeholder="Re-enter password to confirm"
+                    minLength={8}
                   />
                 </div>
+
+                {accountRole === 'supervisor' && (
+                  <div style={{ padding: '10px 12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
+                    <span className="form-label" style={{ fontSize: '0.7rem', display: 'block', marginBottom: '8px' }}>Supervisor permissions</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                      {PERM_OPTIONS.map(p => (
+                        <label key={p.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', color: '#e2e8f0', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={!!staffPermissions[p.key as keyof typeof staffPermissions]}
+                            onChange={(e) => setStaffPermissions(prev => ({ ...prev, [p.key]: e.target.checked }))}
+                          />
+                          {p.label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {accountSuccess && (
                   <div style={{ color: '#48bb78', fontSize: '0.8rem', textAlign: 'center', fontWeight: '500' }}>
@@ -690,6 +776,17 @@ const AdminPortal: React.FC = () => {
               <h4 style={{ fontSize: '1.1rem', color: '#fff', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
                 User Accounts Directory
               </h4>
+              <div style={{ position: 'relative', marginBottom: '14px' }}>
+                <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <input
+                  type="text"
+                  className="form-input"
+                  style={{ padding: '6px 10px 6px 30px', fontSize: '0.8rem', width: '100%' }}
+                  placeholder="Search name, email, or role..."
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                />
+              </div>
 
               {loadingUsers ? (
                 <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading users...</div>
@@ -700,11 +797,11 @@ const AdminPortal: React.FC = () => {
                   <div>
                     <h5 style={{ fontSize: '0.85rem', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '4px' }}>
                       <span>Staff Members</span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>({users.filter(u => u.role !== 'client').length})</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>({visibleUsers.filter(u => u.role !== 'client').length})</span>
                     </h5>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {users.filter(u => u.role !== 'client').map(u => renderUserRow(u))}
-                      {users.filter(u => u.role !== 'client').length === 0 && (
+                      {visibleUsers.filter(u => u.role !== 'client').map(u => renderUserRow(u))}
+                      {visibleUsers.filter(u => u.role !== 'client').length === 0 && (
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', padding: '10px', textAlign: 'center' }}>No staff members found.</div>
                       )}
                     </div>
@@ -714,11 +811,11 @@ const AdminPortal: React.FC = () => {
                   <div>
                     <h5 style={{ fontSize: '0.85rem', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '4px' }}>
                       <span>Client Accounts</span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>({users.filter(u => u.role === 'client').length})</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>({visibleUsers.filter(u => u.role === 'client').length})</span>
                     </h5>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {users.filter(u => u.role === 'client').map(u => renderUserRow(u))}
-                      {users.filter(u => u.role === 'client').length === 0 && (
+                      {visibleUsers.filter(u => u.role === 'client').map(u => renderUserRow(u))}
+                      {visibleUsers.filter(u => u.role === 'client').length === 0 && (
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', padding: '10px', textAlign: 'center' }}>No client accounts found.</div>
                       )}
                     </div>
@@ -850,12 +947,23 @@ const AdminPortal: React.FC = () => {
                 <ShieldCheck size={20} style={{ color: 'var(--accent-red)' }} />
                 <h4 style={{ fontSize: '1.1rem', color: '#fff', margin: 0 }}>Security Audit Trail</h4>
               </div>
+              <div style={{ position: 'relative', marginBottom: '12px' }}>
+                <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <input
+                  type="text"
+                  className="form-input"
+                  style={{ padding: '6px 10px 6px 30px', fontSize: '0.8rem', width: '100%' }}
+                  placeholder="Search logs..."
+                  value={logSearchQuery}
+                  onChange={(e) => setLogSearchQuery(e.target.value)}
+                />
+              </div>
 
               {loadingLogs ? (
                 <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading audit logs...</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '350px', overflowY: 'auto' }}>
-                  {auditLogs.map(log => (
+                  {visibleLogs.map(log => (
                     <div 
                       key={log.id}
                       style={{
@@ -883,7 +991,7 @@ const AdminPortal: React.FC = () => {
                     </div>
                   ))}
 
-                  {auditLogs.length === 0 && (
+                  {visibleLogs.length === 0 && (
                     <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>No audit logs recorded.</div>
                   )}
                 </div>
@@ -952,7 +1060,7 @@ const AdminPortal: React.FC = () => {
                     <option value="operations_officer">Operations Officer</option>
                     <option value="compliance_officer">Compliance Officer</option>
                     <option value="supervisor">Supervisor</option>
-                    <option value="admin">System Administrator</option>
+                    {(activeUser?.role === 'admin' || editRole === 'admin') && <option value="admin">System Administrator</option>}
                   </select>
                 </div>
 
@@ -976,9 +1084,31 @@ const AdminPortal: React.FC = () => {
                   className="form-input"
                   value={editPassword}
                   onChange={(e) => setEditPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Leave blank to keep current (min. 8 if changing)"
                 />
               </div>
+
+              {editRole === 'supervisor' && (
+                <div style={{ padding: '10px 12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
+                  <span className="form-label" style={{ fontSize: '0.7rem', display: 'block', marginBottom: '8px' }}>Supervisor permissions</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    {PERM_OPTIONS.map(p => (
+                      <label key={p.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', color: '#e2e8f0', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={!!editPermissions[p.key]}
+                          onChange={(e) => setEditPermissions(prev => ({ ...prev, [p.key]: e.target.checked }))}
+                        />
+                        {p.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {editUserError && (
+                <div style={{ color: 'var(--accent-red)', fontSize: '0.8rem' }}>{editUserError}</div>
+              )}
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '12px', justifyContent: 'flex-end' }}>
                 <button type="button" onClick={() => setEditingUser(null)} className="btn-secondary">

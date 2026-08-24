@@ -4,7 +4,10 @@
   "private": true,
   "scripts": {
     "build": "cd client && npm install && npm run build && cd ../server && npm install && npm run build",
-    "start": "cd server && npm start"
+    "start": "cd server && npm start",
+    "dev": "node scripts/dev.mjs",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",

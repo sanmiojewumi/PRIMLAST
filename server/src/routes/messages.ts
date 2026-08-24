@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { getDb, sendNotificationEmail } from '../db';
 import { authenticateJWT, AuthRequest } from '../middleware/auth';
+import { notifyUser } from '../lib/notify';
 
 const router = Router();
 
@@ -114,10 +115,13 @@ router.post('/', authenticateJWT as any, async (req: AuthRequest, res) => {
       try {
         const admins = await db.all("SELECT id FROM users WHERE role IN ('admin', 'supervisor', 'operations_officer', 'compliance_officer')");
         for (const adminUser of admins) {
-          await db.run(
-            'INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)',
-            [adminUser.id, 'Client Response Received', `Client ${req.user.name} responded to query/message on Application Ref #${appId}.`]
-          );
+          await notifyUser(db, {
+            userId: adminUser.id,
+            title: 'Client Response Received',
+            message: `Client ${req.user.name} responded to query/message on Application Ref #${appId}.`,
+            linkType: 'chat',
+            linkId: appId
+          });
         }
         console.log(`[OFFICIAL EMAIL ALERT] Sent email alert to official mailbox (primeflowconsultingservices@gmail.com / admin@primeflow.com): Client ${req.user.name} (${req.user.email}) responded to admin query on Application #${appId}. Message: "${message_text || filename || 'file attachment'}"`);
       } catch (e) {

@@ -139,6 +139,20 @@ async function initializeDatabase(db: Database) {
     try {
       await db.exec("ALTER TABLE profiles ADD COLUMN lga TEXT");
     } catch (e) {}
+    try {
+      await db.exec("ALTER TABLE documents ADD COLUMN kind TEXT DEFAULT 'file'");
+    } catch (e) {}
+    try { await db.exec("ALTER TABLE notifications ADD COLUMN link_type TEXT"); } catch (e) {}
+    try { await db.exec("ALTER TABLE notifications ADD COLUMN link_id INTEGER"); } catch (e) {}
+    try { await db.exec("ALTER TABLE invoices ADD COLUMN payment_status TEXT DEFAULT 'unpaid'"); } catch (e) {}
+    try { await db.exec("ALTER TABLE invoices ADD COLUMN payment_method TEXT"); } catch (e) {}
+    try { await db.exec("ALTER TABLE invoices ADD COLUMN payment_reference TEXT"); } catch (e) {}
+    try { await db.exec("ALTER TABLE invoices ADD COLUMN paid_at TEXT"); } catch (e) {}
+    try { await db.exec("ALTER TABLE billing_settings ADD COLUMN bank_name TEXT"); } catch (e) {}
+    try { await db.exec("ALTER TABLE billing_settings ADD COLUMN bank_account_name TEXT"); } catch (e) {}
+    try { await db.exec("ALTER TABLE billing_settings ADD COLUMN bank_account_number TEXT"); } catch (e) {}
+    try { await db.exec("ALTER TABLE billing_settings ADD COLUMN gateway_enabled INTEGER DEFAULT 0"); } catch (e) {}
+    try { await db.exec("ALTER TABLE billing_settings ADD COLUMN paystack_public_key TEXT"); } catch (e) {}
   } catch (err) {
     console.error("Migration warning:", err);
   }
@@ -250,6 +264,35 @@ async function initializeDatabase(db: Database) {
         priority TEXT DEFAULT 'medium',
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+      CREATE TABLE IF NOT EXISTS signatures (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        application_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        document_id INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS invoices (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        application_id INTEGER,
+        client_id INTEGER NOT NULL,
+        doc_type TEXT NOT NULL,
+        generation_mode TEXT NOT NULL,
+        number TEXT NOT NULL UNIQUE,
+        amount REAL NOT NULL,
+        tax REAL DEFAULT 0,
+        currency TEXT DEFAULT 'NGN',
+        description TEXT,
+        line_items TEXT,
+        status TEXT DEFAULT 'issued',
+        issued_by INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS billing_settings (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        auto_invoice_on_complete INTEGER DEFAULT 0,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      INSERT OR IGNORE INTO billing_settings (id, auto_invoice_on_complete) VALUES (1, 0);
     `);
   } catch (err) {
     console.warn("Embedded schema fallback notice:", err);

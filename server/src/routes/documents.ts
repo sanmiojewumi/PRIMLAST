@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import { getDb } from '../db';
 import { authenticateJWT, AuthRequest } from '../middleware/auth';
 import { uploadSecure } from '../middleware/upload';
@@ -67,8 +68,8 @@ router.post('/upload', authenticateJWT as any, (req, res, next) => {
 
     // Save metadata to DB
     const result = await db.run(
-      'INSERT INTO documents (application_id, user_id, filename, original_name, mime_type, size) VALUES (?, ?, ?, ?, ?, ?)',
-      [appId, req.user.id, file.filename, file.originalname, file.mimetype, file.size]
+      'INSERT INTO documents (application_id, user_id, filename, original_name, mime_type, size, kind) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [appId, req.user.id, file.filename, file.originalname, file.mimetype, file.size, 'file']
     );
 
     const docId = result.lastID;
@@ -120,7 +121,7 @@ router.get('/application/:appId', authenticateJWT as any, async (req: AuthReques
     }
 
     const docs = await db.all(
-      'SELECT id, application_id, user_id, original_name, mime_type, size, is_approved, created_at FROM documents WHERE application_id = ? ORDER BY created_at DESC',
+      'SELECT id, application_id, user_id, filename, original_name, mime_type, size, is_approved, kind, created_at FROM documents WHERE application_id = ? ORDER BY created_at DESC',
       [appId]
     );
 
@@ -215,6 +216,74 @@ router.put('/:id/approve', authenticateJWT as any, async (req: AuthRequest, res)
   } catch (err) {
     console.error(err);
      res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// SAVE CLIENT SIGNATURE (PNG data URL) alongside application documents
+router.post('/signature', authenticateJWT as any, async (req: AuthRequest, res) => {
+  if (!req.user) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  const applicationId = parseInt(req.body?.application_id, 10);
+  const image = String(req.body?.image || '');
+  const match = image.match(/^data:image\/png;base64,([A-Za-z0-9+/=]+)$/);
+
+  if (!applicationId || !match) {
+    res.status(400).json({ error: 'Application ID and PNG signature are required' });
+    return;
+  }
+
+  const buffer = Buffer.from(match[1], 'base64');
+  if (buffer.length < 80 || buffer.length > 2 * 1024 * 1024) {
+    res.status(400).json({ error: 'Signature image is invalid or too large' });
+    return;
+  }
+
+  try {
+    const db = await getDb();
+    const app = await db.get('SELECT client_id FROM applications WHERE id = ?', [applicationId]);
+    if (!app) {
+      res.status(404).json({ error: 'Associated application not found' });
+      return;
+    }
+
+    if (req.user.role === 'client' && app.client_id !== req.user.id) {
+      res.status(403).json({ error: 'Forbidden: You cannot sign this application' });
+      return;
+    }
+
+    const filename = `${crypto.randomUUID()}.png`;
+    const filePath = path.join(UPLOADS_DIR, filename);
+    fs.writeFileSync(filePath, buffer);
+
+    const result = await db.run(
+      'INSERT INTO documents (application_id, user_id, filename, original_name, mime_type, size, kind) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [applicationId, req.user.id, filename, 'Client Signature.png', 'image/png', buffer.length, 'signature']
+    );
+
+    await db.run(
+      'INSERT INTO signatures (application_id, user_id, document_id, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
+      [applicationId, req.user.id, result.lastID]
+    );
+
+    await logAudit(
+      req.user.id,
+      'SIGNATURE_CAPTURE',
+      `Captured client signature for application ${applicationId}`,
+      req.ip
+    );
+
+    res.status(201).json({
+      id: result.lastID,
+      filename,
+      originalName: 'Client Signature.png',
+      message: 'Signature saved'
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

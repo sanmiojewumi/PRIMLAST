@@ -1,6 +1,8 @@
 import { Router, Response } from 'express';
 import { getDb, sendNotificationEmail } from '../db';
 import { authenticateJWT, AuthRequest, requireRole } from '../middleware/auth';
+import { autoInvoiceForApplication } from '../lib/billing';
+import { notifyUser } from '../lib/notify';
 
 const router = Router();
 
@@ -33,7 +35,8 @@ router.get('/applications', authenticateJWT as any, async (req: AuthRequest, res
     if (role === 'client') {
       // Clients only see their own applications
       applications = await db.all(
-        `SELECT a.*, u.name as client_name, staff.name as assignee_name 
+        `SELECT a.*, u.name as client_name, staff.name as assignee_name,
+                (SELECT COUNT(*) FROM documents d WHERE d.application_id = a.id AND IFNULL(d.kind,'file') = 'signature') as signature_count
          FROM applications a
          LEFT JOIN users u ON a.client_id = u.id
          LEFT JOIN users staff ON a.assigned_to = staff.id
@@ -41,19 +44,10 @@ router.get('/applications', authenticateJWT as any, async (req: AuthRequest, res
          ORDER BY a.updated_at DESC`,
         [id]
       );
-    } else if (role === 'operations_officer' || role === 'compliance_officer') {
-      // Staff see all applications or their assigned ones. Let's return all, so they can assign them to themselves, but flag assigned.
+    } else {
       applications = await db.all(
-        `SELECT a.*, u.name as client_name, staff.name as assignee_name 
-         FROM applications a
-         LEFT JOIN users u ON a.client_id = u.id
-         LEFT JOIN users staff ON a.assigned_to = staff.id
-         ORDER BY a.updated_at DESC`
-      );
-    } else if (role === 'admin') {
-      // Admins see everything
-      applications = await db.all(
-        `SELECT a.*, u.name as client_name, staff.name as assignee_name 
+        `SELECT a.*, u.name as client_name, staff.name as assignee_name,
+                (SELECT COUNT(*) FROM documents d WHERE d.application_id = a.id AND IFNULL(d.kind,'file') = 'signature') as signature_count
          FROM applications a
          LEFT JOIN users u ON a.client_id = u.id
          LEFT JOIN users staff ON a.assigned_to = staff.id
@@ -81,7 +75,8 @@ router.get('/applications/:id', authenticateJWT as any, async (req: AuthRequest,
   try {
     const db = await getDb();
     const app = await db.get(
-      `SELECT a.*, u.name as client_name, staff.name as assignee_name 
+      `SELECT a.*, u.name as client_name, staff.name as assignee_name,
+              (SELECT COUNT(*) FROM documents d WHERE d.application_id = a.id AND IFNULL(d.kind,'file') = 'signature') as signature_count
        FROM applications a
        LEFT JOIN users u ON a.client_id = u.id
        LEFT JOIN users staff ON a.assigned_to = staff.id
@@ -144,10 +139,13 @@ router.post('/applications', authenticateJWT as any, requireRole(['client']) as 
     try {
       const admins = await db.all("SELECT id, email, name FROM users WHERE role IN ('admin', 'supervisor')");
       for (const adminUser of admins) {
-        await db.run(
-          'INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)',
-          [adminUser.id, 'New Client Application Submitted', `Client ${req.user.name} submitted a new ${service_type.replace(/_/g, ' ')} application (Ref #${newAppId}).`]
-        );
+        await notifyUser(db, {
+          userId: adminUser.id,
+          title: 'New Client Application Submitted',
+          message: `Client ${req.user.name} submitted a new ${service_type.replace(/_/g, ' ')} application (Ref #${newAppId}).`,
+          linkType: 'application',
+          linkId: newAppId || null
+        });
       }
       console.log(`[OFFICIAL EMAIL ALERT] Sent email alert to official mailbox (primeflowconsultingservices@gmail.com / admin@primeflow.com): New Application #${newAppId} (${service_type}) submitted by ${req.user.name} (${req.user.email}).`);
     } catch (e) {
@@ -162,7 +160,7 @@ router.post('/applications', authenticateJWT as any, requireRole(['client']) as 
 });
 
 // UPDATE STATUS
-router.put('/applications/:id/status', authenticateJWT as any, requireRole(['admin', 'operations_officer', 'compliance_officer']) as any, async (req: AuthRequest, res) => {
+router.put('/applications/:id/status', authenticateJWT as any, requireRole(['admin', 'operations_officer', 'compliance_officer', 'supervisor']) as any, async (req: AuthRequest, res) => {
   if (!req.user) {
      res.status(401).json({ error: 'Unauthorized' });
      return;
@@ -194,16 +192,31 @@ router.put('/applications/:id/status', authenticateJWT as any, requireRole(['adm
 
     // Insert status notification for the client
     const notificationMsg = `Your application for ${app.service_type.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())} (Ref: #${appId}) status has been updated to "${status.replace(/_/g, ' ')}".`;
-    await db.run(
-      'INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)',
-      [
-        app.client_id,
-        'Application Status Update',
-        notificationMsg
-      ]
-    );
+    await notifyUser(db, {
+      userId: app.client_id,
+      title: 'Application Status Update',
+      message: notificationMsg,
+      linkType: 'application',
+      linkId: appId
+    });
 
     await sendNotificationEmail(db, app.client_id, 'Application Status Update', notificationMsg);
+
+    let autoInvoice = null;
+    if (status === 'completed') {
+      const settings = await db.get<{ auto_invoice_on_complete: number }>(
+        'SELECT auto_invoice_on_complete FROM billing_settings WHERE id = 1'
+      );
+      if (settings?.auto_invoice_on_complete) {
+        autoInvoice = await autoInvoiceForApplication(db, app, req.user.id);
+        await logAudit(
+          req.user.id,
+          'BILLING_GENERATE',
+          `Auto-issued invoice ${autoInvoice?.number} for completed application ${appId}`,
+          req.ip
+        );
+      }
+    }
 
     await logAudit(
       req.user.id,
@@ -212,7 +225,7 @@ router.put('/applications/:id/status', authenticateJWT as any, requireRole(['adm
       req.ip
     );
 
-     res.status(200).json({ message: 'Status updated successfully' });
+     res.status(200).json({ message: 'Status updated successfully', invoice: autoInvoice });
   } catch (err) {
     console.error(err);
      res.status(500).json({ error: 'Internal server error' });
@@ -220,7 +233,7 @@ router.put('/applications/:id/status', authenticateJWT as any, requireRole(['adm
 });
 
 // ASSIGN APPLICATION
-router.put('/applications/:id/assign', authenticateJWT as any, requireRole(['admin', 'operations_officer', 'compliance_officer']) as any, async (req: AuthRequest, res) => {
+router.put('/applications/:id/assign', authenticateJWT as any, requireRole(['admin', 'operations_officer', 'compliance_officer', 'supervisor']) as any, async (req: AuthRequest, res) => {
   if (!req.user) {
      res.status(401).json({ error: 'Unauthorized' });
      return;

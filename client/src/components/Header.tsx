@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, API_BASE } from '../context/AuthContext';
 import { Bell, Search, User as UserIcon, Menu, Mail } from 'lucide-react';
+import { navFromNotification } from '../utils/notifications';
 
 interface HeaderProps {
   activeTab: string;
@@ -31,7 +32,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
     { name: 'PENCOM Compliance', type: 'Compliance', tab: 'compliance', action: 'pencom' },
     { name: 'NSITF Registration', type: 'Compliance', tab: 'compliance', action: 'nsitf' },
     { name: 'ITF Compliance', type: 'Compliance', tab: 'compliance', action: 'itf' },
-    { name: 'NRS Tax Clearance (FIRS)', type: 'Compliance', tab: 'compliance', action: 'nrs' },
+    { name: 'NRS Tax Clearance', type: 'Compliance', tab: 'compliance', action: 'nrs' },
     
     { name: "Driver's Licence", type: 'Other Service', tab: 'services', action: 'other_services', sub: "Driver's Licence" },
     { name: "Car Dealer's Licence", type: 'Other Service', tab: 'services', action: 'other_services', sub: "Car Dealer's Licence" },
@@ -121,6 +122,14 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
     }
   };
 
+  const openNotification = (n: any) => {
+    markRead(n.id);
+    setShowNotifications(false);
+    const dest = navFromNotification(n, user?.role);
+    if (setActiveTab) setActiveTab(dest.tab);
+    window.dispatchEvent(new CustomEvent('primeflow-navigate', { detail: dest }));
+  };
+
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   const markAllRead = async () => {
@@ -140,6 +149,8 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
     advisor: 'AI Business Advisor',
     knowledge: 'Knowledge Hub',
     kanban: 'Operations Kanban',
+    workflow: 'Workflow Tracker',
+    billing: 'Invoices & Receipts',
     chat: 'Consultation Chat',
     admin: 'System Administration'
   };
@@ -303,7 +314,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
           {/* Mailbox Dropdown */}
           {showMailbox && (
             <div
-              className="glass-panel"
+              className="glass-panel header-dropdown"
               style={{
                 position: 'absolute',
                 top: '40px',
@@ -397,7 +408,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
           {/* Notifications Dropdown */}
           {showNotifications && (
             <div
-              className="glass-panel"
+              className="glass-panel header-dropdown"
               style={{
                 position: 'absolute',
                 top: '40px',
@@ -423,13 +434,13 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
                 {notifications.map(n => (
                   <div 
                     key={n.id} 
-                    onClick={() => { if (!n.is_read) markRead(n.id); }}
+                    onClick={() => openNotification(n)}
                     style={{ 
                       padding: '8px 10px', 
                       borderRadius: '6px', 
                       background: n.is_read ? 'transparent' : 'rgba(229, 62, 62, 0.05)',
                       borderLeft: n.is_read ? '2px solid transparent' : '2px solid var(--accent-red)',
-                      cursor: n.is_read ? 'default' : 'pointer'
+                      cursor: 'pointer'
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: '600', marginBottom: '2px' }}>
@@ -453,14 +464,15 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
         </div>
 
         {/* Brand Mini Logo — click to go home */}
-        <img 
-          src="/logo.jpg" 
+          <img 
+          src="/logo.png" 
           alt="PrimeFlow Logo" 
+          className="brand-logo"
           onClick={() => setActiveTab && setActiveTab('welcome')}
           title="Go to Home Workspace"
           style={{ 
-            width: '34px', 
-            height: '34px', 
+            width: '68px', 
+            height: '32px', 
             borderRadius: '6px', 
             border: '1px solid rgba(255,255,255,0.12)',
             boxShadow: '0 0 8px rgba(229, 62, 62, 0.2)',
@@ -483,7 +495,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
           style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
           title="View/Edit Profile"
         >
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+          <div className="header-user-meta">
             <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#fff' }}>{user.name}</span>
             <span style={{ fontSize: '0.7rem', color: 'var(--accent-red)', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               {user.role.replace('_', ' ')}

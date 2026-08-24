@@ -5,10 +5,18 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: '0.0.0.0',   // Bind to all interfaces so mobile/tablet can connect
-    port: 5173,
-    strictPort: false,
+    host: '0.0.0.0',
+    port: 5174,
+    strictPort: true,
     allowedHosts: true,
-    cors: true
+    cors: true,
+    hmr: {
+      protocol: 'ws',
+      clientPort: 5174
+    },
+    proxy: {
+      '/api': { target: 'http://127.0.0.1:5000', changeOrigin: true },
+      '/uploads': { target: 'http://127.0.0.1:5000', changeOrigin: true }
+    }
   }
 })

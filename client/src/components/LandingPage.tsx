@@ -121,7 +121,6 @@ const BLOG_POSTS = [
 
 const TRUST_AGENCIES = [
   { name: 'CAC', full: 'Corporate Affairs Commission' },
-  { name: 'IRS', full: 'Internal Revenue Service' },
   { name: 'NRS', full: 'Nigeria Revenue Service' },
   { name: 'SCUML', full: 'Special Control Unit Against Money Laundering' },
   { name: 'PENCOM', full: 'National Pension Commission' },
@@ -156,8 +155,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
     return () => clearInterval(interval);
   }, []);
 
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [contactService, setContactService] = useState('');
+  const [contactMessage, setContactMessage] = useState('');
+  const [contactSent, setContactSent] = useState(false);
+  const [legalModal, setLegalModal] = useState<{ title: string; body: string } | null>(null);
   const nextTestimonial = () => setTestimonialIdx(i => (i + 1) % TESTIMONIALS.length);
   const prevTestimonial = () => setTestimonialIdx(i => (i - 1 + TESTIMONIALS.length) % TESTIMONIALS.length);
+
+  const submitConsultation = (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = encodeURIComponent(
+      `Hello Primeflow, I would like a free consultation.\n\nName: ${contactName}\nEmail: ${contactEmail}\nPhone: ${contactPhone}\nService: ${contactService}\n\n${contactMessage || 'Please get in touch with me.'}`
+    );
+    window.open(`https://wa.me/2347072928256?text=${text}`, '_blank', 'noopener,noreferrer');
+    setContactSent(true);
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: '#0F0F0F', color: '#FFFFFF', fontFamily: "'Inter', sans-serif", overflowX: 'hidden' }}>
@@ -174,7 +189,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
             title="Return to Homepage"
             style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
           >
-            <img src="/logo.jpg" alt="Primeflow Logo" style={{ width: '44px', height: '44px', borderRadius: '8px', border: '1.5px solid rgba(215,25,32,0.4)', boxShadow: '0 0 12px rgba(215,25,32,0.25)' }} />
+            <img src="/logo.png" alt="Primeflow Logo" className="brand-logo" style={{ height: '40px', width: '88px', borderRadius: '8px', border: '1.5px solid rgba(215,25,32,0.4)', boxShadow: '0 0 12px rgba(215,25,32,0.25)' }} />
             <div>
               <div style={{ fontSize: '1.15rem', fontWeight: '800', letterSpacing: '0.05em', fontFamily: "'Outfit', sans-serif" }}>
                 PRIME<span style={{ color: '#D71920' }}>FLOW</span>
@@ -191,10 +206,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
             <a href="#contact">Contact</a>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <button onClick={() => onShowAuth('login')} className="landing-btn-ghost">Sign In</button>
-            <button onClick={() => onShowAuth('register')} className="landing-btn-primary">Get Started</button>
-            {/* Mobile hamburger */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="landing-nav-cta">
+              <button onClick={() => onShowAuth('login')} className="landing-btn-ghost">Sign In</button>
+              <button onClick={() => onShowAuth('register')} className="landing-btn-primary">Get Started</button>
+            </div>
             <button className="landing-hamburger" onClick={() => setMobileMenuOpen(v => !v)} aria-label="Menu">
               <span /><span /><span />
             </button>
@@ -208,7 +224,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
             {['Services', 'Why Us', 'Resources', 'Contact'].map(l => (
               <a key={l} href={`#${l.toLowerCase().replace(' ', '-')}`} onClick={() => setMobileMenuOpen(false)} style={{ display: 'block', padding: '16px 0', fontSize: '1.1rem', color: '#fff', textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>{l}</a>
             ))}
-            <button onClick={() => { setMobileMenuOpen(false); onShowAuth('register'); }} className="landing-btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '20px' }}>Get Started <ArrowRight size={16} /></button>
+            <button onClick={() => { setMobileMenuOpen(false); onShowAuth('login'); }} className="landing-btn-ghost" style={{ width: '100%', justifyContent: 'center', marginTop: '20px' }}>Sign In</button>
+            <button onClick={() => { setMobileMenuOpen(false); onShowAuth('register'); }} className="landing-btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '12px' }}>Get Started <ArrowRight size={16} /></button>
           </div>
         )}
       </nav>
@@ -348,7 +365,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
       </section>
 
       {/* ── WHY CHOOSE US / ABOUT US ───────────────────────────────────────── */}
-      <section id="about" className="landing-section landing-section-alt">
+      <section id="why-us" className="landing-section landing-section-alt">
         <div className="landing-container">
           <FadeSection>
             <div className="section-header">
@@ -557,7 +574,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
                     <div style={{ fontWeight: '700', color: '#fff', marginBottom: '4px' }}>Call, SMS & WhatsApp Official Helpline</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <a href="https://wa.me/2347072928256" target="_blank" rel="noopener noreferrer" style={{ color: '#D71920', fontWeight: '700', fontSize: '1rem', textDecoration: 'none' }}>
-                        📞 +234 707 292 8256 (Calls, SMS & WhatsApp)
+                        +234 707 292 8256 (Calls, SMS & WhatsApp)
+                      </a>
+                      <a href="https://wa.me/2347066714961" target="_blank" rel="noopener noreferrer" style={{ color: '#94a3b8', fontWeight: '600', fontSize: '0.9rem', textDecoration: 'none' }}>
+                        +234 706 671 4961 (WhatsApp support)
                       </a>
                     </div>
                   </div>
@@ -604,19 +624,32 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
             <FadeSection delay={0.2}>
               <div className="contact-form-card">
                 <h4 style={{ fontSize: '1.2rem', fontWeight: '700', color: '#fff', marginBottom: '24px' }}>Book a Free Consultation</h4>
-                <form onSubmit={(e) => { e.preventDefault(); onShowAuth('register'); }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <input type="text" placeholder="Your Full Name" required className="landing-input" />
-                  <input type="email" placeholder="Email Address" required className="landing-input" />
-                  <input type="tel" placeholder="Phone Number" required className="landing-input" />
-                  <select required className="landing-input" defaultValue="">
-                    <option value="" disabled>Select Service</option>
-                    {SERVICES.map(s => <option key={s.category} value={s.category}>{s.category}</option>)}
-                  </select>
-                  <textarea placeholder="Tell us about your business needs..." className="landing-input" style={{ minHeight: '100px', resize: 'vertical' }} />
-                  <button type="submit" className="landing-btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                    Book Consultation <ArrowRight size={16} />
-                  </button>
-                </form>
+                {contactSent ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <p style={{ color: '#cbd5e1', fontSize: '0.92rem', lineHeight: 1.6, margin: 0 }}>
+                      WhatsApp should now be open with your details. If it did not open, tap the helpline number on the left.
+                    </p>
+                    <button type="button" className="landing-btn-ghost" onClick={() => setContactSent(false)}>Send another enquiry</button>
+                  </div>
+                ) : (
+                  <form onSubmit={submitConsultation} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <input type="text" placeholder="Your Full Name" required className="landing-input" value={contactName} onChange={e => setContactName(e.target.value)} />
+                    <input type="email" placeholder="Email Address" required className="landing-input" value={contactEmail} onChange={e => setContactEmail(e.target.value)} />
+                    <input type="tel" placeholder="Phone Number" required className="landing-input" value={contactPhone} onChange={e => setContactPhone(e.target.value)} />
+                    <select required className="landing-input" value={contactService} onChange={e => setContactService(e.target.value)}>
+                      <option value="" disabled>Select Service</option>
+                      {SERVICES.map(s => <option key={s.category} value={s.category}>{s.category}</option>)}
+                    </select>
+                    <textarea placeholder="Tell us about your business needs..." className="landing-input" style={{ minHeight: '100px', resize: 'vertical' }} value={contactMessage} onChange={e => setContactMessage(e.target.value)} />
+                    <button type="submit" className="landing-btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+                      Send via WhatsApp <ArrowRight size={16} />
+                    </button>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b', textAlign: 'center' }}>
+                      Prefer a portal account?{' '}
+                      <button type="button" onClick={() => onShowAuth('register')} style={{ background: 'none', border: 'none', color: '#D71920', cursor: 'pointer', fontWeight: 700 }}>Create one here</button>
+                    </p>
+                  </form>
+                )}
               </div>
             </FadeSection>
           </div>
@@ -633,7 +666,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
                 title="Return to Homepage"
                 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', cursor: 'pointer' }}
               >
-                <img src="/logo.jpg" alt="Primeflow Logo" style={{ width: '40px', height: '40px', borderRadius: '8px' }} />
+                <img src="/logo.png" alt="Primeflow Logo" className="brand-logo" style={{ height: '36px', width: '80px', borderRadius: '8px' }} />
                 <div style={{ fontSize: '1.1rem', fontWeight: '800', fontFamily: "'Outfit', sans-serif" }}>
                   PRIME<span style={{ color: '#D71920' }}>FLOW</span>
                 </div>
@@ -651,16 +684,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
             </div>
             <div>
               <div className="footer-heading">Company</div>
-              <a href="#about" className="footer-link">About Us</a>
+              <a href="#why-us" className="footer-link">About Us</a>
               <a href="#testimonials" className="footer-link">Client Reviews</a>
               <a href="#blog" className="footer-link">Knowledge Hub</a>
               <a href="#contact" className="footer-link">Contact Us</a>
             </div>
             <div>
               <div className="footer-heading">Legal & Compliance</div>
-              <a href="#contact" onClick={(e) => { e.preventDefault(); alert("PrimeFlow Privacy Policy: All client data, incorporation documents, and identity records are strictly encrypted under standard Nigerian NDPR and CAC guidelines."); }} className="footer-link">Privacy Policy</a>
-              <a href="#contact" onClick={(e) => { e.preventDefault(); alert("PrimeFlow Terms of Service: All services are delivered in accordance with CAC regulations, FIRS requirements, and CAMA 2020 legal provisions."); }} className="footer-link">Terms of Service</a>
-              <a href="#contact" onClick={(e) => { e.preventDefault(); alert("PrimeFlow Cookie Policy: We use essential session cookies only to secure your active portal login and application state."); }} className="footer-link">Cookie Policy</a>
+              <a href="#contact" onClick={(e) => { e.preventDefault(); setLegalModal({ title: 'Privacy Policy', body: 'PrimeFlow stores client data, incorporation documents, and identity records in accordance with the Nigeria Data Protection Regulation (NDPR) and CAC filing requirements. Access is limited to authorised staff handling your matter.' }); }} className="footer-link">Privacy Policy</a>
+              <a href="#contact" onClick={(e) => { e.preventDefault(); setLegalModal({ title: 'Terms of Service', body: 'All services are delivered in accordance with CAC regulations, Nigeria Revenue Service (NRS) requirements, and CAMA 2020. Filing timelines depend on complete client documents and agency processing.' }); }} className="footer-link">Terms of Service</a>
+              <a href="#contact" onClick={(e) => { e.preventDefault(); setLegalModal({ title: 'Cookie Policy', body: 'We use essential session cookies only to keep your portal login and application state secure. We do not use advertising trackers on this platform.' }); }} className="footer-link">Cookie Policy</a>
               <div className="footer-heading" style={{ marginTop: '20px' }}>Registered Agencies</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
                 {TRUST_AGENCIES.map(a => (
@@ -675,6 +708,20 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
           </div>
         </div>
       </footer>
+
+      {legalModal && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setLegalModal(null); }}>
+          <div className="modal-frame" style={{ maxWidth: '520px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, color: '#fff' }}>{legalModal.title}</h3>
+              <button type="button" onClick={() => setLegalModal(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }} aria-label="Close">
+                <X size={20} />
+              </button>
+            </div>
+            <p className="legal-modal-body">{legalModal.body}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

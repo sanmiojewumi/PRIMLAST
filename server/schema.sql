@@ -111,6 +111,8 @@ CREATE TABLE IF NOT EXISTS notifications (
   title TEXT NOT NULL,
   message TEXT NOT NULL,
   is_read INTEGER DEFAULT 0,
+  link_type TEXT,
+  link_id INTEGER,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -140,4 +142,55 @@ CREATE TABLE IF NOT EXISTS compliance_items (
 );
 
 CREATE INDEX IF NOT EXISTS idx_compliance_user ON compliance_items(user_id);
+
+CREATE TABLE IF NOT EXISTS signatures (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  application_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  document_id INTEGER,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS invoices (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  application_id INTEGER,
+  client_id INTEGER NOT NULL,
+  doc_type TEXT CHECK(doc_type IN ('invoice','receipt')) NOT NULL,
+  generation_mode TEXT CHECK(generation_mode IN ('automated','manual')) NOT NULL,
+  number TEXT NOT NULL UNIQUE,
+  amount REAL NOT NULL,
+  tax REAL DEFAULT 0,
+  currency TEXT DEFAULT 'NGN',
+  description TEXT,
+  line_items TEXT,
+  status TEXT DEFAULT 'issued',
+  issued_by INTEGER,
+  payment_status TEXT DEFAULT 'unpaid',
+  payment_method TEXT,
+  payment_reference TEXT,
+  paid_at TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE SET NULL,
+  FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS billing_settings (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  auto_invoice_on_complete INTEGER DEFAULT 0,
+  bank_name TEXT,
+  bank_account_name TEXT,
+  bank_account_number TEXT,
+  gateway_enabled INTEGER DEFAULT 0,
+  paystack_public_key TEXT,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT OR IGNORE INTO billing_settings (id, auto_invoice_on_complete) VALUES (1, 0);
+
+CREATE INDEX IF NOT EXISTS idx_invoices_client ON invoices(client_id);
+CREATE INDEX IF NOT EXISTS idx_invoices_app ON invoices(application_id);
+CREATE INDEX IF NOT EXISTS idx_signatures_app ON signatures(application_id);
+
 

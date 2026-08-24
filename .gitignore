@@ -11,6 +11,8 @@ server/dist/
 # SQLite databases
 *.db
 *.db-journal
+*.db-shm
+*.db-wal
 
 # Uploaded documents
 server/uploads/

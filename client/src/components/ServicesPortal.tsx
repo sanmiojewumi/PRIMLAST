@@ -18,6 +18,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import type { ServiceType } from '../types';
+import SignaturePad from './SignaturePad';
 
 interface ServiceOption {
   id: ServiceType;
@@ -182,6 +183,7 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
   const [surveyClarity, setSurveyClarity] = useState<string>('Yes');
   const [surveySuggestions, setSurveySuggestions] = useState<string>('');
   const [surveySubmitted, setSurveySubmitted] = useState<boolean>(false);
+  const [surveyError, setSurveyError] = useState<string | null>(null);
   const [submittingSurvey, setSubmittingSurvey] = useState<boolean>(false);
   const [showSurveyModal, setShowSurveyModal] = useState<boolean>(false);
   
@@ -193,6 +195,7 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
     appId?: number;
     triggerSurvey?: boolean;
   } | null>(null);
+  const [clientSignature, setClientSignature] = useState<string | null>(null);
   
   // Navigation & Page State
   const [selectedService, setSelectedService] = useState<ServiceType | null>(null);
@@ -693,7 +696,7 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
         if (selectedComplianceServices.includes('TIN Validation')) {
           if (!tvCompanyName.trim()) { setError('TIN Validation Company/Business Name is required.'); return false; }
           if (!tvRcNumber.trim()) { setError('TIN Validation RC/BN number is required.'); return false; }
-          if (!tvTin.trim()) { setError('TIN Validation FIRS TIN number is required.'); return false; }
+          if (!tvTin.trim()) { setError('TIN Validation NRS TIN number is required.'); return false; }
           if (!tvNatureOfBusiness.trim()) { setError('TIN Validation Line of Business is required.'); return false; }
           if (!tvCompanyAddress.trim()) { setError('TIN Validation Company address is required.'); return false; }
           if (!tvCompanyPhone.trim()) { setError('TIN Validation Company phone is required.'); return false; }
@@ -791,6 +794,11 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
           return;
         }
       }
+    }
+
+    if (!clientSignature) {
+      setError('Please draw your signature in the signature pad before submitting.');
+      return;
     }
 
     setLoading(true);
@@ -1108,7 +1116,22 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
         }
       }
 
+      const sigRes = await fetch(`${API_BASE}/documents/signature`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ application_id: newAppId, image: clientSignature })
+      });
+      const sigData = await sigRes.json();
+      if (!sigRes.ok) {
+        throw new Error(`Application submitted, but signature failed: ${sigData.error || 'Could not save signature'}`);
+      }
+      uploadedFilesList.push({ name: 'Client Signature.png', size: 0, category: 'Signature' });
+
       setSuccessMsg(`Service application submitted successfully! Reference ID: #${newAppId}`);
+      setClientSignature(null);
       
       // Trigger Upload Result Pop Up Modal FIRST (Survey comes up after user acknowledges upload result!)
       setUploadResultModal({
@@ -2971,11 +2994,11 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                               <div className="form-group">
-                                <label className="form-label">*FIRS TIN Number:*</label>
+                                <label className="form-label">*NRS TIN Number:*</label>
                                 <input
                                   type="text"
                                   required
-                                  placeholder="FIRS TIN Number"
+                                  placeholder="NRS TIN Number"
                                   className="form-input"
                                   value={tvTin}
                                   onChange={(e) => setTvTin(e.target.value)}
@@ -3601,6 +3624,16 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
                   </div>
                 )}
 
+                <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <h5 style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em', margin: 0 }}>
+                    Applicant signature
+                  </h5>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+                    Sign below. Admin will receive this signature with your uploaded documents.
+                  </p>
+                  <SignaturePad value={clientSignature} onChange={setClientSignature} />
+                </div>
+
                 {/* Review panel */}
                 <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
                   <h5 style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em', marginBottom: '8px' }}>
@@ -3859,6 +3892,7 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 setSubmittingSurvey(true);
+                setSurveyError(null);
                 try {
                   const res = await fetch(`${API_BASE}/services/survey`, {
                     method: 'POST',
@@ -3875,9 +3909,13 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
                   });
                   if (res.ok) {
                     setSurveySubmitted(true);
+                  } else {
+                    const data = await res.json().catch(() => ({}));
+                    setSurveyError(data.error || 'Could not save feedback. Please try again.');
                   }
                 } catch (err) {
                   console.error(err);
+                  setSurveyError('Could not save feedback. Check your connection and try again.');
                 } finally {
                   setSubmittingSurvey(false);
                 }
@@ -3956,6 +3994,12 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
                     style={{ minHeight: '60px', resize: 'vertical' }}
                   />
                 </div>
+
+                {surveyError && (
+                  <div style={{ padding: '8px 12px', background: 'rgba(215,25,32,0.1)', border: '1px solid #fc8181', borderRadius: '6px', color: '#fc8181', fontSize: '0.8rem' }}>
+                    {surveyError}
+                  </div>
+                )}
 
                 <button 
                   type="submit" 
