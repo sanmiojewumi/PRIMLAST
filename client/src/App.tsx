@@ -36,6 +36,26 @@ const App: React.FC = () => {
   }, [user, token]);
 
   useEffect(() => {
+    if (!user) return;
+    const header = document.querySelector('.app-header');
+    if (!(header instanceof HTMLElement)) return;
+    const sync = () => {
+      const height = Math.ceil(header.getBoundingClientRect().height);
+      document.documentElement.style.setProperty('--app-header-offset', `${height}px`);
+    };
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(header);
+    window.addEventListener('orientationchange', sync);
+    window.visualViewport?.addEventListener('resize', sync);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('orientationchange', sync);
+      window.visualViewport?.removeEventListener('resize', sync);
+    };
+  }, [user, activeTab]);
+
+  useEffect(() => {
     document.body.classList.toggle('mobile-drawer-open', mobileMenuOpen);
     return () => document.body.classList.remove('mobile-drawer-open');
   }, [mobileMenuOpen]);
@@ -848,7 +868,7 @@ const App: React.FC = () => {
               )}
 
               {/* Quick Portal Cards Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', width: '100%', maxWidth: '900px', marginBottom: '40px' }}>
+              <div className="welcome-portal-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '20px', width: '100%', maxWidth: '900px', marginBottom: '40px' }}>
                 
                 {user.role === 'client' && (
                   <div 

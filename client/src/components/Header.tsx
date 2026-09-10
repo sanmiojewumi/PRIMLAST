@@ -139,16 +139,6 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
     }
   };
 
-  const [compactTitle, setCompactTitle] = useState(
-    typeof window !== 'undefined' ? window.innerWidth <= 768 : false
-  );
-
-  useEffect(() => {
-    const onResize = () => setCompactTitle(window.innerWidth <= 768);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-
   const tabNames: Record<string, string> = {
     welcome: 'Home Workspace',
     dashboard: 'Workspace Dashboard',
@@ -178,10 +168,6 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
   };
 
   if (!user) return null;
-
-  const pageTitle = compactTitle
-    ? (tabNamesShort[activeTab] || 'PrimeFlow')
-    : (tabNames[activeTab] || 'PrimeFlow Hub');
 
   return (
     <header
@@ -232,8 +218,9 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
           <Menu size={22} />
         </button>
         <div className="header-title-block">
-          <h2 className="header-page-title" style={{ fontSize: compactTitle ? '1rem' : '1.25rem', fontWeight: '700', color: '#fff', margin: 0 }}>
-            {pageTitle}
+          <h2 className="header-page-title" style={{ fontWeight: '700', color: '#fff', margin: 0, whiteSpace: 'nowrap' }}>
+            <span className="header-title-wide">{tabNames[activeTab] || 'PrimeFlow Hub'}</span>
+            <span className="header-title-narrow">{tabNamesShort[activeTab] || 'Home'}</span>
           </h2>
         </div>
       </div>
