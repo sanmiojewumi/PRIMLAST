@@ -139,7 +139,15 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
     }
   };
 
-  if (!user) return null;
+  const [compactTitle, setCompactTitle] = useState(
+    typeof window !== 'undefined' ? window.innerWidth <= 768 : false
+  );
+
+  useEffect(() => {
+    const onResize = () => setCompactTitle(window.innerWidth <= 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const tabNames: Record<string, string> = {
     welcome: 'Home Workspace',
@@ -169,6 +177,12 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
     admin: 'Admin'
   };
 
+  if (!user) return null;
+
+  const pageTitle = compactTitle
+    ? (tabNamesShort[activeTab] || 'PrimeFlow')
+    : (tabNames[activeTab] || 'PrimeFlow Hub');
+
   return (
     <header
       className="app-header"
@@ -182,9 +196,10 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0 24px',
-        position: 'sticky',
+        position: 'relative',
         top: 0,
-        zIndex: 90
+        zIndex: 90,
+        flexShrink: 0
       }}
     >
       {/* Title & Hamburger */}
@@ -217,11 +232,8 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
           <Menu size={22} />
         </button>
         <div className="header-title-block">
-          <h2 className="header-title-full" style={{ fontSize: '1.25rem', fontWeight: '700', color: '#fff', margin: 0 }}>
-            {tabNames[activeTab] || 'PrimeFlow Hub'}
-          </h2>
-          <h2 className="header-title-short" style={{ fontSize: '1rem', fontWeight: '700', color: '#fff', margin: 0 }}>
-            {tabNamesShort[activeTab] || 'PrimeFlow'}
+          <h2 className="header-page-title" style={{ fontSize: compactTitle ? '1rem' : '1.25rem', fontWeight: '700', color: '#fff', margin: 0 }}>
+            {pageTitle}
           </h2>
         </div>
       </div>

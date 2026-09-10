@@ -2179,13 +2179,49 @@ body.landing-menu-open {
 /* ═══════════════════════════════════════════════════════════════════
    GLOBAL MODAL & POPUP FRAME CONTAINMENT STYLES
    ═══════════════════════════════════════════════════════════════════ */
-html, body, #root {
-  overflow-x: hidden !important;
-  overflow-y: visible !important;
-  max-width: 100% !important;
-  width: 100% !important;
+html.app-shell,
+body.app-shell,
+html.app-shell #root {
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+body.app-shell .app-shell-container,
+body.app-shell .main-content-wrapper {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+body.app-shell .app-header {
+  position: relative !important;
+  flex-shrink: 0 !important;
   height: auto !important;
-  box-sizing: border-box !important;
+  min-height: calc(56px + env(safe-area-inset-top, 0px)) !important;
+  overflow: visible;
+  z-index: 90;
+}
+
+body.app-shell main.app-main {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  padding-top: 12px !important;
+}
+
+body.app-shell .welcome-dashboard-title {
+  position: relative;
+  z-index: 2;
+  margin-top: 0 !important;
+  padding-top: 4px !important;
+}
+
+body.app-shell .welcome-dashboard-card {
+  justify-content: flex-start !important;
+  min-height: 0 !important;
+  margin-top: 0 !important;
 }
 
 html {
@@ -2374,15 +2410,13 @@ canvas {
   }
 
   .app-header {
-    position: -webkit-sticky;
-    position: sticky;
+    position: relative !important;
     top: 0;
     height: auto !important;
-    min-height: calc(var(--header-height) + env(safe-area-inset-top, 0px)) !important;
+    min-height: calc(56px + env(safe-area-inset-top, 0px)) !important;
     padding-top: env(safe-area-inset-top, 0px) !important;
     padding-left: max(12px, env(safe-area-inset-left, 0px)) !important;
     padding-right: max(12px, env(safe-area-inset-right, 0px)) !important;
-    overflow: visible !important;
     z-index: 90;
   }
 

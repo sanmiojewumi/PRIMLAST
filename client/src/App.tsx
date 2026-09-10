@@ -26,6 +26,16 @@ const App: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
+    const on = Boolean(user && token);
+    document.body.classList.toggle('app-shell', on);
+    document.documentElement.classList.toggle('app-shell', on);
+    return () => {
+      document.body.classList.remove('app-shell');
+      document.documentElement.classList.remove('app-shell');
+    };
+  }, [user, token]);
+
+  useEffect(() => {
     document.body.classList.toggle('mobile-drawer-open', mobileMenuOpen);
     return () => document.body.classList.remove('mobile-drawer-open');
   }, [mobileMenuOpen]);
@@ -698,9 +708,18 @@ const App: React.FC = () => {
           setActiveTab={setActiveTab}
         />
         
-        <main style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', maxWidth: '100%', display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1, paddingBottom: '60px' }}>
+        <main className={activeTab === 'welcome' ? 'app-main welcome-main' : 'app-main'} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', maxWidth: '100%', display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1, paddingBottom: '60px' }}>
           {activeTab === 'welcome' && (
             <div className="animate-fade-in welcome-dashboard-card">
+              <h1 className="welcome-dashboard-title">
+                <span className="welcome-dashboard-greeting">Welcome back,</span>
+                {' '}
+                <span className="welcome-dashboard-name">{user.name}</span>!
+              </h1>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', maxWidth: '600px', lineHeight: '1.6', margin: '0 0 24px 0' }}>
+                Welcome to your PrimeFlow Consulting workspace. Select a service portal category below or choose an action in the navigation bar to start.
+              </p>
+
               {/* Glow Logo Backdrop */}
               <div className="welcome-hero-mark" style={{ position: 'relative', marginBottom: '24px' }}>
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(26,111,232,0.4) 0%, rgba(215,25,32,0.2) 50%, transparent 70%)', filter: 'blur(28px)', opacity: 0.7, zIndex: 1 }} />
@@ -717,16 +736,6 @@ const App: React.FC = () => {
                 />
                 </span>
               </div>
-
-              {/* Welcome Text */}
-              <h1 className="welcome-dashboard-title">
-                <span className="welcome-dashboard-greeting">Welcome back,</span>
-                {' '}
-                <span className="welcome-dashboard-name">{user.name}</span>!
-              </h1>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', maxWidth: '600px', lineHeight: '1.6', margin: '0 0 36px 0' }}>
-                Welcome to your PrimeFlow Consulting workspace. Select a service portal category below or choose an action in the navigation bar to start.
-              </p>
 
               {/* Search Bar for Mobile/Desktop Home Page */}
               <div 
