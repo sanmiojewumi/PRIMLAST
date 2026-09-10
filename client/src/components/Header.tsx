@@ -173,7 +173,8 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
     <header
       className="app-header"
       style={{
-        height: 'var(--header-height)',
+        minHeight: 'var(--header-height)',
+        height: 'auto',
         background: 'linear-gradient(90deg, rgba(10,22,40,0.95) 0%, rgba(13,27,42,0.92) 100%)',
         backgroundSize: 'cover',
         borderBottom: '1px solid var(--border-color)',

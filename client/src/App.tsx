@@ -702,7 +702,7 @@ const App: React.FC = () => {
           {activeTab === 'welcome' && (
             <div className="animate-fade-in welcome-dashboard-card">
               {/* Glow Logo Backdrop */}
-              <div style={{ position: 'relative', marginBottom: '24px' }}>
+              <div className="welcome-hero-mark" style={{ position: 'relative', marginBottom: '24px' }}>
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(26,111,232,0.4) 0%, rgba(215,25,32,0.2) 50%, transparent 70%)', filter: 'blur(28px)', opacity: 0.7, zIndex: 1 }} />
                 <span className="brand-logo-plate" style={{ position: 'relative', zIndex: 2, borderRadius: '16px', padding: '8px 10px' }}>
                 <img 
@@ -720,7 +720,9 @@ const App: React.FC = () => {
 
               {/* Welcome Text */}
               <h1 className="welcome-dashboard-title">
-                Welcome back, <span style={{ color: 'var(--accent-red)' }}>{user.name}</span>!
+                <span className="welcome-dashboard-greeting">Welcome back,</span>
+                {' '}
+                <span className="welcome-dashboard-name">{user.name}</span>!
               </h1>
               <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', maxWidth: '600px', lineHeight: '1.6', margin: '0 0 36px 0' }}>
                 Welcome to your PrimeFlow Consulting workspace. Select a service portal category below or choose an action in the navigation bar to start.

@@ -2037,8 +2037,20 @@ html {
   font-weight: 800;
   color: #fff;
   margin: 0 0 8px 0;
-  letter-spacing: 0.05em;
-  line-height: 1.2;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  overflow: visible;
+  max-width: 100%;
+  padding: 4px 8px 0;
+}
+
+.welcome-dashboard-greeting,
+.welcome-dashboard-name {
+  display: inline;
+}
+
+.welcome-dashboard-name {
+  color: var(--accent-red);
 }
 
 /* Tablet Overrides */
@@ -2046,7 +2058,9 @@ html {
   .welcome-dashboard-card {
     margin: 12px !important;
     padding: 32px 16px !important;
-    min-height: calc(100vh - var(--header-height) - 24px) !important;
+    min-height: 0 !important;
+    justify-content: flex-start !important;
+    overflow: visible !important;
     border-radius: 12px !important;
   }
   .welcome-dashboard-logo {
@@ -2056,14 +2070,26 @@ html {
   .welcome-dashboard-title {
     font-size: 1.8rem !important;
   }
+
+  .welcome-hero-mark {
+    margin-bottom: 16px !important;
+  }
+
+  .welcome-hero-mark > div {
+    width: 110px !important;
+    height: 110px !important;
+    filter: blur(16px) !important;
+  }
 }
 
 /* Phone Overrides */
 @media (max-width: 480px) {
   .welcome-dashboard-card {
     margin: 8px !important;
-    padding: 24px 12px !important;
-    min-height: calc(100vh - var(--header-height) - 16px) !important;
+    padding: 28px 12px 24px !important;
+    min-height: 0 !important;
+    justify-content: flex-start !important;
+    overflow: visible !important;
     border-radius: 8px !important;
   }
   .welcome-dashboard-logo {
@@ -2072,7 +2098,9 @@ html {
     border-radius: 8px !important;
   }
   .welcome-dashboard-title {
-    font-size: 1.4rem !important;
+    font-size: 1.35rem !important;
+    line-height: 1.3 !important;
+    letter-spacing: 0 !important;
   }
 }
 
@@ -2349,11 +2377,12 @@ canvas {
     position: -webkit-sticky;
     position: sticky;
     top: 0;
-    min-height: var(--header-height);
-    height: calc(var(--header-height) + env(safe-area-inset-top, 0px)) !important;
+    height: auto !important;
+    min-height: calc(var(--header-height) + env(safe-area-inset-top, 0px)) !important;
     padding-top: env(safe-area-inset-top, 0px) !important;
     padding-left: max(12px, env(safe-area-inset-left, 0px)) !important;
     padding-right: max(12px, env(safe-area-inset-right, 0px)) !important;
+    overflow: visible !important;
     z-index: 90;
   }
 
