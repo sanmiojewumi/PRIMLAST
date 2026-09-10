@@ -34,45 +34,61 @@ router.get('/tracker', authenticateJWT as any, requireRole(['admin', 'supervisor
   try {
     const db = await getDb();
 
-    const submissions = await db.all(
+    const countSafe = async (sql: string) => {
+      try {
+        return (await db.get<{ c: number }>(sql))?.c || 0;
+      } catch {
+        return 0;
+      }
+    };
+
+    const seriesSafe = async (sql: string) => {
+      try {
+        return await db.all(sql);
+      } catch {
+        return [];
+      }
+    };
+
+    const submissions = await seriesSafe(
       `SELECT ${created.bucket} as bucket, COUNT(*) as count FROM applications WHERE ${created.start} GROUP BY bucket ORDER BY bucket`
     );
-    const completions = await db.all(
+    const completions = await seriesSafe(
       `SELECT ${updated.bucket} as bucket, COUNT(*) as count FROM applications
        WHERE status = 'completed' AND ${updated.start}
        GROUP BY bucket ORDER BY bucket`
     );
-    const audits = await db.all(
+    const audits = await seriesSafe(
       `SELECT ${created.bucket} as bucket, COUNT(*) as count FROM audit_logs WHERE ${created.start} GROUP BY bucket ORDER BY bucket`
     );
-    const documents = await db.all(
+    const documents = await seriesSafe(
       `SELECT ${created.bucket} as bucket, COUNT(*) as count FROM documents WHERE ${created.start} GROUP BY bucket ORDER BY bucket`
     );
-    const invoices = await db.all(
+    const invoices = await seriesSafe(
       `SELECT ${created.bucket} as bucket, COUNT(*) as count FROM invoices WHERE ${created.start} GROUP BY bucket ORDER BY bucket`
     );
 
     const kpis = {
-      submissions: (await db.get<{ c: number }>(`SELECT COUNT(*) as c FROM applications WHERE ${created.start}`))?.c || 0,
-      completions: (await db.get<{ c: number }>(
+      submissions: await countSafe(`SELECT COUNT(*) as c FROM applications WHERE ${created.start}`),
+      completions: await countSafe(
         `SELECT COUNT(*) as c FROM applications WHERE status = 'completed' AND ${updated.start}`
-      ))?.c || 0,
-      documents: (await db.get<{ c: number }>(`SELECT COUNT(*) as c FROM documents WHERE ${created.start}`))?.c || 0,
-      signatures: (await db.get<{ c: number }>(
-        `SELECT COUNT(*) as c FROM documents WHERE ${created.start} AND kind = 'signature'`
-      ))?.c || 0,
-      invoices: (await db.get<{ c: number }>(`SELECT COUNT(*) as c FROM invoices WHERE ${created.start}`))?.c || 0,
-      activities: (await db.get<{ c: number }>(`SELECT COUNT(*) as c FROM audit_logs WHERE ${created.start}`))?.c || 0
+      ),
+      documents: await countSafe(`SELECT COUNT(*) as c FROM documents WHERE ${created.start}`),
+      signatures: await countSafe(
+        `SELECT COUNT(*) as c FROM documents WHERE ${created.start} AND IFNULL(kind,'file') = 'signature'`
+      ),
+      invoices: await countSafe(`SELECT COUNT(*) as c FROM invoices WHERE ${created.start}`),
+      activities: await countSafe(`SELECT COUNT(*) as c FROM audit_logs WHERE ${created.start}`)
     };
 
-    const byStatus = await db.all(`SELECT status, COUNT(*) as count FROM applications GROUP BY status`);
-    const byService = await db.all(
+    const byStatus = await seriesSafe(`SELECT status, COUNT(*) as count FROM applications GROUP BY status`);
+    const byService = await seriesSafe(
       `SELECT service_type, COUNT(*) as count FROM applications WHERE ${created.start} GROUP BY service_type`
     );
-    const byAction = await db.all(
+    const byAction = await seriesSafe(
       `SELECT action, COUNT(*) as count FROM audit_logs WHERE ${created.start} GROUP BY action ORDER BY count DESC LIMIT 8`
     );
-    const recent = await db.all(
+    const recent = await seriesSafe(
       `SELECT l.*, u.name as user_name, u.role as user_role
        FROM audit_logs l LEFT JOIN users u ON u.id = l.user_id
        WHERE ${logCreated.start}
