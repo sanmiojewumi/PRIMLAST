@@ -4,6 +4,10 @@ import './index.css'
 import App from './App.tsx'
 import { AuthProvider } from './context/AuthContext.tsx'
 
+if (/SamsungBrowser/i.test(navigator.userAgent)) {
+  document.documentElement.classList.add('samsung-browser');
+}
+
 // Global Fetch Interceptor to bypass Localtunnel landing page for all API calls
 const originalFetch = window.fetch;
 window.fetch = async (input, init) => {

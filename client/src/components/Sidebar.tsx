@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
   LayoutDashboard, 
@@ -39,6 +39,20 @@ const Sidebar: React.FC<SidebarProps> = ({
   setMobileOpen
 }) => {
   const { user, logout } = useAuth();
+  const [drawerInert, setDrawerInert] = useState(false);
+  const [mobileServicesExpanded, setMobileServicesExpanded] = useState(false);
+  const compact = collapsed && !mobileOpen;
+
+  useEffect(() => {
+    if (!mobileOpen) {
+      setDrawerInert(false);
+      setMobileServicesExpanded(false);
+      return;
+    }
+    setDrawerInert(true);
+    const t = window.setTimeout(() => setDrawerInert(false), 420);
+    return () => window.clearTimeout(t);
+  }, [mobileOpen]);
 
   if (!user) return null;
 
@@ -56,69 +70,91 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'admin', name: 'Admin Portal', icon: Users, roles: ['admin', 'supervisor'] },
   ];
 
+  const CLIENT_SERVICE_OPTIONS = [
+    { name: 'Company Incorporation', id: 'company_incorporation' },
+    { name: 'Business Name Registration', id: 'business_registration' },
+    { name: 'Incorporated Trustee', id: 'incorporated_trustee' },
+    { name: 'Annual Returns', id: 'annual_returns' },
+    { name: 'Post-Incorporation', id: 'post_incorporation' },
+    { name: 'Compliance Services', id: 'compliance' },
+    { name: 'Other Services', id: 'other_services' },
+  ];
+
   const filteredItems = menuItems.filter(item => item.roles.includes(user.role));
 
   return (
-    <aside className={`sidebar-aside ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
-      {/* Brand Logo — click to go home */}
+    <aside className={`sidebar-aside ${compact ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''} ${drawerInert ? 'drawer-inert' : ''}`}>
+      {/* Brand Logo — desktop click goes home; on mobile it must not steal the menu tap */}
       <div 
+        className="sidebar-brand-row"
         style={{
           height: 'var(--header-height)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'space-between',
+          justifyContent: compact ? 'center' : 'space-between',
           padding: '0 20px',
-          borderBottom: '1px solid rgba(0, 0, 0, 0.06)'
+          borderBottom: '1px solid var(--border-color)'
         }}
       >
-        {!collapsed && (
+        {!compact && (
           <div 
-            onClick={() => { setActiveTab('welcome'); if (setMobileOpen) setMobileOpen(false); }}
-            title="Return to Homepage"
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+            className="sidebar-brand"
+            onClick={() => {
+              if (mobileOpen) return;
+              setActiveTab('welcome');
+            }}
+            title={mobileOpen ? undefined : 'Return to Homepage'}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: mobileOpen ? 'default' : 'pointer' }}
           >
+            <span className="brand-logo-plate">
             <img 
-              src="/logo.png" 
+              src="/logo.png?v=4" 
               alt="PrimeFlow Logo" 
               className="brand-logo"
               style={{ 
                 width: '72px', 
                 height: '36px', 
-                borderRadius: '8px',
-                border: '1.5px solid rgba(0,0,0,0.06)',
-                boxShadow: '0 0 10px rgba(229, 62, 62, 0.15)'
+                borderRadius: '8px'
               }} 
             />
-            <h1 style={{ fontSize: '1.2rem', color: '#1e293b', fontWeight: '800', letterSpacing: '0.05em', margin: 0 }}>
+            </span>
+            <h1 className="sidebar-brand-title" style={{ fontSize: '1.2rem', color: '#f0f4f8', fontWeight: '800', letterSpacing: '0.05em', margin: 0 }}>
               PRIME<span style={{ color: 'var(--accent-red)' }}>FLOW</span>
             </h1>
           </div>
         )}
         
-        {collapsed && (
+        {compact && (
+          <span className="brand-logo-plate">
           <img 
-            src="/logo.png" 
+            src="/logo.png?v=4" 
             alt="PrimeFlow Logo" 
             className="brand-logo"
-            onClick={() => { setActiveTab('welcome'); if (setMobileOpen) setMobileOpen(false); }}
+            onClick={() => setActiveTab('welcome')}
             title="Return to Homepage"
             style={{ 
               width: '52px', 
               height: '28px', 
               borderRadius: '6px',
-              border: '1.5px solid var(--accent-red)',
-              boxShadow: '0 0 8px var(--accent-red)',
               cursor: 'pointer'
             }} 
           />
+          </span>
         )}
 
         <button 
-          onClick={() => {
+          type="button"
+          aria-label={mobileOpen ? 'Close navigation menu' : (collapsed ? 'Expand side panel' : 'Collapse side panel')}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (mobileOpen && setMobileOpen) {
+              setMobileOpen(false);
+              return;
+            }
             setCollapsed(!collapsed);
-            if (setMobileOpen) setMobileOpen(false);
           }}
-          title={collapsed ? "Expand Side Panel" : "Close / Collapse Side Panel"}
+          title={mobileOpen ? 'Close menu' : (collapsed ? 'Expand Side Panel' : 'Collapse Side Panel')}
           style={{
             background: 'none',
             border: 'none',
@@ -126,7 +162,10 @@ const Sidebar: React.FC<SidebarProps> = ({
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            padding: '4px'
+            padding: '8px',
+            minWidth: '40px',
+            minHeight: '40px',
+            touchAction: 'manipulation'
           }}
         >
           <span className="desktop-toggle-icon" style={{ display: 'flex', alignItems: 'center' }}>
@@ -139,22 +178,27 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Navigation List */}
-      <nav style={{ flex: 1, padding: '20px 10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <nav className="sidebar-nav" style={{ flex: 1, padding: '20px 10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {filteredItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
             <React.Fragment key={item.id}>
               <button
-                key={item.id}
+                type="button"
                 onClick={() => {
+                  if (mobileOpen && item.id === 'services') {
+                    setActiveTab(item.id);
+                    setMobileServicesExpanded(open => !open);
+                    return;
+                  }
                   setActiveTab(item.id);
-                  if (setMobileOpen) setMobileOpen(false);
+                  setMobileOpen?.(false);
                 }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: collapsed ? 'center' : 'flex-start',
+                  justifyContent: compact ? 'center' : 'flex-start',
                   gap: '12px',
                   padding: '12px',
                   width: '100%',
@@ -170,20 +214,42 @@ const Sidebar: React.FC<SidebarProps> = ({
                 }}
               >
                 <Icon size={20} />
-                {!collapsed && (
+                {!compact && (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '6px' }}>
                     <span>{item.name}</span>
                   </div>
                 )}
               </button>
+              {item.id === 'services' && mobileOpen && mobileServicesExpanded && user.role === 'client' && (
+                <ul className="sidebar-mobile-options">
+                  {CLIENT_SERVICE_OPTIONS.map(option => (
+                    <li key={option.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveTab('services');
+                          setMobileOpen?.(false);
+                          window.setTimeout(() => {
+                            window.dispatchEvent(new CustomEvent('navigate-service', {
+                              detail: { serviceId: option.id }
+                            }));
+                          }, 80);
+                        }}
+                      >
+                        {option.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </React.Fragment>
           );
         })}
       </nav>
 
       {/* Support / Correspondence Widget */}
-      {!collapsed && (
-        <div style={{ padding: '16px', borderTop: '1px solid rgba(0, 0, 0, 0.06)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {!compact && (
+        <div className="sidebar-support" style={{ padding: '16px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <span style={{ fontSize: '0.65rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Support & Info
           </span>
@@ -220,33 +286,34 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div 
         style={{
           padding: '16px',
-          borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+          borderTop: '1px solid var(--border-color)',
           display: 'flex',
           flexDirection: 'column',
           gap: '12px'
         }}
       >
-        {!collapsed && (
+        {!compact && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div 
+              className="sidebar-avatar"
               style={{
                 width: '36px',
                 height: '36px',
                 borderRadius: '50%',
-                background: 'rgba(0,0,0,0.04)',
+                background: 'rgba(215, 25, 32, 0.12)',
                 border: '1px solid var(--accent-red)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: '700',
                 fontSize: '0.85rem',
-                color: '#1e293b'
+                color: 'var(--text-primary)'
               }}
             >
               {user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#1e293b', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+              <span className="sidebar-user-name" style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                 {user.name}
               </span>
               <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
@@ -262,7 +329,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: collapsed ? 'center' : 'flex-start',
+            justifyContent: compact ? 'center' : 'flex-start',
             gap: '12px',
             padding: '10px 12px',
             width: '100%',
@@ -279,7 +346,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
         >
           <LogOut size={20} />
-          {!collapsed && <span>Logout</span>}
+          {!compact && <span>Logout</span>}
         </button>
       </div>
     </aside>

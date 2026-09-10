@@ -19,42 +19,16 @@ import { ShieldCheck, ArrowRight, Eye, EyeOff, Building2, ShieldAlert, MessageSq
 
 const App: React.FC = () => {
   const { user, token, loading, login, register, registerVerify, resetPassword, logout } = useAuth();
-
-  // Auto-logout after 20 minutes of inactivity
-  useEffect(() => {
-    if (!user) return;
-
-    let timeoutId: any;
-
-    const resetTimer = () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      // 20 minutes = 1,200,000 ms
-      timeoutId = setTimeout(() => {
-        logout();
-        alert('You have been logged out due to 20 minutes of inactivity.');
-      }, 1200000);
-    };
-
-    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
-
-    resetTimer();
-
-    activityEvents.forEach(event => {
-      window.addEventListener(event, resetTimer);
-    });
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      activityEvents.forEach(event => {
-        window.removeEventListener(event, resetTimer);
-      });
-    };
-  }, [user, logout]);
   
   // Navigation states
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    document.body.classList.toggle('mobile-drawer-open', mobileMenuOpen);
+    return () => document.body.classList.remove('mobile-drawer-open');
+  }, [mobileMenuOpen]);
   
   // Auth view states
   const [authView, setAuthView] = useState<'login' | 'register' | 'reset'>('login');
@@ -412,6 +386,17 @@ const App: React.FC = () => {
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (user) return;
+    if (sessionStorage.getItem('primeflow_idle_logout') !== '1') return;
+    sessionStorage.removeItem('primeflow_idle_logout');
+    setAuthView('login');
+    setShowAuthModal(true);
+    window.setTimeout(() => {
+      setAuthError('You were signed out after 10 minutes of inactivity.');
+    }, 0);
+  }, [user]);
+
   // Set default tab when user changes (e.g. show welcome landing page)
   useEffect(() => {
     if (user) {
@@ -522,7 +507,9 @@ const App: React.FC = () => {
                 title="Return to Homepage"
                 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '-8px', cursor: 'pointer' }}
               >
-                <img src="/logo.png" alt="Primeflow Logo" className="brand-logo" style={{ height: '40px', width: '88px', borderRadius: '8px' }} />
+                <span className="brand-logo-plate">
+                <img src="/logo.png?v=4" alt="Primeflow Logo" className="brand-logo" style={{ height: '40px', width: '88px', borderRadius: '8px' }} />
+                </span>
                 <h2 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#0F0F0F', fontFamily: "'Outfit', sans-serif" }}>
                   PRIME<span style={{ color: '#D71920' }}>FLOW</span>
                 </h2>
@@ -667,18 +654,9 @@ const App: React.FC = () => {
     <div className="app-shell-container">
       {/* Mobile Sidebar backdrop overlay */}
       {mobileMenuOpen && (
-        <div 
+        <div
+          className="drawer-backdrop"
           onClick={() => setMobileMenuOpen(false)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            background: 'rgba(0,0,0,0.5)',
-            backdropFilter: 'blur(3px)',
-            zIndex: 140
-          }}
         />
       )}
       
@@ -714,7 +692,11 @@ const App: React.FC = () => {
           pointerEvents: 'none',
           zIndex: 0
         }} />
-        <Header activeTab={activeTab} onMenuClick={() => setMobileMenuOpen(true)} setActiveTab={setActiveTab} />
+        <Header
+          activeTab={activeTab}
+          onMenuClick={() => setMobileMenuOpen(open => !open)}
+          setActiveTab={setActiveTab}
+        />
         
         <main style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', maxWidth: '100%', display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1, paddingBottom: '60px' }}>
           {activeTab === 'welcome' && (
@@ -722,8 +704,9 @@ const App: React.FC = () => {
               {/* Glow Logo Backdrop */}
               <div style={{ position: 'relative', marginBottom: '24px' }}>
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(26,111,232,0.4) 0%, rgba(215,25,32,0.2) 50%, transparent 70%)', filter: 'blur(28px)', opacity: 0.7, zIndex: 1 }} />
+                <span className="brand-logo-plate" style={{ position: 'relative', zIndex: 2, borderRadius: '16px', padding: '8px 10px' }}>
                 <img 
-                  src="/logo.png" 
+                  src="/logo.png?v=4" 
                   alt="PrimeFlow Brand Logo" 
                   className="welcome-dashboard-logo"
                   style={{ 
@@ -732,6 +715,7 @@ const App: React.FC = () => {
                     animation: 'pulseGlow 2.5s infinite ease-in-out'
                   }} 
                 />
+                </span>
               </div>
 
               {/* Welcome Text */}

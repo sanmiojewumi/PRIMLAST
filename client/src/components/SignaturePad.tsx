@@ -60,7 +60,7 @@ const SignaturePad: React.FC<SignaturePadProps> = ({ value, onChange, height = 1
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
-    canvas.setPointerCapture(e.pointerId);
+    canvas.setPointerCapture?.(e.pointerId);
     drawing.current = true;
     const p = point(e);
     ctx.beginPath();
@@ -100,6 +100,7 @@ const SignaturePad: React.FC<SignaturePadProps> = ({ value, onChange, height = 1
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
         onPointerLeave={onPointerUp}
         style={{
           width: '100%',

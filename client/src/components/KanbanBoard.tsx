@@ -458,7 +458,7 @@ const KanbanBoard: React.FC = () => {
   }
 
   return (
-    <div className="animate-fade-in theme-colored page-theme-glow" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', height: 'calc(100vh - var(--header-height))', overflow: 'hidden' }}>
+    <div className="animate-fade-in theme-colored page-theme-glow kanban-board-page" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', height: 'calc(100vh - var(--header-height))', overflow: 'hidden' }}>
       
       {/* Board Header info */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -580,16 +580,16 @@ const KanbanBoard: React.FC = () => {
             className={`kanban-detail-modal${isFullscreen ? ' is-expanded' : ''}`}
           >
             {/* Header */}
-            <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
+            <div className="kanban-detail-header">
+              <div style={{ minWidth: 0, flex: 1 }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--accent-red)', fontWeight: '700', textTransform: 'uppercase' }}>
                   Reference ID: #{selectedApp.id}
                 </span>
-                <h3 style={{ color: '#fff', fontSize: '1.2rem', marginTop: '2px' }}>
+                <h3 style={{ color: '#fff', fontSize: '1.05rem', marginTop: '2px', overflowWrap: 'anywhere' }}>
                   {selectedApp.service_type.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
                 </h3>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div className="kanban-detail-header-actions">
                 {(user?.role === 'admin' || (user?.role === 'supervisor' && (user as any).permissions?.can_delete_applications === true)) && (
                   <button 
                     onClick={handleDeleteApplication}
@@ -665,7 +665,7 @@ const KanbanBoard: React.FC = () => {
               <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <h4 style={{ fontSize: '0.9rem', color: '#fff', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>Operations Control</h4>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="ops-control-grid">
                   {/* Status update */}
                   <div className="form-group">
                     <label className="form-label">Workflow Status</label>
@@ -721,7 +721,7 @@ const KanbanBoard: React.FC = () => {
               </div>
  
               <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                <div className="kanban-invoice-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
                   <h4 style={{ fontSize: '0.9rem', color: '#fff', margin: 0 }}>Invoices & receipts</h4>
                   {(user?.role === 'admin' || user?.role === 'supervisor') && (
                     <div style={{ display: 'flex', gap: '6px' }}>

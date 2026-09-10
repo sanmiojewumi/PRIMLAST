@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 export const DraggableWhatsApp: React.FC = () => {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -31,8 +31,10 @@ export const DraggableWhatsApp: React.FC = () => {
     let newY = elementStartPos.current.y + dy;
 
     // Constrain inside viewport
-    newX = Math.max(10, Math.min(window.innerWidth - 68, newX));
-    newY = Math.max(10, Math.min(window.innerHeight - 68, newY));
+    const vw = window.visualViewport?.width ?? window.innerWidth;
+    const vh = window.visualViewport?.height ?? window.innerHeight;
+    newX = Math.max(10, Math.min(vw - 68, newX));
+    newY = Math.max(10, Math.min(vh - 68, newY));
 
     setPos({ x: newX, y: newY });
   };
@@ -55,20 +57,26 @@ export const DraggableWhatsApp: React.FC = () => {
   };
 
   // Touch event listeners
+  useEffect(() => {
+    const onMove = (e: TouchEvent) => {
+      if (!isDragging.current || e.touches.length !== 1) return;
+      e.preventDefault();
+      handleMove(e.touches[0].clientX, e.touches[0].clientY);
+    };
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', handleEnd);
+    window.addEventListener('touchcancel', handleEnd);
+    return () => {
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', handleEnd);
+      window.removeEventListener('touchcancel', handleEnd);
+    };
+  }, []);
+
   const onTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
       handleStart(e.touches[0].clientX, e.touches[0].clientY);
     }
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 1 && isDragging.current) {
-      handleMove(e.touches[0].clientX, e.touches[0].clientY);
-    }
-  };
-
-  const onTouchEnd = () => {
-    handleEnd();
   };
 
   const handleClick = (e: React.MouseEvent) => {
@@ -90,8 +98,6 @@ export const DraggableWhatsApp: React.FC = () => {
       className="whatsapp-fab"
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
       onClick={handleClick}
       style={{
         ...stylePosition,

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Building2, ShieldCheck, FileText, TrendingUp, Users, Phone, Mail,
   MapPin, ArrowRight, CheckCircle2, Star, ChevronLeft, ChevronRight,
   Play, Award, Clock, BookOpen, MessageCircle, X,
-  BarChart3, Globe, Layers, Zap, Lock, HeartHandshake
+  BarChart3, Globe, Layers, Zap, Lock, HeartHandshake, ChevronDown
 } from 'lucide-react';
 
 import DraggableWhatsApp from './DraggableWhatsApp';
@@ -133,13 +134,29 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
   const [activeService, setActiveService] = useState(0);
   const [testimonialIdx, setTestimonialIdx] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
+  const [mobileServiceCat, setMobileServiceCat] = useState<number | null>(null);
   const { ref: statsRef, inView: statsInView } = useInView(0.3);
   const c1 = useCounter(700, 2200, statsInView);
   const c2 = useCounter(400, 2000, statsInView);
   const c3 = useCounter(10, 1800, statsInView);
   const c4 = useCounter(98, 2500, statsInView);
 
-  // Auto-rotate testimonials
+  const LANDING_NAV = [
+    { label: 'Services', href: '#services' },
+    { label: 'Why Us', href: '#why-us' },
+    { label: 'Resources', href: '#blog' },
+    { label: 'Contact', href: '#contact' },
+  ];
+
+  useEffect(() => {
+    document.body.classList.toggle('landing-menu-open', mobileMenuOpen);
+    if (mobileMenuOpen) {
+      setMobileServicesOpen(false);
+      setMobileServiceCat(null);
+    }
+    return () => document.body.classList.remove('landing-menu-open');
+  }, [mobileMenuOpen]);
   useEffect(() => {
     const interval = setInterval(() => {
       setTestimonialIdx(i => (i + 1) % TESTIMONIALS.length);
@@ -175,7 +192,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0F0F0F', color: '#FFFFFF', fontFamily: "'Inter', sans-serif", overflowX: 'hidden' }}>
+    <div className="landing-root">
 
       {/* ── FLOATING DRAGGABLE WHATSAPP ───────────────────────────────── */}
       <DraggableWhatsApp />
@@ -184,13 +201,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
       {/* ── NAVBAR ───────────────────────────────────────────────────────── */}
       <nav className="landing-nav">
         <div className="landing-nav-inner">
-          <div 
+          <div
+            className="landing-brand"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             title="Return to Homepage"
-            style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', minWidth: 0 }}
           >
-            <img src="/logo.png" alt="Primeflow Logo" className="brand-logo" style={{ height: '40px', width: '88px', borderRadius: '8px', border: '1.5px solid rgba(215,25,32,0.4)', boxShadow: '0 0 12px rgba(215,25,32,0.25)' }} />
-            <div>
+            <span className="brand-logo-plate">
+            <img src="/logo.png?v=4" alt="Primeflow Logo" className="brand-logo" style={{ height: '44px', width: '96px', borderRadius: '8px' }} />
+            </span>
+            <div className="landing-brand-copy">
               <div style={{ fontSize: '1.15rem', fontWeight: '800', letterSpacing: '0.05em', fontFamily: "'Outfit', sans-serif" }}>
                 PRIME<span style={{ color: '#D71920' }}>FLOW</span>
               </div>
@@ -211,24 +231,92 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
               <button onClick={() => onShowAuth('login')} className="landing-btn-ghost">Sign In</button>
               <button onClick={() => onShowAuth('register')} className="landing-btn-primary">Get Started</button>
             </div>
-            <button className="landing-hamburger" onClick={() => setMobileMenuOpen(v => !v)} aria-label="Menu">
+            <button
+              type="button"
+              className="landing-hamburger"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setMobileMenuOpen(v => !v);
+              }}
+            >
               <span /><span /><span />
             </button>
           </div>
         </div>
-
-        {/* Mobile menu */}
-        {mobileMenuOpen && (
-          <div className="landing-mobile-menu">
-            <button onClick={() => setMobileMenuOpen(false)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={22} /></button>
-            {['Services', 'Why Us', 'Resources', 'Contact'].map(l => (
-              <a key={l} href={`#${l.toLowerCase().replace(' ', '-')}`} onClick={() => setMobileMenuOpen(false)} style={{ display: 'block', padding: '16px 0', fontSize: '1.1rem', color: '#fff', textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>{l}</a>
-            ))}
-            <button onClick={() => { setMobileMenuOpen(false); onShowAuth('login'); }} className="landing-btn-ghost" style={{ width: '100%', justifyContent: 'center', marginTop: '20px' }}>Sign In</button>
-            <button onClick={() => { setMobileMenuOpen(false); onShowAuth('register'); }} className="landing-btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '12px' }}>Get Started <ArrowRight size={16} /></button>
-          </div>
-        )}
       </nav>
+
+      {mobileMenuOpen && createPortal(
+        <div className="landing-mobile-menu" role="dialog" aria-label="Site menu">
+          <div className="landing-mobile-menu-inner">
+            <div className="landing-mobile-group">
+              <button
+                type="button"
+                className="landing-mobile-group-toggle"
+                aria-expanded={mobileServicesOpen}
+                onClick={() => setMobileServicesOpen(v => !v)}
+              >
+                <span>Services</span>
+                <ChevronDown size={18} style={{ transform: mobileServicesOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+              </button>
+              {mobileServicesOpen && (
+                <div className="landing-mobile-services">
+                  {SERVICES.map((s, i) => {
+                    const Icon = s.icon;
+                    const open = mobileServiceCat === i;
+                    return (
+                      <div key={s.category} className="landing-mobile-service-cat">
+                        <button
+                          type="button"
+                          className={`landing-mobile-cat-btn ${open ? 'active' : ''}`}
+                          onClick={() => setMobileServiceCat(open ? null : i)}
+                        >
+                          <Icon size={16} />
+                          <span>{s.category}</span>
+                          <ChevronDown size={14} style={{ marginLeft: 'auto', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                        </button>
+                        {open && (
+                          <ul className="landing-mobile-options">
+                            {s.items.map(item => (
+                              <li key={item}>
+                                <a
+                                  href="#services"
+                                  onClick={() => {
+                                    setActiveService(i);
+                                    setMobileMenuOpen(false);
+                                  }}
+                                >
+                                  {item}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {LANDING_NAV.filter(link => link.href !== '#services').map(link => (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="landing-mobile-link"
+              >
+                {link.label}
+              </a>
+            ))}
+            <button type="button" onClick={() => { setMobileMenuOpen(false); onShowAuth('login'); }} className="landing-btn-ghost" style={{ width: '100%', justifyContent: 'center', marginTop: '20px' }}>Sign In</button>
+            <button type="button" onClick={() => { setMobileMenuOpen(false); onShowAuth('register'); }} className="landing-btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '12px' }}>Get Started <ArrowRight size={16} /></button>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <section className="landing-hero">
@@ -666,7 +754,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
                 title="Return to Homepage"
                 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', cursor: 'pointer' }}
               >
-                <img src="/logo.png" alt="Primeflow Logo" className="brand-logo" style={{ height: '36px', width: '80px', borderRadius: '8px' }} />
+                <span className="brand-logo-plate">
+                <img src="/logo.png?v=4" alt="Primeflow Logo" className="brand-logo" style={{ height: '36px', width: '80px', borderRadius: '8px' }} />
+                </span>
                 <div style={{ fontSize: '1.1rem', fontWeight: '800', fontFamily: "'Outfit', sans-serif" }}>
                   PRIME<span style={{ color: '#D71920' }}>FLOW</span>
                 </div>

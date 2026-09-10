@@ -1,7 +1,11 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import type { User } from '../types';
 
 export const API_BASE = (import.meta as any).env?.VITE_API_URL || '/api';
+
+const IDLE_LIMIT_MS = 10 * 60 * 1000;
+const LAST_ACTIVITY_KEY = 'primeflow_last_activity';
+const IDLE_LOGOUT_FLAG = 'primeflow_idle_logout';
 
 /** Resolve avatar / upload paths whether API_BASE is relative or absolute. */
 export function mediaUrl(path: string) {
@@ -96,6 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       localStorage.setItem('primeflow_token', data.token);
       localStorage.setItem('primeflow_user', JSON.stringify(data.user));
+      localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
       setToken(data.token);
       setUser(data.user);
     } catch (err: any) {
@@ -160,6 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       localStorage.setItem('primeflow_token', data.token);
       localStorage.setItem('primeflow_user', JSON.stringify(data.user));
+      localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
       setToken(data.token);
       setUser(data.user);
     } catch (err: any) {
@@ -172,12 +178,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
+  const logout = useCallback((reason?: 'idle') => {
+    if (reason === 'idle') {
+      sessionStorage.setItem(IDLE_LOGOUT_FLAG, '1');
+    }
     localStorage.removeItem('primeflow_token');
     localStorage.removeItem('primeflow_user');
+    localStorage.removeItem(LAST_ACTIVITY_KEY);
     setToken(null);
     setUser(null);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const markActivity = () => {
+      localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
+    };
+
+    const checkIdle = () => {
+      const last = Number(localStorage.getItem(LAST_ACTIVITY_KEY) || '0');
+      if (!last) {
+        markActivity();
+        return;
+      }
+      if (Date.now() - last >= IDLE_LIMIT_MS) {
+        logout('idle');
+      }
+    };
+
+    const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart', 'pointerdown', 'click', 'wheel'];
+    let moveThrottle: ReturnType<typeof setTimeout> | null = null;
+    const onActivity = () => markActivity();
+    const onMouseMove = () => {
+      if (moveThrottle) return;
+      moveThrottle = setTimeout(() => {
+        moveThrottle = null;
+        markActivity();
+      }, 1000);
+    };
+
+    activityEvents.forEach((event) => window.addEventListener(event, onActivity, { passive: true }));
+    window.addEventListener('mousemove', onMouseMove, { passive: true });
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') checkIdle();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    const interval = window.setInterval(checkIdle, 15000);
+    checkIdle();
+
+    return () => {
+      if (moveThrottle) clearTimeout(moveThrottle);
+      activityEvents.forEach((event) => window.removeEventListener(event, onActivity));
+      window.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.clearInterval(interval);
+    };
+  }, [user, logout]);
 
   const resetPassword = async (email: string, newPassword: string): Promise<string> => {
     try {

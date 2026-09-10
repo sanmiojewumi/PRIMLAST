@@ -48,11 +48,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId }) => {
                 }
               } else {
                 setSelectedApp(data[0]);
-                setExpandedClients({ [data[0].client_id]: true });
               }
             } else {
               setSelectedApp(data[0]);
-              setExpandedClients({ [data[0].client_id]: true });
+              setExpandedClients({});
             }
           }
         }
@@ -163,7 +162,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId }) => {
   }
 
   return (
-    <div className="animate-fade-in chat-layout-container" style={{ padding: '24px', height: 'calc(100vh - var(--header-height) - 48px)', overflow: 'hidden' }}>
+    <div className="animate-fade-in chat-layout-container" style={{ padding: '24px', height: 'calc(100vh - var(--header-height) - 48px)', overflow: 'hidden', minWidth: 0, maxWidth: '100%', boxSizing: 'border-box' }}>
       
       {/* Applications list sidebar */}
       <div className="glass-panel chat-list-sidebar">

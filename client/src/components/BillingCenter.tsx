@@ -245,7 +245,7 @@ const BillingCenter: React.FC<BillingCenterProps> = ({ focusInvoiceId = null }) 
 
       <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <h4 style={{ color: '#fff', margin: 0 }}>Generate document</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+        <div className="billing-generate-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '12px' }}>
           <div className="form-group">
             <label className="form-label">Type</label>
             <select className="form-select" value={docType} onChange={(e) => setDocType(e.target.value as 'invoice' | 'receipt')}>
@@ -260,7 +260,7 @@ const BillingCenter: React.FC<BillingCenterProps> = ({ focusInvoiceId = null }) 
               <option value="manual">Manual entry</option>
             </select>
           </div>
-          <div className="form-group" style={{ gridColumn: 'span 2' }}>
+          <div className="form-group" style={{ gridColumn: '1 / -1' }}>
             <label className="form-label">Application</label>
             <select className="form-select" value={applicationId} onChange={(e) => setApplicationId(e.target.value)}>
               <option value="">Select a filing</option>
@@ -273,7 +273,7 @@ const BillingCenter: React.FC<BillingCenterProps> = ({ focusInvoiceId = null }) 
           </div>
         </div>
         {mode === 'manual' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+          <div className="billing-generate-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '12px' }}>
             <div className="form-group">
               <label className="form-label">Amount (NGN)</label>
               <input className="form-input" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="75000" />
@@ -282,7 +282,7 @@ const BillingCenter: React.FC<BillingCenterProps> = ({ focusInvoiceId = null }) 
               <label className="form-label">Tax (NGN)</label>
               <input className="form-input" value={tax} onChange={(e) => setTax(e.target.value)} />
             </div>
-            <div className="form-group" style={{ gridColumn: 'span 2' }}>
+            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
               <label className="form-label">Description</label>
               <input className="form-input" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Professional consulting fee" />
             </div>
@@ -298,7 +298,7 @@ const BillingCenter: React.FC<BillingCenterProps> = ({ focusInvoiceId = null }) 
         <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0 }}>
           Bank transfer is always available. Online gateway is optional and only works if PAYSTACK_SECRET_KEY is set on the server.
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+        <div className="billing-generate-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '12px' }}>
           <input className="form-input" placeholder="Bank name" value={bankName} onChange={(e) => setBankName(e.target.value)} />
           <input className="form-input" placeholder="Account name" value={bankAccountName} onChange={(e) => setBankAccountName(e.target.value)} />
           <input className="form-input" placeholder="Account number" value={bankAccountNumber} onChange={(e) => setBankAccountNumber(e.target.value)} />
@@ -326,9 +326,10 @@ const BillingCenter: React.FC<BillingCenterProps> = ({ focusInvoiceId = null }) 
             <div key={row.id} id={`invoice-${row.id}`} style={{
               display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start',
               padding: '12px', border: `1px solid ${focusInvoiceId === row.id ? 'var(--accent-red)' : 'var(--border-color)'}`,
-              borderRadius: '8px', background: focusInvoiceId === row.id ? 'rgba(215,25,32,0.08)' : undefined
+              borderRadius: '8px', background: focusInvoiceId === row.id ? 'rgba(215,25,32,0.08)' : undefined,
+              flexWrap: 'wrap', minWidth: 0
             }}>
-              <div>
+              <div style={{ minWidth: 0, flex: '1 1 180px', overflowWrap: 'anywhere' }}>
                 <div style={{ color: '#fff', fontWeight: 700 }}>{row.number} · {row.doc_type}</div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                   {row.client_name} · {row.generation_mode} · NGN {Number(row.amount).toLocaleString()} · {row.payment_status || 'unpaid'}

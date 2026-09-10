@@ -489,10 +489,12 @@ const AdminPortal: React.FC = () => {
             border: '1px solid var(--border-color)',
             borderRadius: '8px',
             cursor: isStaff ? 'pointer' : 'default',
-            transition: 'background 0.2s'
+            transition: 'background 0.2s',
+            minWidth: 0
           }}
+          className="admin-user-row"
         >
-          <div>
+          <div className="admin-user-row-meta">
             <span 
               onClick={(e) => {
                 e.stopPropagation();
@@ -511,7 +513,7 @@ const AdminPortal: React.FC = () => {
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
+          <div className="user-row-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => openEditUser(u)}
               style={{
@@ -875,7 +877,7 @@ const AdminPortal: React.FC = () => {
               <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading applications...</div>
             ) : (
               <div className="table-responsive" style={{ maxHeight: '420px', overflowY: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', textAlign: 'left' }}>
+                <table className="admin-apps-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', textAlign: 'left' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
                       <th style={{ padding: '8px' }}>Ref ID</th>
@@ -889,10 +891,10 @@ const AdminPortal: React.FC = () => {
                   <tbody>
                     {filteredApps.map(a => (
                       <tr key={a.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                        <td style={{ padding: '8px', color: '#fff', fontWeight: '700' }}>#{a.id}</td>
-                        <td style={{ padding: '8px', color: 'var(--text-primary)' }}>{a.client_name || `Client #${a.client_id}`}</td>
-                        <td style={{ padding: '8px', color: 'var(--text-secondary)' }}>{a.service_type.replace(/_/g, ' ').toUpperCase()}</td>
-                        <td style={{ padding: '8px' }}>
+                        <td data-label="Ref ID" style={{ padding: '8px', color: '#fff', fontWeight: '700' }}>#{a.id}</td>
+                        <td data-label="Client" style={{ padding: '8px', color: 'var(--text-primary)' }}>{a.client_name || `Client #${a.client_id}`}</td>
+                        <td data-label="Service" style={{ padding: '8px', color: 'var(--text-secondary)' }}>{a.service_type.replace(/_/g, ' ').toUpperCase()}</td>
+                        <td data-label="Status" style={{ padding: '8px' }}>
                           <span style={{
                             background: a.status === 'completed' ? 'rgba(72,187,120,0.15)' : a.status === 'rejected' || a.status === 'add_info_required' ? 'rgba(229,62,62,0.15)' : 'rgba(49,130,206,0.15)',
                             color: a.status === 'completed' ? '#48bb78' : a.status === 'rejected' || a.status === 'add_info_required' ? '#f56565' : '#4299e1',
@@ -905,8 +907,8 @@ const AdminPortal: React.FC = () => {
                             {a.status.replace(/_/g, ' ')}
                           </span>
                         </td>
-                        <td style={{ padding: '8px', color: 'var(--text-muted)' }}>{a.assignee_name || 'Unassigned'}</td>
-                        <td style={{ padding: '8px', textAlign: 'right' }}>
+                        <td data-label="Assignee" style={{ padding: '8px', color: 'var(--text-muted)' }}>{a.assignee_name || 'Unassigned'}</td>
+                        <td data-label="Actions" style={{ padding: '8px', textAlign: 'right' }}>
                           <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                             <button 
                               onClick={() => openEditApp(a)}
@@ -975,8 +977,8 @@ const AdminPortal: React.FC = () => {
                         fontSize: '0.75rem'
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '600', marginBottom: '4px' }}>
-                        <span style={{ color: 'var(--accent-red)' }}>{log.action}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap', fontWeight: '600', marginBottom: '4px' }}>
+                        <span style={{ color: 'var(--accent-red)', overflowWrap: 'anywhere' }}>{log.action}</span>
                         <span style={{ color: 'var(--text-muted)' }}>
                           {new Date(log.created_at).toLocaleString()}
                         </span>
@@ -984,7 +986,7 @@ const AdminPortal: React.FC = () => {
                       <p style={{ color: 'var(--text-primary)', marginBottom: '4px', lineHeight: '1.3' }}>
                         {log.details}
                       </p>
-                      <div style={{ display: 'flex', gap: '16px', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
                         <span>Operator: {log.user_name || 'System'} ({log.user_role || 'unassigned'})</span>
                         <span>IP: {log.ip_address}</span>
                       </div>

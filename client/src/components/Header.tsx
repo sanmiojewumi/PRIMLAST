@@ -155,8 +155,23 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
     admin: 'System Administration'
   };
 
+  const tabNamesShort: Record<string, string> = {
+    welcome: 'Home',
+    dashboard: 'Dashboard',
+    services: 'Services',
+    compliance: 'Compliance',
+    advisor: 'AI Advisor',
+    knowledge: 'Knowledge',
+    kanban: 'Operations',
+    workflow: 'Workflow',
+    billing: 'Invoices',
+    chat: 'Consultations',
+    admin: 'Admin'
+  };
+
   return (
     <header
+      className="app-header"
       style={{
         height: 'var(--header-height)',
         background: 'linear-gradient(90deg, rgba(10,22,40,0.95) 0%, rgba(13,27,42,0.92) 100%)',
@@ -172,36 +187,46 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
       }}
     >
       {/* Title & Hamburger */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div className="header-left">
         <button
-          onClick={onMenuClick}
+          type="button"
+          aria-label="Open navigation menu"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onMenuClick?.();
+          }}
           className="mobile-menu-btn"
           style={{
             background: 'none',
             border: 'none',
             color: '#fff',
             cursor: 'pointer',
-            padding: '4px',
+            padding: '10px',
             display: 'none',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            minWidth: '44px',
+            minHeight: '44px',
+            touchAction: 'manipulation',
+            position: 'relative',
+            zIndex: 2
           }}
         >
           <Menu size={22} />
         </button>
-        <div
-          onClick={() => setActiveTab && setActiveTab('welcome')}
-          title="Return to Homepage"
-          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-        >
-          <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#fff', margin: 0 }}>
+        <div className="header-title-block">
+          <h2 className="header-title-full" style={{ fontSize: '1.25rem', fontWeight: '700', color: '#fff', margin: 0 }}>
             {tabNames[activeTab] || 'PrimeFlow Hub'}
+          </h2>
+          <h2 className="header-title-short" style={{ fontSize: '1rem', fontWeight: '700', color: '#fff', margin: 0 }}>
+            {tabNamesShort[activeTab] || 'PrimeFlow'}
           </h2>
         </div>
       </div>
 
       {/* Global Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+      <div className="header-actions">
 
         {/* Search */}
         <div className="header-search-container" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -464,8 +489,9 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
         </div>
 
         {/* Brand Mini Logo — click to go home */}
+          <span className="brand-logo-plate">
           <img 
-          src="/logo.png" 
+          src="/logo.png?v=4" 
           alt="PrimeFlow Logo" 
           className="brand-logo"
           onClick={() => setActiveTab && setActiveTab('welcome')}
@@ -474,16 +500,12 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
             width: '68px', 
             height: '32px', 
             borderRadius: '6px', 
-            border: '1px solid rgba(255,255,255,0.12)',
-            boxShadow: '0 0 8px rgba(229, 62, 62, 0.2)',
-            cursor: 'pointer',
-            transition: 'box-shadow 0.2s, transform 0.2s'
+            cursor: 'pointer'
           }}
-          onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 16px rgba(215,25,32,0.5)'; e.currentTarget.style.transform = 'scale(1.05)'; }}
-          onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 8px rgba(229,62,62,0.2)'; e.currentTarget.style.transform = 'scale(1)'; }}
         />
+          </span>
         
-        <div style={{ width: '1px', height: '24px', backgroundColor: 'var(--border-color)' }} />
+        <div className="header-divider" style={{ width: '1px', height: '24px', backgroundColor: 'var(--border-color)' }} />
 
         {/* User Info Quick View */}
         <div 
