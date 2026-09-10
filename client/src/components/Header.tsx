@@ -346,8 +346,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
                 right: 0,
                 width: '350px',
                 padding: '16px',
-                zIndex: 110,
-                animation: 'fadeIn 0.2s ease forwards'
+                zIndex: 210
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
@@ -440,12 +439,11 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
                 right: 0,
                 width: '320px',
                 padding: '16px',
-                zIndex: 110,
-                animation: 'fadeIn 0.2s ease forwards'
+                zIndex: 210
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: '700' }}>Notifications</span>
+              <div className="header-dropdown-head">
+                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#fff' }}>Notifications</span>
                 {unreadCount > 0 && (
                   <button 
                     onClick={markAllRead}
@@ -468,13 +466,13 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
                       cursor: 'pointer'
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: '600', marginBottom: '2px' }}>
-                      <span style={{ color: n.is_read ? 'var(--text-primary)' : '#fff' }}>{n.title}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontSize: '0.8rem', fontWeight: '600', marginBottom: '2px' }}>
+                      <span style={{ color: n.is_read ? 'var(--text-primary)' : '#fff', overflowWrap: 'anywhere' }}>{n.title}</span>
                       <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
                         {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.3', margin: 0 }}>{n.message}</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.3', margin: 0, overflowWrap: 'anywhere' }}>{n.message}</p>
                   </div>
                 ))}
 
@@ -551,6 +549,17 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onMenuClick, setActiveTab })
           </div>
         </div>
       </div>
+      {(showNotifications || showMailbox) && (
+        <button
+          type="button"
+          className="header-popover-backdrop"
+          aria-label="Close notifications"
+          onClick={() => {
+            setShowNotifications(false);
+            setShowMailbox(false);
+          }}
+        />
+      )}
     </header>
   );
 };
