@@ -774,12 +774,16 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
       }
     }
 
-    if (['company_incorporation', 'business_registration', 'incorporated_trustee'].includes(selectedService!)) {
+    if (['company_incorporation', 'business_registration', 'incorporated_trustee', 'annual_returns'].includes(selectedService!)) {
       const incDocs = getIncorporationRequiredDocs(selectedService!).filter(d => d.isRequired);
       for (const doc of incDocs) {
         const files = incorporationRequiredFiles[doc.key] || [];
         if (files.length === 0) {
-          setError(`Please select and upload at least one file for: ${doc.label}`);
+          setError(`Please upload the required document: ${doc.label}`);
+          return;
+        }
+        if (files.some(f => f.size > 15 * 1024 * 1024)) {
+          setError(`Each file must be 15MB or smaller. Check: ${doc.label}`);
           return;
         }
       }
@@ -790,7 +794,17 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
       for (const docType of requiredDocs) {
         const files = complianceRequiredFiles[docType] || [];
         if (files.length === 0) {
-          setError(`Please select and upload at least one file for: ${docType}`);
+          setError(`Please upload the required document: ${docType}`);
+          return;
+        }
+      }
+    }
+
+    if (selectedService === 'other_services' && selectedOtherServices.includes('Trademark Registration')) {
+      for (const docType of ["CAC Certificate", "Company Logo", "Director's Signature"]) {
+        const files = complianceRequiredFiles[docType] || [];
+        if (files.length === 0) {
+          setError(`Please upload the required trademark document: ${docType}`);
           return;
         }
       }
@@ -968,8 +982,21 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
       };
     }
 
+    let createdAppId: number | null = null;
+    const mimeForUpload = (file: File) => {
+      const t = (file.type || '').toLowerCase();
+      if (t === 'image/jpg' || t === 'image/pjpeg') return 'image/jpeg';
+      if (t) return t;
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
+      if (ext === 'png') return 'image/png';
+      if (ext === 'webp') return 'image/webp';
+      if (ext === 'pdf') return 'application/pdf';
+      if (ext === 'docx') return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      return 'application/octet-stream';
+    };
+
     try {
-      // 1. Submit Application
       const appRes = await fetch(`${API_BASE}/services/applications`, {
         method: 'POST',
         headers: {
@@ -985,134 +1012,59 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
       const appData = await appRes.json();
       if (!appRes.ok) throw new Error(appData.error || 'Failed to submit application');
 
-      const newAppId = appData.id;
+      const newAppId = appData.id as number;
+      createdAppId = newAppId;
       const uploadedFilesList: { name: string; size: number; category?: string }[] = [];
 
-      // 2. Loop and upload files sequentially
-      if (['company_incorporation', 'business_registration', 'incorporated_trustee'].includes(selectedService)) {
+      const uploadOne = async (file: File, label: string, prefix: string) => {
+        const formData = new FormData();
+        const renamedFile = new File([file], `[${prefix}] ${file.name}`, { type: mimeForUpload(file) });
+        formData.append('file', renamedFile);
+        formData.append('application_id', newAppId.toString());
+        const uploadRes = await fetch(`${API_BASE}/documents/upload`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData
+        });
+        let uploadData: any = {};
+        try { uploadData = await uploadRes.json(); } catch { /* ignore */ }
+        if (!uploadRes.ok) {
+          throw new Error(`Could not attach "${file.name}" for "${label}": ${uploadData.error || 'Upload failed'}`);
+        }
+        uploadedFilesList.push({ name: file.name, size: file.size, category: label });
+      };
+
+      if (['company_incorporation', 'business_registration', 'incorporated_trustee', 'annual_returns'].includes(selectedService)) {
         const incDocs = getIncorporationRequiredDocs(selectedService);
         for (const doc of incDocs) {
-          const files = incorporationRequiredFiles[doc.key] || [];
-          for (const file of files) {
-            const formData = new FormData();
-            const renamedFile = new File([file], `[${doc.key}] ${file.name}`, { type: file.type });
-            formData.append('file', renamedFile);
-            formData.append('application_id', newAppId.toString());
-
-            const uploadRes = await fetch(`${API_BASE}/documents/upload`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`
-              },
-              body: formData
-            });
-
-            const uploadData = await uploadRes.json();
-            if (!uploadRes.ok) {
-              throw new Error(`Application submitted, but file "${file.name}" for "${doc.label}" failed: ${uploadData.error}`);
-            }
-            uploadedFilesList.push({ name: file.name, size: file.size, category: doc.key });
+          for (const file of incorporationRequiredFiles[doc.key] || []) {
+            await uploadOne(file, doc.label, doc.key);
           }
         }
-      } else if (['post_incorporation', 'compliance', 'other_services'].includes(selectedService)) {
-        if (['post_incorporation', 'other_services'].includes(selectedService)) {
-          const activeSubServices = selectedService === 'post_incorporation' ? selectedSubServices : selectedOtherServices;
-          for (const sub of activeSubServices) {
-            if (selectedService === 'other_services' && sub === 'Trademark Registration') {
-              const trademarkDocs = ["CAC Certificate", "Company Logo", "Director's Signature"];
-              for (const docType of trademarkDocs) {
-                const files = complianceRequiredFiles[docType] || [];
-                for (const file of files) {
-                  const formData = new FormData();
-                  const renamedFile = new File([file], `[${sub} - ${docType}] ${file.name}`, { type: file.type });
-                  formData.append('file', renamedFile);
-                  formData.append('application_id', newAppId.toString());
-
-                  const uploadRes = await fetch(`${API_BASE}/documents/upload`, {
-                    method: 'POST',
-                    headers: {
-                      'Authorization': `Bearer ${token}`
-                    },
-                    body: formData
-                  });
-
-                  const uploadData = await uploadRes.json();
-                  if (!uploadRes.ok) {
-                    throw new Error(`Application submitted, but file "${file.name}" for "${docType}" failed: ${uploadData.error}`);
-                  }
-                  uploadedFilesList.push({ name: file.name, size: file.size, category: `${sub} - ${docType}` });
-                }
-              }
-            } else {
-              const files = subServiceFiles[sub] || [];
-              for (const file of files) {
-                const formData = new FormData();
-                const renamedFile = new File([file], `[${sub}] ${file.name}`, { type: file.type });
-                formData.append('file', renamedFile);
-                formData.append('application_id', newAppId.toString());
-
-                const uploadRes = await fetch(`${API_BASE}/documents/upload`, {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${token}`
-                  },
-                  body: formData
-                });
-
-                const uploadData = await uploadRes.json();
-                if (!uploadRes.ok) {
-                  throw new Error(`Application submitted, but file "${file.name}" for "${sub}" failed: ${uploadData.error}`);
-                }
-                uploadedFilesList.push({ name: file.name, size: file.size, category: sub });
+      } else if (['post_incorporation', 'other_services'].includes(selectedService)) {
+        const activeSubServices = selectedService === 'post_incorporation' ? selectedSubServices : selectedOtherServices;
+        for (const sub of activeSubServices) {
+          if (selectedService === 'other_services' && sub === 'Trademark Registration') {
+            for (const docType of ["CAC Certificate", "Company Logo", "Director's Signature"]) {
+              for (const file of complianceRequiredFiles[docType] || []) {
+                await uploadOne(file, docType, `${sub} - ${docType}`);
               }
             }
-          }
-        } else {
-          // compliance
-          const requiredDocs = getComplianceRequiredDocs();
-          for (const docType of requiredDocs) {
-            const files = complianceRequiredFiles[docType] || [];
-            for (const file of files) {
-              const formData = new FormData();
-              const renamedFile = new File([file], `[${docType}] ${file.name}`, { type: file.type });
-              formData.append('file', renamedFile);
-              formData.append('application_id', newAppId.toString());
-
-              const uploadRes = await fetch(`${API_BASE}/documents/upload`, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${token}`
-                },
-                body: formData
-              });
-
-              const uploadData = await uploadRes.json();
-              if (!uploadRes.ok) {
-                throw new Error(`Application submitted, but file "${file.name}" for "${docType}" failed: ${uploadData.error}`);
-              }
-              uploadedFilesList.push({ name: file.name, size: file.size, category: docType });
+          } else {
+            for (const file of subServiceFiles[sub] || []) {
+              await uploadOne(file, sub, sub);
             }
           }
         }
-      } else if (uploadFiles.length > 0) {
+      } else if (selectedService === 'compliance') {
+        for (const docType of getComplianceRequiredDocs()) {
+          for (const file of complianceRequiredFiles[docType] || []) {
+            await uploadOne(file, docType, docType);
+          }
+        }
+      } else {
         for (const file of uploadFiles) {
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('application_id', newAppId.toString());
-
-          const uploadRes = await fetch(`${API_BASE}/documents/upload`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`
-            },
-            body: formData
-          });
-
-          const uploadData = await uploadRes.json();
-          if (!uploadRes.ok) {
-            throw new Error(`Application submitted, but file "${file.name}" upload failed: ${uploadData.error}`);
-          }
-          uploadedFilesList.push({ name: file.name, size: file.size, category: 'Supporting File' });
+          await uploadOne(file, 'Supporting File', 'file');
         }
       }
 
@@ -1126,7 +1078,7 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
       });
       const sigData = await sigRes.json();
       if (!sigRes.ok) {
-        throw new Error(`Application submitted, but signature failed: ${sigData.error || 'Could not save signature'}`);
+        throw new Error(`Could not save your signature: ${sigData.error || 'Please try again'}`);
       }
       uploadedFilesList.push({ name: 'Client Signature.png', size: 0, category: 'Signature' });
 
@@ -1205,10 +1157,18 @@ const ServicesPortal: React.FC<ServicesPortalProps> = ({ targetAppId }) => {
       setLastFilingDate('');
 
     } catch (err: any) {
+      if (createdAppId) {
+        try {
+          await fetch(`${API_BASE}/services/applications/${createdAppId}/incomplete`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        } catch { /* keep the user-facing upload error */ }
+      }
       setError(err.message || 'An unexpected error occurred.');
       setUploadResultModal({
         success: false,
-        message: err.message || 'Document upload or application submission failed. Please check your attachments and try again.',
+        message: err.message || 'Documents are incomplete. The filing was not submitted.',
         files: [],
         triggerSurvey: false
       });

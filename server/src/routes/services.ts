@@ -429,4 +429,38 @@ router.get('/mock-mailbox', authenticateJWT as any, async (req: AuthRequest, res
   }
 });
 
+// Client may withdraw a filing that failed to attach all documents
+router.delete('/applications/:id/incomplete', authenticateJWT as any, async (req: AuthRequest, res) => {
+  if (!req.user) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  const appId = parseInt(req.params.id as string, 10);
+  try {
+    const db = await getDb();
+    const app = await db.get('SELECT id, client_id, assigned_to FROM applications WHERE id = ?', [appId]);
+    if (!app) {
+      res.status(404).json({ error: 'Application not found' });
+      return;
+    }
+    if (req.user.role === 'client' && app.client_id !== req.user.id) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+    if (app.assigned_to) {
+      res.status(409).json({ error: 'This filing is already assigned and cannot be withdrawn automatically.' });
+      return;
+    }
+
+    await db.run('DELETE FROM documents WHERE application_id = ?', [appId]);
+    await db.run('DELETE FROM applications WHERE id = ?', [appId]);
+    await logAudit(req.user.id, 'APPLICATION_WITHDRAWN', `Withdrew incomplete application ${appId}`, req.ip);
+    res.status(200).json({ message: 'Incomplete application withdrawn' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Could not withdraw incomplete application' });
+  }
+});
+
 export default router;

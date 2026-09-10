@@ -6,10 +6,11 @@ import fs from 'fs';
 import { getDb } from '../db';
 import { AuthRequest, authenticateJWT } from '../middleware/auth';
 import { uploadSecure } from '../middleware/upload';
+import { getUploadsDir } from '../uploadsPath';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'primeflow_super_secure_jwt_secret_key_2026_abuja';
-const UPLOADS_DIR = path.resolve(__dirname, '..', '..', 'uploads');
+const UPLOADS_DIR = getUploadsDir();
 
 // Helper to log audit actions
 async function logAudit(userId: number | null, action: string, details: string, ip: string | undefined) {

@@ -7,6 +7,7 @@ import path from 'path';
 import fs from 'fs';
 import { getDb } from './db';
 import multer from 'multer';
+import { getUploadsDir } from './uploadsPath';
 
 // Load environment variables
 dotenv.config();
@@ -29,7 +30,8 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" } // Required to allow download/image requests
 }));
 
-const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV || process.env.NOW_REGION);
+const uploadsDir = getUploadsDir();
+app.use('/uploads', express.static(uploadsDir));
 
 // Maximum Security: 3. Setup global rate limiter to prevent denial of service (DoS) and brute force
 const limiter = rateLimit({
@@ -53,17 +55,6 @@ const authLimiter = rateLimit({
 // JSON and URL-encoded payload size limits
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Ensure upload folders exist and serve static files securely
-const uploadsDir = isVercel ? '/tmp/uploads' : path.resolve(__dirname, '..', 'uploads');
-try {
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  }
-} catch (e) {
-  console.warn("Uploads directory notice:", e);
-}
-app.use('/uploads', express.static(uploadsDir));
 
 // Middleware to ensure DB connection is ready for all environments
 app.use(async (req: Request, res: Response, next: NextFunction) => {

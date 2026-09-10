@@ -1,56 +1,58 @@
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
 import crypto from 'crypto';
+import { getUploadsDir } from '../uploadsPath';
 
-const UPLOAD_DIR = path.resolve(__dirname, '..', '..', 'uploads');
+const UPLOAD_DIR = getUploadsDir();
 
-// Ensure upload directory exists
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-}
-
-// Allowed extensions and MIME types
-const ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.jpg', '.jpeg', '.png'];
+const ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif'];
 const ALLOWED_MIME_TYPES = [
   'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'image/jpeg',
-  'image/png'
+  'image/jpg',
+  'image/pjpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+  'application/octet-stream'
 ];
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, UPLOAD_DIR);
+  destination: (_req, _file, cb) => {
+    cb(null, getUploadsDir());
   },
-  filename: (req, file, cb) => {
-    // Generate a secure random filename to prevent Path Traversal and shell injection
-    const ext = path.extname(file.originalname).toLowerCase();
-    const secureName = crypto.randomUUID() + ext;
-    cb(null, secureName);
+  filename: (_req, file, cb) => {
+    let ext = path.extname(file.originalname).toLowerCase();
+    if (ext === '.jpeg') ext = '.jpg';
+    if (!ext) ext = '.bin';
+    cb(null, crypto.randomUUID() + ext);
   }
 });
 
-const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const ext = path.extname(file.originalname).toLowerCase();
-  
-  // Validate file extension
+
   if (!ALLOWED_EXTENSIONS.includes(ext)) {
     return cb(new Error(`Extension not allowed. Supported types: ${ALLOWED_EXTENSIONS.join(', ')}`));
   }
-  
-  // Validate MIME type
-  if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-    return cb(new Error(`MIME type not allowed. Supported types: PDF, DOCX, JPG, PNG`));
+
+  const mime = (file.mimetype || '').toLowerCase();
+  if (mime && !ALLOWED_MIME_TYPES.includes(mime)) {
+    return cb(new Error('File type not allowed. Use PDF, DOCX, JPG, PNG, or WEBP.'));
   }
 
   cb(null, true);
 };
 
 export const uploadSecure = multer({
-  storage: storage,
-  fileFilter: fileFilter,
+  storage,
+  fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5 MB limits
+    fileSize: 15 * 1024 * 1024
   }
 });
+
+export { UPLOAD_DIR };

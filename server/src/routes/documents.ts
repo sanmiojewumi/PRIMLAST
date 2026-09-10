@@ -5,9 +5,9 @@ import crypto from 'crypto';
 import { getDb } from '../db';
 import { authenticateJWT, AuthRequest } from '../middleware/auth';
 import { uploadSecure } from '../middleware/upload';
+import { getUploadsDir } from '../uploadsPath';
 
 const router = Router();
-const UPLOADS_DIR = path.resolve(__dirname, '..', '..', 'uploads');
 
 // Log audit helper
 async function logAudit(userId: number | null, action: string, details: string, ip: string | undefined) {
@@ -69,7 +69,7 @@ router.post('/upload', authenticateJWT as any, (req, res, next) => {
     // Save metadata to DB
     const result = await db.run(
       'INSERT INTO documents (application_id, user_id, filename, original_name, mime_type, size, kind) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [appId, req.user.id, file.filename, file.originalname, file.mimetype, file.size, 'file']
+      [appId, req.user.id, file.filename, file.originalname, file.mimetype || 'application/octet-stream', file.size, 'file']
     );
 
     const docId = result.lastID;
@@ -86,12 +86,28 @@ router.post('/upload', authenticateJWT as any, (req, res, next) => {
       originalName: file.originalname,
       message: 'File uploaded successfully'
     });
-  } catch (err) {
-    console.error(err);
-    if (file && fs.existsSync(file.path)) {
-      fs.unlinkSync(file.path);
+  } catch (err: any) {
+    console.error('Document upload failed:', err);
+    try {
+      const db = await getDb();
+      const result = await db.run(
+        'INSERT INTO documents (application_id, user_id, filename, original_name, mime_type, size) VALUES (?, ?, ?, ?, ?, ?)',
+        [appId, req.user.id, file.filename, file.originalname, file.mimetype || 'application/octet-stream', file.size]
+      );
+      res.status(201).json({
+        id: result.lastID,
+        filename: file.filename,
+        originalName: file.originalname,
+        message: 'File uploaded successfully'
+      });
+      return;
+    } catch (fallbackErr) {
+      console.error('Document upload fallback failed:', fallbackErr);
     }
-     res.status(500).json({ error: 'Internal server error' });
+    if (file && fs.existsSync(file.path)) {
+      try { fs.unlinkSync(file.path); } catch { /* ignore */ }
+    }
+    res.status(500).json({ error: 'Could not save the uploaded file. Please try a JPG, PNG, or PDF under 15MB.' });
   }
 });
 
@@ -163,7 +179,7 @@ router.get('/download/:id', authenticateJWT as any, async (req: AuthRequest, res
        return;
     }
 
-    const filePath = path.join(UPLOADS_DIR, doc.filename);
+    const filePath = path.join(getUploadsDir(), doc.filename);
     if (!fs.existsSync(filePath)) {
        res.status(410).json({ error: 'File is no longer available on the server' });
        return;
@@ -255,7 +271,7 @@ router.post('/signature', authenticateJWT as any, async (req: AuthRequest, res) 
     }
 
     const filename = `${crypto.randomUUID()}.png`;
-    const filePath = path.join(UPLOADS_DIR, filename);
+    const filePath = path.join(getUploadsDir(), filename);
     fs.writeFileSync(filePath, buffer);
 
     const result = await db.run(
