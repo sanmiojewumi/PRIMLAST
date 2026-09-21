@@ -55,6 +55,7 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   validate: { xForwardedForHeader: false, default: false },
+  skip: (req: Request) => req.method === 'OPTIONS',
   message: { error: 'Too many requests from this IP, please try again after 15 minutes' }
 });
 app.use(limiter);
@@ -64,6 +65,7 @@ const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 1000,
   validate: { xForwardedForHeader: false, default: false },
+  skip: (req: Request) => req.method === 'OPTIONS',
   message: { error: 'Too many authentication attempts, please try again later' }
 });
 

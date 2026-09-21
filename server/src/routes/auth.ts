@@ -303,62 +303,69 @@ router.post('/register-staff', authenticateJWT as any, async (req: AuthRequest, 
 });
 
 // LOGIN
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+router.route('/login')
+  .options((req, res) => {
+    res.sendStatus(204);
+  })
+  .post(async (req, res) => {
+    const { email, password } = req.body;
 
-  if (!email || !password) {
-     res.status(400).json({ error: 'Email and password are required' });
-     return;
-  }
-
-  try {
-    const db = await getDb();
-
-    // Fetch user
-    const user = await db.get<any>(
-      'SELECT id, name, email, password_hash, role, status, permissions FROM users WHERE email = ?',
-      [email]
-    );
-
-    if (!user) {
-      // Avoid enumerating email existence for maximum security. Use generic messages.
-      await logAudit(null, 'LOGIN_FAILED', `Failed login attempt for email: ${email}`, req.ip);
-       res.status(401).json({ error: 'Invalid email or password' });
+    if (!email || !password) {
+       res.status(400).json({ error: 'Email and password are required' });
        return;
     }
 
-    // Verify status
-    if (user.status !== 'active') {
-       res.status(403).json({ error: 'Your account is suspended or pending approval' });
-       return;
+    try {
+      const db = await getDb();
+
+      // Fetch user
+      const user = await db.get<any>(
+        'SELECT id, name, email, password_hash, role, status, permissions FROM users WHERE email = ?',
+        [email]
+      );
+
+      if (!user) {
+        // Avoid enumerating email existence for maximum security. Use generic messages.
+        await logAudit(null, 'LOGIN_FAILED', `Failed login attempt for email: ${email}`, req.ip);
+         res.status(401).json({ error: 'Invalid email or password' });
+         return;
+      }
+
+      // Verify status
+      if (user.status !== 'active') {
+         res.status(403).json({ error: 'Your account is suspended or pending approval' });
+         return;
+      }
+
+      // Verify password
+      const match = await bcrypt.compare(password, user.password_hash);
+      if (!match) {
+        await logAudit(user.id, 'LOGIN_FAILED', `Invalid password entered`, req.ip);
+         res.status(401).json({ error: 'Invalid email or password' });
+         return;
+      }
+
+      // Generate token
+      const token = jwt.sign(
+        { id: user.id, email: user.email, role: user.role, name: user.name, permissions: user.permissions },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+
+      await logAudit(user.id, 'LOGIN_SUCCESS', `User successfully authenticated`, req.ip);
+
+       res.status(200).json({
+        token,
+        user: { id: user.id, name: user.name, email: user.email, role: user.role, permissions: user.permissions ? JSON.parse(user.permissions) : null }
+      });
+    } catch (err: any) {
+      console.error('Login error:', err);
+       res.status(500).json({ error: 'Internal server error' });
     }
-
-    // Verify password
-    const match = await bcrypt.compare(password, user.password_hash);
-    if (!match) {
-      await logAudit(user.id, 'LOGIN_FAILED', `Invalid password entered`, req.ip);
-       res.status(401).json({ error: 'Invalid email or password' });
-       return;
-    }
-
-    // Generate token
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, name: user.name, permissions: user.permissions },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    await logAudit(user.id, 'LOGIN_SUCCESS', `User successfully authenticated`, req.ip);
-
-     res.status(200).json({
-      token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role, permissions: user.permissions ? JSON.parse(user.permissions) : null }
-    });
-  } catch (err: any) {
-    console.error('Login error:', err);
-     res.status(500).json({ error: 'Internal server error' });
-  }
-});
+  })
+  .all((req, res) => {
+    res.status(405).json({ error: `Method ${req.method} not allowed on login route. Please use POST.` });
+  });
 
 // GET CURRENT USER PROFILE
 router.get('/me', authenticateJWT as any, async (req: AuthRequest, res) => {
