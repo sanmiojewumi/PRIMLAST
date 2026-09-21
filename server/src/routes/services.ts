@@ -300,46 +300,87 @@ router.get('/notifications', authenticateJWT as any, async (req: AuthRequest, re
   }
 });
 
-// MARK NOTIFICATION AS READ
-router.put('/notifications/:id/read', authenticateJWT as any, async (req: AuthRequest, res) => {
-  if (!req.user) {
-     res.status(401).json({ error: 'Unauthorized' });
-     return;
-  }
-
-  const notificationId = parseInt((req.params as any).id as string);
-
-  try {
-    const db = await getDb();
-    await db.run(
-      'UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?',
-      [notificationId, req.user.id]
-    );
-     res.status(200).json({ message: 'Notification marked as read' });
-  } catch (err) {
-    console.error(err);
-     res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 // MARK ALL NOTIFICATIONS AS READ
-router.put('/notifications/read-all', authenticateJWT as any, async (req: AuthRequest, res) => {
-  if (!req.user) {
-     res.status(401).json({ error: 'Unauthorized' });
-     return;
-  }
-  try {
-    const db = await getDb();
-    await db.run(
-      'UPDATE notifications SET is_read = 1 WHERE user_id = ?',
-      [req.user.id]
-    );
-     res.status(200).json({ message: 'All notifications marked as read' });
-  } catch (err) {
-    console.error(err);
-     res.status(500).json({ error: 'Internal server error' });
-  }
-});
+router.route('/notifications/read-all')
+  .all(authenticateJWT as any)
+  .put(async (req: AuthRequest, res) => {
+    if (!req.user) {
+       res.status(401).json({ error: 'Unauthorized' });
+       return;
+    }
+    try {
+      const db = await getDb();
+      await db.run(
+        'UPDATE notifications SET is_read = 1 WHERE user_id = ?',
+        [req.user.id]
+      );
+       res.status(200).json({ message: 'All notifications marked as read' });
+    } catch (err) {
+      console.error(err);
+       res.status(500).json({ error: 'Internal server error' });
+    }
+  })
+  .post(async (req: AuthRequest, res) => {
+    if (!req.user) {
+       res.status(401).json({ error: 'Unauthorized' });
+       return;
+    }
+    try {
+      const db = await getDb();
+      await db.run(
+        'UPDATE notifications SET is_read = 1 WHERE user_id = ?',
+        [req.user.id]
+      );
+       res.status(200).json({ message: 'All notifications marked as read' });
+    } catch (err) {
+      console.error(err);
+       res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+// MARK NOTIFICATION AS READ
+router.route('/notifications/:id/read')
+  .all(authenticateJWT as any)
+  .put(async (req: AuthRequest, res) => {
+    if (!req.user) {
+       res.status(401).json({ error: 'Unauthorized' });
+       return;
+    }
+
+    const notificationId = parseInt((req.params as any).id as string);
+
+    try {
+      const db = await getDb();
+      await db.run(
+        'UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?',
+        [notificationId, req.user.id]
+      );
+       res.status(200).json({ message: 'Notification marked as read' });
+    } catch (err) {
+      console.error(err);
+       res.status(500).json({ error: 'Internal server error' });
+    }
+  })
+  .post(async (req: AuthRequest, res) => {
+    if (!req.user) {
+       res.status(401).json({ error: 'Unauthorized' });
+       return;
+    }
+
+    const notificationId = parseInt((req.params as any).id as string);
+
+    try {
+      const db = await getDb();
+      await db.run(
+        'UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?',
+        [notificationId, req.user.id]
+      );
+       res.status(200).json({ message: 'Notification marked as read' });
+    } catch (err) {
+      console.error(err);
+       res.status(500).json({ error: 'Internal server error' });
+    }
+  });
 
 // POST /survey — submit feedback survey
 router.post('/survey', authenticateJWT as any, async (req: AuthRequest, res) => {

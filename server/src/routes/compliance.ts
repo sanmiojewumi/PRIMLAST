@@ -59,8 +59,8 @@ router.get('/', authenticateJWT, async (req: Request, res: Response): Promise<vo
   }
 });
 
-// PUT /api/compliance/:key — update status of a specific compliance item
-router.put('/:key', authenticateJWT, async (req: Request, res: Response): Promise<void> => {
+// PUT or POST /api/compliance/:key — update status of a specific compliance item
+const handleComplianceUpdate = async (req: Request, res: Response): Promise<void> => {
   try {
     const db = await getDb();
     const userId = (req as any).user.id;
@@ -86,9 +86,14 @@ router.put('/:key', authenticateJWT, async (req: Request, res: Response): Promis
 
     res.json(updated);
   } catch (err: any) {
-    console.error('Compliance PUT error:', err);
+    console.error('Compliance update error:', err);
     res.status(500).json({ error: 'Failed to update compliance item' });
   }
-});
+};
+
+router.route('/:key')
+  .all(authenticateJWT)
+  .put(handleComplianceUpdate)
+  .post(handleComplianceUpdate);
 
 export default router;

@@ -20,10 +20,25 @@ app.set('trust proxy', 1);
 
 // Maximum Security: 1. Setup CORS policy (strictly limit origins or configure default safe origins)
 app.use(cors({
-  origin: '*', // For demo/development ease; in strict environments, lock this to the client's URL
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'bypass-tunnel-reminder']
+  origin: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'bypass-tunnel-reminder', 'x-requested-with', 'Accept'],
+  credentials: true
 }));
+
+// Pre-flight request handler for all routes
+app.options('*', cors() as any);
+
+// Middleware to normalize Vercel serverless rewritten URLs
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.url.startsWith('/api/index.ts')) {
+    req.url = req.url.replace('/api/index.ts', '/api');
+    if (req.url === '/api' || req.url === '/api/') {
+      req.url = '/api/health';
+    }
+  }
+  next();
+});
 
 // Maximum Security: 2. Configure security HTTP headers via Helmet
 app.use(helmet({
@@ -112,6 +127,11 @@ app.get(['/api/download-db-sql', '/download-db-sql'], (req, res) => {
 // Base route for connectivity checks
 app.get(['/health', '/api/health'], (req, res) => {
   res.status(200).json({ status: 'healthy', timestamp: new Date() });
+});
+
+// Fallback for unmatched API endpoints to ensure clean JSON responses
+app.all(['/api/*', '/auth/*', '/services/*', '/documents/*', '/messages/*', '/admin/*', '/compliance/*'], (req: Request, res: Response) => {
+  res.status(404).json({ error: `Endpoint ${req.method} ${req.path} not found` });
 });
 
 // Serve compiled client static files on Render / Production
