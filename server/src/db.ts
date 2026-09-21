@@ -359,7 +359,8 @@ export async function sendNotificationEmail(db: any, userId: number, title: stri
       timestamp: new Date().toISOString()
     };
 
-    const mailboxPath = path.resolve(__dirname, '..', 'mock_mailbox.json');
+    const mailboxDir = isVercel ? '/tmp' : path.resolve(__dirname, '..');
+    const mailboxPath = path.join(mailboxDir, 'mock_mailbox.json');
     let currentMailbox: any[] = [];
     if (fs.existsSync(mailboxPath)) {
       try {

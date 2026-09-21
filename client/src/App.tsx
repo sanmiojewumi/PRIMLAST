@@ -18,7 +18,7 @@ import { navFromNotification } from './utils/notifications';
 import { ShieldCheck, ArrowRight, Eye, EyeOff, Building2, ShieldAlert, MessageSquare, Layers, X, Search, Bell } from 'lucide-react';
 
 const App: React.FC = () => {
-  const { user, token, loading, login, register, registerVerify, resetPassword, logout } = useAuth();
+  const { user, token, loading, login, register, registerVerify, resetPassword } = useAuth();
   
   // Navigation states
   const [activeTab, setActiveTab] = useState('dashboard');
