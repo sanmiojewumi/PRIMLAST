@@ -120,7 +120,13 @@ const WorkflowTracker: React.FC = () => {
     ] as [string, number, (typeof KPI_KINDS)[number]][];
   }, [data]);
 
-  const insights = useMemo(() => {
+  const insights = useMemo((): {
+    label: string;
+    value: string;
+    note: string;
+    kind: string;
+    extra?: Record<string, string>;
+  }[] => {
     if (!data) return [];
     const { kpis, byStatus, byService, byAction } = data;
     const rate = kpis.submissions ? Math.round((kpis.completions / kpis.submissions) * 100) : 0;

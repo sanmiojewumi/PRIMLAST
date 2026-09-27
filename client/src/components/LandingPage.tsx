@@ -715,7 +715,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
           </div>
 
           <div className="blog-grid" style={{ marginTop: '28px' }}>
-            {FAQS.map((item, i) => (
+            {FAQS.map((item) => (
               <div key={item.q} className="blog-card" style={{ cursor: 'default' }}>
                 <h4 className="blog-card-title">{item.q}</h4>
                 <p className="blog-card-excerpt">{item.a}</p>
