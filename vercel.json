@@ -61,7 +61,15 @@
       "destination": "/api/index.ts"
     },
     {
-      "source": "/((?!api|auth|services|documents|messages|admin|compliance|health|download-db-pdf|download-db-sql|uploads).*)",
+      "source": "/billing/(.*)",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/workflow/(.*)",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/((?!api|auth|services|documents|messages|admin|compliance|billing|workflow|health|download-db-pdf|download-db-sql|uploads).*)",
       "destination": "/index.html"
     }
   ]

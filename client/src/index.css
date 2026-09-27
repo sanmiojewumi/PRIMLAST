@@ -1048,6 +1048,11 @@ html {
 
 .landing-section {
   padding: 100px 0;
+  scroll-margin-top: 96px;
+}
+
+#consultation {
+  scroll-margin-top: 96px;
 }
 
 .landing-section-alt {

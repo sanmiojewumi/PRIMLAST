@@ -225,13 +225,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
     if ('scrollRestoration' in history) {
       history.scrollRestoration = 'manual';
     }
-    if (window.location.hash) {
-      history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    if (!window.location.hash) {
+      window.scrollTo(0, 0);
     }
-    window.scrollTo(0, 0);
-    const frame = window.requestAnimationFrame(() => window.scrollTo(0, 0));
-    return () => window.cancelAnimationFrame(frame);
   }, []);
+
+  const goToConsultation = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    setMobileMenuOpen(false);
+    const el = document.getElementById('consultation');
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    history.replaceState(null, '', `${window.location.pathname}${window.location.search}#consultation`);
+    window.setTimeout(() => {
+      const field = el.querySelector('input, textarea, select') as HTMLElement | null;
+      field?.focus();
+    }, 400);
+  };
 
   useEffect(() => {
     document.body.classList.toggle('landing-menu-open', mobileMenuOpen);
@@ -439,7 +449,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
             <button onClick={() => onShowAuth('register')} className="landing-btn-primary landing-btn-large">
               Start Your Registration <ArrowRight size={18} />
             </button>
-            <a href="https://wa.me/2347072928256" target="_blank" rel="noopener noreferrer" className="landing-btn-ghost landing-btn-large">
+            <a href="#consultation" onClick={goToConsultation} className="landing-btn-ghost landing-btn-large">
               Book a Free Consultation
             </a>
           </div>
@@ -770,6 +780,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
               <button onClick={() => onShowAuth('register')} className="landing-btn-primary landing-btn-large">
                 Start Registration <ArrowRight size={18} />
               </button>
+              <a href="#consultation" onClick={goToConsultation} className="landing-btn-ghost landing-btn-large">
+                Book a Free Consultation
+              </a>
               <a href="#advisor" className="landing-btn-ghost landing-btn-large">
                 Ask the AI Advisor
               </a>
@@ -857,7 +870,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
             </FadeSection>
 
             <FadeSection delay={0.2}>
-              <div className="contact-form-card">
+              <div id="consultation" className="contact-form-card">
                 <h4 style={{ fontSize: '1.2rem', fontWeight: '700', color: '#fff', marginBottom: '24px' }}>Book a Free Consultation</h4>
                 {contactSent ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
