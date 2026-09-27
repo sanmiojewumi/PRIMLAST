@@ -14,6 +14,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV || process.env.NOW_REGION);
 
 // Trust localtunnel proxy headers
 app.set('trust proxy', 1);
@@ -21,7 +22,7 @@ app.set('trust proxy', 1);
 // Maximum Security: 1. Setup CORS policy (strictly limit origins or configure default safe origins)
 app.use(cors({
   origin: '*', // For demo/development ease; in strict environments, lock this to the client's URL
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'bypass-tunnel-reminder']
 }));
 
@@ -97,7 +98,7 @@ app.get(['/health', '/api/health'], (req, res) => {
 
 // Serve compiled client static files on Render / Production
 const clientDist = path.resolve(__dirname, '..', '..', 'client', 'dist');
-if (fs.existsSync(clientDist)) {
+if (!isVercel && fs.existsSync(clientDist)) {
   app.use(express.static(clientDist));
   app.get('*', (req: Request, res: Response, next: NextFunction) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path === '/health') {
@@ -155,7 +156,7 @@ async function startServer() {
 }
 
 // Support class declarations in this scope for multer errors check
-if (!process.env.VERCEL) {
+if (!isVercel) {
   startServer();
 }
 

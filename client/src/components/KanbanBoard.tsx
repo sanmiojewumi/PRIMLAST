@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth, API_BASE } from '../context/AuthContext';
 import { 
   Plus, 
@@ -11,8 +11,9 @@ import {
 } from 'lucide-react';
 import type { Application, User, Document, Message, ApplicationStatus } from '../types';
 
-const KanbanBoard: React.FC = () => {
+const KanbanBoard: React.FC<{ initialAppId?: number | null }> = ({ initialAppId }) => {
   const { user, token } = useAuth();
+  const openedFromTracker = useRef<number | null>(null);
   
   // State
   const [applications, setApplications] = useState<Application[]>([]);
@@ -56,7 +57,15 @@ const KanbanBoard: React.FC = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        setApplications(data);
+        const filings = (Array.isArray(data) ? data : []).filter((app: Application) => {
+          try {
+            const details = typeof app.details === 'string' ? JSON.parse(app.details) : app.details;
+            return !details?.consultation;
+          } catch {
+            return true;
+          }
+        });
+        setApplications(filings);
       }
     } catch (err) {
       console.error(err);
@@ -129,6 +138,15 @@ const KanbanBoard: React.FC = () => {
       console.error(err);
     }
   };
+
+  useEffect(() => {
+    if (!initialAppId || !applications.length) return;
+    if (openedFromTracker.current === initialAppId) return;
+    const app = applications.find((a) => a.id === initialAppId);
+    if (!app) return;
+    openedFromTracker.current = initialAppId;
+    handleOpenDetails(app);
+  }, [initialAppId, applications]);
 
   // Update Status
   const handleUpdateStatus = async () => {

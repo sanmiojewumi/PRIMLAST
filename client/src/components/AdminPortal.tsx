@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuth, API_BASE } from '../context/AuthContext';
 import { 
   ShieldCheck, UserMinus, UserCheck, AlertCircle, RefreshCw, 
-  FileSpreadsheet, Trash2, Edit3, X, Search, UserPlus, FileText 
+  FileSpreadsheet, Trash2, Edit3, X, Search, UserPlus, FileText, MessageSquare
 } from 'lucide-react';
 import type { User, AuditLog, Application } from '../types';
+import ChatRoom from './ChatRoom';
 
 const AdminPortal: React.FC = () => {
   const { token, user: activeUser } = useAuth();
@@ -69,6 +70,7 @@ const AdminPortal: React.FC = () => {
   const [appStatusFilter, setAppStatusFilter] = useState('all');
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [logSearchQuery, setLogSearchQuery] = useState('');
+  const [chatClientId, setChatClientId] = useState<number | null>(null);
 
   const hasPermission = (permName: string) => {
     if (!activeUser) return false;
@@ -514,6 +516,32 @@ const AdminPortal: React.FC = () => {
           </div>
 
           <div className="user-row-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+            {!isStaff && (
+            <button
+              onClick={() => {
+                setChatClientId(u.id);
+                window.setTimeout(() => {
+                  document.getElementById('admin-client-chat')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 50);
+              }}
+              style={{
+                background: 'rgba(215,25,32,0.1)',
+                border: '1px solid rgba(215,25,32,0.3)',
+                color: '#f87171',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '5px 8px',
+                borderRadius: '4px',
+                fontSize: '0.7rem',
+                gap: '4px'
+              }}
+              title="Open client chat"
+            >
+              <MessageSquare size={14} /> Chat
+            </button>
+            )}
+
             <button
               onClick={() => openEditUser(u)}
               style={{
@@ -638,6 +666,19 @@ const AdminPortal: React.FC = () => {
           <span>{error}</span>
         </div>
       )}
+
+      <div id="admin-client-chat" className="glass-panel" style={{ padding: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <MessageSquare size={20} style={{ color: 'var(--accent-red)' }} />
+            <h4 style={{ fontSize: '1.1rem', color: '#fff', margin: 0 }}>Client Chat</h4>
+          </div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            Search registered clients to open or start a consultation
+          </span>
+        </div>
+        <ChatRoom key={chatClientId || 'admin-chat'} embedded initialClientId={chatClientId} />
+      </div>
 
       {/* Main Admin Grid */}
       <div className="admin-grid-container">
@@ -910,6 +951,19 @@ const AdminPortal: React.FC = () => {
                         <td data-label="Assignee" style={{ padding: '8px', color: 'var(--text-muted)' }}>{a.assignee_name || 'Unassigned'}</td>
                         <td data-label="Actions" style={{ padding: '8px', textAlign: 'right' }}>
                           <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                            <button 
+                              onClick={() => {
+                                setChatClientId(a.client_id);
+                                window.setTimeout(() => {
+                                  document.getElementById('admin-client-chat')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }, 50);
+                              }}
+                              style={{ background: 'rgba(215,25,32,0.1)', border: '1px solid rgba(215,25,32,0.3)', color: '#f87171', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem' }}
+                              title="Open client chat"
+                            >
+                              <MessageSquare size={13} />
+                            </button>
+
                             <button 
                               onClick={() => openEditApp(a)}
                               style={{ background: 'rgba(26,111,232,0.1)', border: '1px solid rgba(26,111,232,0.3)', color: '#60a5fa', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem' }}

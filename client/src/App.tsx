@@ -991,9 +991,9 @@ const App: React.FC = () => {
           {activeTab === 'dashboard' && <DashboardOverview />}
           {activeTab === 'services' && user.role === 'client' && <ServicesPortal targetAppId={targetAppId} />}
           {activeTab === 'compliance' && user.role === 'client' && <ComplianceDashboard />}
-          {activeTab === 'advisor' && user.role === 'client' && <AIAdvisor />}
+          {activeTab === 'advisor' && <AIAdvisor />}
           {activeTab === 'knowledge' && user.role === 'client' && <KnowledgeHub />}
-          {activeTab === 'kanban' && user.role !== 'client' && <KanbanBoard />}
+          {activeTab === 'kanban' && user.role !== 'client' && <KanbanBoard initialAppId={targetAppId} />}
           {activeTab === 'chat' && <ChatRoom initialAppId={targetAppId} />}
           {activeTab === 'admin' && ['admin', 'supervisor'].includes(user.role) && <AdminPortal />}
           {activeTab === 'billing' && (user.role === 'client' || ['admin', 'supervisor'].includes(user.role)) && (

@@ -60,7 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'welcome', name: 'Home Workspace', icon: Home, roles: ['client', 'operations_officer', 'compliance_officer', 'admin', 'supervisor'] },
     { id: 'services', name: 'Services Portal', icon: FileText, roles: ['client'] },
     { id: 'compliance', name: 'Compliance Check', icon: ShieldCheck, roles: ['client'] },
-    { id: 'advisor', name: 'AI Business Advisor', icon: Sparkles, roles: ['client'] },
+    { id: 'advisor', name: 'AI Business Advisor', icon: Sparkles, roles: ['client', 'operations_officer', 'compliance_officer', 'admin', 'supervisor'] },
     { id: 'knowledge', name: 'Knowledge Hub', icon: BookOpen, roles: ['client'] },
     { id: 'chat', name: 'Clients Chat', icon: MessageSquare, roles: ['client', 'operations_officer', 'compliance_officer', 'admin', 'supervisor'] },
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard, roles: ['client', 'operations_officer', 'compliance_officer', 'admin', 'supervisor'] },
@@ -260,16 +260,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'var(--accent-red)', fontSize: '0.78rem', fontWeight: '700' }}
           >
             <PhoneCall size={14} />
-            <span>+234 707 292 8256 (Call, SMS & WA)</span>
-          </a>
-          <a 
-            href="https://wa.me/2347066714961" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'var(--text-secondary)', fontSize: '0.78rem', fontWeight: '600' }}
-          >
-            <PhoneCall size={14} />
-            <span>+234 706 671 4961 (WhatsApp)</span>
+            <span>+234 707 292 8256 (Call, SMS & WhatsApp)</span>
           </a>
           <a 
             href="mailto:primeflowconsultingservices@gmail.com" 

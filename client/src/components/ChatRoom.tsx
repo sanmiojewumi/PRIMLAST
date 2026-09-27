@@ -1,13 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, API_BASE } from '../context/AuthContext';
-import { MessageSquare, Send, FileText, Paperclip, Download } from 'lucide-react';
+import { MessageSquare, Send, FileText, Paperclip, Download, Search } from 'lucide-react';
 import type { Application, Message } from '../types';
+
+interface ClientHit {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string | null;
+  app_count: number;
+  latest_app_id?: number | null;
+}
 
 interface ChatRoomProps {
   initialAppId?: number | null;
+  initialClientId?: number | null;
+  embedded?: boolean;
 }
 
-const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId }) => {
+const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId, initialClientId, embedded = false }) => {
   const { user, token } = useAuth();
   const [applications, setApplications] = useState<Application[]>([]);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
@@ -19,6 +30,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId }) => {
 
   // Accordion toggle state for admin viewing
   const [expandedClients, setExpandedClients] = useState<{ [key: number]: boolean }>({});
+  const [clientQuery, setClientQuery] = useState('');
+  const [clientHits, setClientHits] = useState<ClientHit[]>([]);
+  const [searchingClients, setSearchingClients] = useState(false);
+  const [openingClient, setOpeningClient] = useState(false);
+  const isStaff = user?.role !== 'client';
 
   const toggleClientExpanded = (clientId: number) => {
     setExpandedClients(prev => ({
@@ -38,6 +54,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId }) => {
         if (res.ok) {
           const data = await res.json();
           setApplications(data);
+          if (initialClientId) {
+            return;
+          }
           if (data.length > 0) {
             if (initialAppId) {
               const matched = data.find((a: Application) => a.id === initialAppId);
@@ -46,10 +65,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId }) => {
                 if (matched.client_id) {
                   setExpandedClients({ [matched.client_id]: true });
                 }
-              } else {
+              } else if (!embedded) {
                 setSelectedApp(data[0]);
               }
-            } else {
+            } else if (!embedded) {
               setSelectedApp(data[0]);
               setExpandedClients({});
             }
@@ -62,7 +81,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId }) => {
       }
     };
     fetchApps();
-  }, [token, initialAppId]);
+  }, [token, initialAppId, initialClientId, embedded]);
+
+  useEffect(() => {
+    if (!token || !isStaff || !initialClientId) return;
+    openClientChat(initialClientId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, isStaff, initialClientId]);
 
   // Fetch messages when selected application changes
   useEffect(() => {
@@ -88,6 +113,57 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId }) => {
     return () => clearInterval(interval);
 
   }, [token, selectedApp]);
+
+  useEffect(() => {
+    if (!token || !isStaff) return;
+    const q = clientQuery.trim();
+    if (!q) {
+      setClientHits([]);
+      setSearchingClients(false);
+      return;
+    }
+    const handle = setTimeout(async () => {
+      setSearchingClients(true);
+      try {
+        const res = await fetch(`${API_BASE}/messages?q=${encodeURIComponent(q)}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) setClientHits(await res.json());
+        else setClientHits([]);
+      } catch {
+        setClientHits([]);
+      } finally {
+        setSearchingClients(false);
+      }
+    }, q ? 250 : 0);
+    return () => clearTimeout(handle);
+  }, [token, isStaff, clientQuery]);
+
+  const openClientChat = async (clientId: number) => {
+    if (!token) return;
+    setOpeningClient(true);
+    try {
+      const res = await fetch(`${API_BASE}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ client_id: clientId })
+      });
+      const body = await res.json();
+      if (!res.ok || !body?.id) throw new Error(body?.error || 'Could not open chat');
+      setApplications((prev) => (prev.some((a) => a.id === body.id) ? prev : [body, ...prev]));
+      setSelectedApp(body);
+      setExpandedClients((prev) => ({ ...prev, [clientId]: true }));
+      setClientQuery('');
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : 'Could not open chat');
+    } finally {
+      setOpeningClient(false);
+    }
+  };
 
   // Send message
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -162,20 +238,66 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId }) => {
   }
 
   return (
-    <div className="animate-fade-in chat-layout-container" style={{ padding: '24px', height: 'calc(100vh - var(--header-height) - 48px)', overflow: 'hidden', minWidth: 0, maxWidth: '100%', boxSizing: 'border-box' }}>
+    <div className={`animate-fade-in chat-layout-container${embedded ? ' chat-embedded' : ''}`} style={{ padding: embedded ? '0' : '24px', height: embedded ? 'min(72vh, 680px)' : 'calc(100vh - var(--header-height) - 48px)', overflow: 'hidden', minWidth: 0, maxWidth: '100%', boxSizing: 'border-box' }}>
       
       {/* Applications list sidebar */}
       <div className="glass-panel chat-list-sidebar">
         <h4 style={{ fontSize: '0.9rem', color: '#fff', marginBottom: '14px', paddingLeft: '4px' }}>Active Consultations</h4>
+
+        {isStaff && (
+          <div className="chat-client-search">
+            <Search size={14} className="chat-client-search-icon" />
+            <input
+              type="search"
+              className="form-input"
+              placeholder="Search registered clients…"
+              value={clientQuery}
+              onChange={(e) => setClientQuery(e.target.value)}
+              aria-label="Search registered clients"
+            />
+          </div>
+        )}
+
+        {isStaff && clientQuery.trim() && (
+          <div className="chat-search-results">
+            {searchingClients ? (
+              <div style={{ padding: '8px 4px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Searching accounts…</div>
+            ) : clientHits.length === 0 ? (
+              <div style={{ padding: '8px 4px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>No registered client matches that search.</div>
+            ) : clientHits.map((hit) => (
+              <button
+                key={hit.id}
+                type="button"
+                className="chat-search-hit"
+                disabled={openingClient}
+                onClick={() => openClientChat(hit.id)}
+              >
+                <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>{hit.name}</span>
+                <span className="chat-search-hit-meta">
+                  {hit.email}{hit.phone ? ` · ${hit.phone}` : ''}
+                </span>
+                <span className="chat-search-hit-meta">
+                  {Number(hit.app_count) > 0
+                    ? `${hit.app_count} filing${Number(hit.app_count) === 1 ? '' : 's'} · Open chat`
+                    : 'Registered account · Start consultation'}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, overflowY: 'auto' }}>
           {(() => {
-            if (user?.role !== 'client') {
+            if (isStaff) {
               // Group applications by client_id
               const clientGroups: { [key: number]: { clientName: string; apps: Application[] } } = {};
+              const q = clientQuery.trim().toLowerCase();
               applications.forEach(app => {
                 const cid = app.client_id;
                 const cname = app.client_name || `Client #${cid}`;
+                if (q && !cname.toLowerCase().includes(q) && !String(app.service_type).toLowerCase().includes(q) && !String(app.id).includes(q)) {
+                  return;
+                }
                 if (!clientGroups[cid]) {
                   clientGroups[cid] = { clientName: cname, apps: [] };
                 }
@@ -187,7 +309,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId }) => {
               if (groupsArray.length === 0) {
                 return (
                   <div style={{ padding: '20px 4px', fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-                    No active applications.
+                    {q ? 'No matching consultations in the list.' : 'No active applications. Search a registered client to start a chat.'}
                   </div>
                 );
               }
@@ -530,9 +652,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ initialAppId }) => {
         ) : (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '10px', color: 'var(--text-secondary)' }}>
             <MessageSquare size={48} strokeWidth={1.5} style={{ color: 'var(--text-muted)' }} />
-            <h4 style={{ fontSize: '1rem', color: '#fff' }}>No Consultations Found</h4>
+            <h4 style={{ fontSize: '1rem', color: '#fff' }}>{isStaff ? 'Select a client to chat' : 'No Consultations Found'}</h4>
             <p style={{ fontSize: '0.8rem', maxWidth: '300px', textAlign: 'center' }}>
-              Please navigate to the Services Portal and submit an application request to start a chat.
+              {isStaff
+                ? 'Search registered client accounts in the sidebar, or pick an existing consultation.'
+                : 'Please navigate to the Services Portal and submit an application request to start a chat.'}
             </p>
           </div>
         )}

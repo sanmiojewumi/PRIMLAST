@@ -507,15 +507,71 @@ h1, h2, h3, h4, h5, h6 {
 
 .chat-layout-container {
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: minmax(240px, 280px) 1fr;
   gap: 20px;
 }
 
-.chat-list-sidebar {
+.chat-client-search {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.chat-client-search input {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px 0 32px;
+  font-size: 0.8rem;
+}
+
+.chat-client-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.chat-search-results {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  padding: 16px 12px;
+  gap: 4px;
+  margin-bottom: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.chat-search-hit {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+
+.chat-search-hit:hover,
+.chat-search-hit:focus {
+  background: rgba(215, 25, 32, 0.16);
+}
+
+.chat-search-hit-meta {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.chat-embedded {
+  min-height: 520px;
+}
+
+.chat-embedded .chat-list-sidebar,
+.chat-embedded .glass-panel {
+  min-width: 0;
 }
 
 .kanban-detail-overlay {
@@ -1412,6 +1468,9 @@ html {
   font-weight: 700;
   letter-spacing: 0.08em;
   transition: all 0.2s;
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-block;
 }
 .agency-badge:hover {
   border-color: rgba(215, 25, 32, 0.3);
@@ -1785,6 +1844,18 @@ html {
 /* ═══════════════════════════════════════════════════════════════════
    BLOG / KNOWLEDGE HUB LANDING PREVIEW
 ═══════════════════════════════════════════════════════════════════ */
+.landing-advisor-wrap {
+  background: rgba(13, 27, 42, 0.55);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.landing-advisor-wrap .ai-advisor-container {
+  min-height: 520px;
+}
+
 .blog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -2839,10 +2910,154 @@ html.samsung-browser .welcome-dashboard-logo {
   align-items: center;
 }
 
-.workflow-period-tabs {
+.workflow-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.workflow-period-tabs,
+.workflow-view-tabs {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.workflow-view-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.workflow-view-tab.active {
+  background: rgba(215, 25, 32, 0.18);
+  border-color: rgba(215, 25, 32, 0.55);
+  color: #fff;
+}
+
+.workflow-clickable {
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  background: inherit;
+  border: inherit;
+  color: inherit;
+  font: inherit;
+}
+
+.workflow-kpi.workflow-clickable:hover,
+.workflow-row.workflow-clickable:hover,
+.workflow-activity.workflow-clickable:hover,
+.workflow-insight:hover {
+  border-color: rgba(215, 25, 32, 0.45);
+  box-shadow: 0 0 0 1px rgba(215, 25, 32, 0.2);
+}
+
+.workflow-kpi-hint {
+  margin-top: 6px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.workflow-insight-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 12px;
+}
+
+.workflow-insight {
+  padding: 18px;
+}
+
+.workflow-insight-note {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  margin: 8px 0 0;
+  line-height: 1.4;
+}
+
+.workflow-bar-col.workflow-clickable {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  width: auto;
+  flex: 1;
+}
+
+.workflow-drill-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: rgba(4, 12, 22, 0.72);
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px;
+}
+
+.workflow-drill {
+  width: min(520px, 100%);
+  max-height: calc(100dvh - 24px);
+  overflow: auto;
+  padding: 20px;
+}
+
+.workflow-drill-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.workflow-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.workflow-crumbs button {
+  background: none;
+  border: 0;
+  color: #93c5fd;
+  cursor: pointer;
+  padding: 0;
+}
+
+.workflow-record h4 {
+  color: #fff;
+  margin: 16px 0 8px;
+}
+
+.workflow-dl {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.workflow-dl dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.workflow-dl dd {
+  margin: 2px 0 0;
+  color: #fff;
+  font-size: 0.9rem;
 }
 
 .workflow-kpi-grid {
@@ -2911,7 +3126,9 @@ html.samsung-browser .welcome-dashboard-logo {
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
+  border: 0;
   border-bottom: 1px solid var(--border-color);
+  background: transparent;
   color: #fff;
   font-size: 0.85rem;
   text-transform: capitalize;
@@ -2950,6 +3167,21 @@ html.samsung-browser .welcome-dashboard-logo {
 }
 
 @media (max-width: 768px), (hover: none) and (pointer: coarse) {
+  .workflow-toolbar {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .workflow-drill-overlay {
+    padding: 0;
+  }
+
+  .workflow-drill {
+    width: 100%;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
   .workflow-tracker .glass-panel {
     overflow: visible !important;
     background: rgba(13, 27, 42, 0.88) !important;

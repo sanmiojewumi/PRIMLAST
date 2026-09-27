@@ -3,11 +3,12 @@ import { createPortal } from 'react-dom';
 import {
   Building2, ShieldCheck, FileText, TrendingUp, Users, Phone, Mail,
   MapPin, ArrowRight, CheckCircle2, Star, ChevronLeft, ChevronRight,
-  Play, Award, Clock, BookOpen, MessageCircle, X,
+  Award, Clock, MessageCircle, X,
   BarChart3, Globe, Layers, Zap, Lock, HeartHandshake, ChevronDown
 } from 'lucide-react';
 
 import DraggableWhatsApp from './DraggableWhatsApp';
+import AIAdvisor from './AIAdvisor';
 
 interface LandingPageProps {
   onShowAuth: (view: 'login' | 'register') => void;
@@ -114,19 +115,89 @@ const TESTIMONIALS = [
   { name: 'Chidi Nwachukwu', role: 'Entrepreneur, Lagos', stars: 5, text: 'I highly recommend Primeflow to every business owner in Nigeria. They are fast, reliable, and honest. My go-to firm for all corporate matters.' },
 ];
 
-const BLOG_POSTS = [
-  { tag: 'Business Registration', title: 'How to Register a Company in Nigeria: Complete 2025 Guide', excerpt: 'Everything you need to know about incorporating a company with the CAC, from name search to certificate collection.', readTime: '8 min read' },
-  { tag: 'Compliance', title: 'SCUML Registration: Who Needs It and How to Apply', excerpt: 'SCUML (Special Control Unit Against Money Laundering) registration is mandatory for many businesses. Learn if yours qualifies.', readTime: '5 min read' },
-  { tag: 'Taxation', title: 'Understanding Company Income Tax in Nigeria', excerpt: 'A practical breakdown of CIT rates, filing deadlines, and how to reduce your tax burden legally.', readTime: '6 min read' },
+const INFO_GUIDES = [
+  {
+    tag: 'Registration',
+    title: 'Company or business name: choosing a structure',
+    excerpt: 'Limited liability, ownership, banking, and contracting each point to a different CAC vehicle.',
+    body: 'A business name is typically used by a sole proprietor. Registration is relatively swift and inexpensive, but the proprietor and the business are not legally separate, so personal assets remain exposed to business liabilities.\n\nA private company limited by shares is a distinct legal person. It is ordinarily preferable where there is more than one owner, a need to ring-fence personal assets, institutional banking, investment, or public-sector contracting. The file will include proposed names, directors, shareholders, share capital, the objects of the company, and a Nigerian registered office.\n\nPrimeflow prepares the CAC submission, monitors name reservation and incorporation, and delivers the certificate. A consultant can advise which structure fits the intended activity.'
+  },
+  {
+    tag: 'Documents',
+    title: 'Documents ordinarily required for CAC incorporation',
+    excerpt: 'Complete packs reduce queries and delay at name search and filing.',
+    body: 'You should expect to provide two proposed names; passport photographs; government-issued identification for each director and shareholder; residential addresses; a description of the business; the proposed shareholding; and a registered office in Nigeria. Occupation, nationality, and contact details are also commonly required.\n\nIncorporated trustees (associations and NGOs) additionally require a constitution and particulars of the trustees.\n\nDocuments may be uploaded in the client portal or sent to Primeflow for a pre-filing review.'
+  },
+  {
+    tag: 'Compliance',
+    title: 'SCUML, PENCOM, NSITF and ITF: scope in outline',
+    excerpt: 'Post-incorporation registrations depend on sector, headcount, and payroll.',
+    body: 'SCUML applies to many designated non-financial businesses and professions, including segments of real estate, dealing, professional practice, and non-profits. Carrying on such a business without registration where it is required may attract penalties.\n\nPENCOM generally applies to employers with three or more employees: staff must be enrolled with a licensed PFA and contributions remitted.\n\nNSITF (employees’ compensation) typically applies from the first employee, with contribution commonly assessed at 1% of payroll.\n\nITF may apply as headcount and payroll increase. Tax registrations (TIN, VAT, CIT) run in parallel. Primeflow sequences these filings so that only obligations that are actually in force are taken on.'
+  },
+  {
+    tag: 'Taxation',
+    title: 'Principal tax obligations for companies',
+    excerpt: 'TIN, VAT, company income tax, and withholding tax — and when they usually fall due.',
+    body: 'A Tax Identification Number should be obtained promptly after incorporation. VAT is currently 7.5% on taxable supplies and is generally filed monthly, often on or before the 21st of the following month. Company Income Tax is an annual charge; rates depend on turnover bands under current NRS rules and should be confirmed for the relevant year.\n\nWithholding tax is deducted at source on specified payments. Maintaining invoices and bank records monthly avoids year-end reconstruction.\n\nPrimeflow undertakes TIN registration, VAT and CIT filings, and tax clearance applications, either as a package or by instruction.'
+  },
+  {
+    tag: 'Deadlines',
+    title: 'CAC annual returns and the cost of default',
+    excerpt: 'Filing windows, penalties, and the risk of striking off.',
+    body: 'Business names generally file annual returns within 90 days of the anniversary of registration. Companies file after the annual general meeting, commonly within 42 days of the AGM, with a longer statutory window for the first return after incorporation.\n\nLate filing attracts penalties that accrue. Persistent default may lead to striking off the register.\n\nSupply your RC or BN number and Primeflow will confirm status, prepare the return, and file.'
+  },
+  {
+    tag: 'Fees',
+    title: 'Indicative Primeflow professional fees',
+    excerpt: 'Starting fees. Final quotations depend on share capital, extras, and government charges.',
+    body: 'Business name from ₦35,000; company incorporation from ₦85,000; annual returns from ₦30,000; SCUML from ₦40,000; PENCOM set-up from ₦50,000; NSITF from ₦45,000; trademark from ₦120,000 per class; tax compliance from ₦60,000 per year.\n\nTypical processing: business name 3–5 working days; company 7–14 working days, subject to CAC systems and a complete file.\n\nA written quotation for a defined mandate is available from a consultant on WhatsApp.'
+  }
+];
+
+const FAQS = [
+  { q: 'How long does a CAC certificate usually take?', a: 'A business name is typically completed in 3–5 working days. A company is typically completed in 7–14 working days where the file is complete. Agency system availability can extend these periods. Primeflow reviews documents before filing to reduce queries.' },
+  { q: 'Where is Primeflow based?', a: 'The office is at Suite 29, Ejimuz Plaza, Aso Savings Road, Kubwa, Abuja. Filings are also handled remotely for clients elsewhere in Nigeria.' },
+  { q: 'Are published fees the final cost?', a: 'The figures shown are starting professional fees. Government charges, share capital, additional classes, and the state of your records may change the quotation. A consultant will confirm the fee before work begins.' },
+  { q: 'Who carries out the official filing?', a: 'Statutory filings are prepared and lodged by Primeflow consultants. This website and the advisor summarise process and documents; they do not themselves constitute a filing or a legal opinion.' },
 ];
 
 const TRUST_AGENCIES = [
-  { name: 'CAC', full: 'Corporate Affairs Commission' },
-  { name: 'NRS', full: 'Nigeria Revenue Service' },
-  { name: 'SCUML', full: 'Special Control Unit Against Money Laundering' },
-  { name: 'PENCOM', full: 'National Pension Commission' },
-  { name: 'NSITF', full: 'Nigeria Social Insurance Trust Fund' },
-  { name: 'ITF', full: 'Industrial Training Fund' },
+  {
+    name: 'CAC',
+    id: 'cac',
+    full: 'Corporate Affairs Commission',
+    more: 'The CAC registers companies, business names, and incorporated trustees, and receives annual returns and post-incorporation changes. Primeflow files name reservations, incorporation, CTCs, share capital increases, and status reports on your behalf.'
+  },
+  {
+    name: 'NRS',
+    id: 'nrs',
+    full: 'Nigeria Revenue Service',
+    more: 'NRS (formerly FIRS at federal level in many filings) handles TIN, VAT, Company Income Tax, withholding tax, and tax clearance. We register your TIN, file returns, and prepare TCC applications so you stay current with tax law.'
+  },
+  {
+    name: 'SCUML',
+    id: 'scuml',
+    full: 'Special Control Unit Against Money Laundering',
+    more: 'SCUML registration is required for many designated non-financial businesses and professions (including some real estate, dealers, professional firms, and NGOs). Operating without it can attract penalties. Primeflow prepares the pack and follows the application through.'
+  },
+  {
+    name: 'PENCOM',
+    id: 'pencom',
+    full: 'National Pension Commission',
+    more: 'Employers with three or more employees must register staff with a licensed PFA and remit pension (typically 8% employee + 10% employer of monthly emolument). We help you choose a PFA, onboard staff, and stay on remittance.'
+  },
+  {
+    name: 'NSITF',
+    id: 'nsitf',
+    full: 'Nigeria Social Insurance Trust Fund',
+    more: 'NSITF covers workplace injury and related employee compensation. Most employers with at least one staff member should register and contribute (commonly 1% of payroll). We handle registration and ongoing compliance.'
+  },
+  {
+    name: 'ITF',
+    id: 'itf',
+    full: 'Industrial Training Fund',
+    more: 'ITF applies as your headcount and payroll grow (statutory thresholds apply). Contribution supports industrial skills training. Primeflow confirms whether you are in scope and files ITF registration and returns when required.'
+  },
 ];
 
 // ─── Main Component ──────────────────────────────────────────────────────────
@@ -144,8 +215,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
 
   const LANDING_NAV = [
     { label: 'Services', href: '#services' },
+    { label: 'Guides', href: '#guides' },
+    { label: 'AI Advisor', href: '#advisor' },
     { label: 'Why Us', href: '#why-us' },
-    { label: 'Resources', href: '#blog' },
     { label: 'Contact', href: '#contact' },
   ];
 
@@ -179,6 +251,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
   const [contactMessage, setContactMessage] = useState('');
   const [contactSent, setContactSent] = useState(false);
   const [legalModal, setLegalModal] = useState<{ title: string; body: string } | null>(null);
+  const [openGuide, setOpenGuide] = useState<number | null>(0);
   const nextTestimonial = () => setTestimonialIdx(i => (i + 1) % TESTIMONIALS.length);
   const prevTestimonial = () => setTestimonialIdx(i => (i - 1 + TESTIMONIALS.length) % TESTIMONIALS.length);
 
@@ -221,8 +294,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
           {/* Desktop nav links */}
           <div className="landing-nav-links">
             <a href="#services">Services</a>
+            <a href="#guides">Guides</a>
+            <a href="#advisor">AI Advisor</a>
             <a href="#why-us">Why Us</a>
-            <a href="#blog">Resources</a>
             <a href="#contact">Contact</a>
           </div>
 
@@ -354,17 +428,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
               Start Your Registration <ArrowRight size={18} />
             </button>
             <a href="https://wa.me/2347072928256" target="_blank" rel="noopener noreferrer" className="landing-btn-ghost landing-btn-large">
-              <Play size={16} style={{ fill: 'currentColor' }} />
-              Book Free Consultation
+              Book a Free Consultation
             </a>
           </div>
 
           {/* Trust badges */}
           <div className="hero-trust-row">
-            <span style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Registered with & Compliant to</span>
+            <span style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Registered with & Compliant to — tap for more</span>
             <div className="hero-agencies">
               {TRUST_AGENCIES.map(a => (
-                <div key={a.name} className="agency-badge" title={a.full}>{a.name}</div>
+                <a key={a.name} href={`#agency-${a.id}`} className="agency-badge" title={`${a.full} — read more`}>
+                  {a.name}
+                </a>
               ))}
             </div>
           </div>
@@ -482,7 +557,38 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ─────────────────────────────────────────────────── */}
+      {/* ── AGENCY EXPLAINERS ───────────────────────────────────────────── */}
+      <section id="agencies" className="landing-section landing-section-alt">
+        <div className="landing-container">
+          <FadeSection>
+            <div className="section-header">
+              <div className="section-badge">Regulators</div>
+              <h2 className="section-title">What CAC, NRS, SCUML, PENCOM, NSITF and ITF mean for you</h2>
+              <p className="section-subtitle">Select an agency badge above for a short briefing. Statutory filings are prepared and lodged by Primeflow consultants.</p>
+            </div>
+          </FadeSection>
+          <div className="blog-grid">
+            {TRUST_AGENCIES.map((a) => (
+              <article key={a.id} id={`agency-${a.id}`} className="blog-card" style={{ scrollMarginTop: '96px' }}>
+                <div className="blog-card-tag">{a.name}</div>
+                <h4 className="blog-card-title">{a.full}</h4>
+                <p className="blog-card-excerpt">{a.more}</p>
+                <div className="blog-card-footer">
+                  <a href="#advisor" style={{ fontSize: '0.78rem', color: '#94a3b8', textDecoration: 'none' }}>Ask the AI Advisor</a>
+                  <a
+                    href="https://wa.me/2347072928256"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', color: '#D71920', fontWeight: 700, textDecoration: 'none' }}
+                  >
+                    Contact Primeflow <ArrowRight size={14} />
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
       <section className="landing-section">
         <div className="landing-container">
           <FadeSection>
@@ -565,44 +671,73 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
         </div>
       </section>
 
-      {/* ── KNOWLEDGE HUB PREVIEW ────────────────────────────────────────── */}
-      <section id="blog" className="landing-section">
+      {/* ── FREE GUIDES ─────────────────────────────────────────────────── */}
+      <section id="guides" className="landing-section">
         <div className="landing-container">
           <FadeSection>
             <div className="section-header">
-              <div className="section-badge">Knowledge Hub</div>
-              <h2 className="section-title">Business Insights & Guides</h2>
-              <p className="section-subtitle">Stay informed with expert articles on registration, compliance, and taxation</p>
+              <div className="section-badge">Briefings</div>
+              <h2 className="section-title">Registration and compliance notes</h2>
+              <p className="section-subtitle">Open a topic for a concise briefing. Instruct a consultant when you are ready to file.</p>
             </div>
           </FadeSection>
 
           <div className="blog-grid">
-            {BLOG_POSTS.map((post, i) => (
-              <FadeSection key={i} delay={0.1 * i}>
-                <div className="blog-card" onClick={() => onShowAuth('register')}>
-                  <div className="blog-card-tag">{post.tag}</div>
-                  <h4 className="blog-card-title">{post.title}</h4>
-                  <p className="blog-card-excerpt">{post.excerpt}</p>
-                  <div className="blog-card-footer">
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', color: '#64748b' }}>
-                      <Clock size={14} /> {post.readTime}
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', color: '#D71920', cursor: 'pointer', fontWeight: '600' }}>
-                      Read more <ArrowRight size={14} />
-                    </span>
-                  </div>
-                </div>
-              </FadeSection>
-            ))}
+            {INFO_GUIDES.map((post, i) => {
+              const open = openGuide === i;
+              return (
+                <FadeSection key={i} delay={0.05 * i}>
+                  <button
+                    type="button"
+                    className="blog-card"
+                    onClick={() => setOpenGuide(open ? null : i)}
+                    style={{ textAlign: 'left', width: '100%', cursor: 'pointer', border: open ? '1px solid rgba(215,25,32,0.45)' : undefined }}
+                  >
+                    <div className="blog-card-tag">{post.tag}</div>
+                    <h4 className="blog-card-title">{post.title}</h4>
+                    <p className="blog-card-excerpt" style={{ whiteSpace: 'pre-line' }}>{open ? post.body : post.excerpt}</p>
+                    <div className="blog-card-footer">
+                      <span style={{ fontSize: '0.78rem', color: '#64748b' }}>{open ? 'Close briefing' : 'Read briefing'}</span>
+                      <a
+                        href="https://wa.me/2347072928256"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', color: '#D71920', fontWeight: 700, textDecoration: 'none' }}
+                      >
+                        Contact Primeflow <ArrowRight size={14} />
+                      </a>
+                    </div>
+                  </button>
+                </FadeSection>
+              );
+            })}
           </div>
 
-          <FadeSection delay={0.3}>
-            <div style={{ textAlign: 'center', marginTop: '40px' }}>
-              <button onClick={() => onShowAuth('register')} className="landing-btn-ghost landing-btn-large">
-                <BookOpen size={18} /> Access Full Knowledge Hub
-              </button>
+          <div className="blog-grid" style={{ marginTop: '28px' }}>
+            {FAQS.map((item, i) => (
+              <div key={item.q} className="blog-card" style={{ cursor: 'default' }}>
+                <h4 className="blog-card-title">{item.q}</h4>
+                <p className="blog-card-excerpt">{item.a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PUBLIC AI ADVISOR ───────────────────────────────────────────── */}
+      <section id="advisor" className="landing-section landing-section-alt">
+        <div className="landing-container">
+          <FadeSection>
+            <div className="section-header">
+              <div className="section-badge">Business Advisor</div>
+              <h2 className="section-title">AI Business Advisor</h2>
+              <p className="section-subtitle">Structured guidance on registration, compliance, tax, and fees. Each response includes a link to consult a Primeflow officer.</p>
             </div>
           </FadeSection>
+          <div className="landing-advisor-wrap">
+            <AIAdvisor embedded />
+          </div>
         </div>
       </section>
 
@@ -623,8 +758,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
               <button onClick={() => onShowAuth('register')} className="landing-btn-primary landing-btn-large">
                 Start Registration <ArrowRight size={18} />
               </button>
+              <a href="#advisor" className="landing-btn-ghost landing-btn-large">
+                Ask the AI Advisor
+              </a>
               <a href="https://wa.me/2347072928256" target="_blank" rel="noopener noreferrer" className="landing-btn-ghost landing-btn-large">
-                WhatsApp Us
+                Contact Primeflow
               </a>
             </div>
           </FadeSection>
@@ -663,9 +801,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <a href="https://wa.me/2347072928256" target="_blank" rel="noopener noreferrer" style={{ color: '#D71920', fontWeight: '700', fontSize: '1rem', textDecoration: 'none' }}>
                         +234 707 292 8256 (Calls, SMS & WhatsApp)
-                      </a>
-                      <a href="https://wa.me/2347066714961" target="_blank" rel="noopener noreferrer" style={{ color: '#94a3b8', fontWeight: '600', fontSize: '0.9rem', textDecoration: 'none' }}>
-                        +234 706 671 4961 (WhatsApp support)
                       </a>
                     </div>
                   </div>
@@ -776,7 +911,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
               <div className="footer-heading">Company</div>
               <a href="#why-us" className="footer-link">About Us</a>
               <a href="#testimonials" className="footer-link">Client Reviews</a>
-              <a href="#blog" className="footer-link">Knowledge Hub</a>
+              <a href="#guides" className="footer-link">Knowledge Hub</a>
               <a href="#contact" className="footer-link">Contact Us</a>
             </div>
             <div>
@@ -787,7 +922,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
               <div className="footer-heading" style={{ marginTop: '20px' }}>Registered Agencies</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
                 {TRUST_AGENCIES.map(a => (
-                  <span key={a.name} style={{ fontSize: '0.7rem', padding: '2px 8px', background: 'rgba(215,25,32,0.1)', border: '1px solid rgba(215,25,32,0.2)', borderRadius: '20px', color: '#D71920', fontWeight: '600' }}>{a.name}</span>
+                  <a key={a.name} href={`#agency-${a.id}`} style={{ fontSize: '0.7rem', padding: '2px 8px', background: 'rgba(215,25,32,0.1)', border: '1px solid rgba(215,25,32,0.2)', borderRadius: '20px', color: '#D71920', fontWeight: '600', textDecoration: 'none' }}>{a.name}</a>
                 ))}
               </div>
             </div>

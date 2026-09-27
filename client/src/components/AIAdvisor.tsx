@@ -13,73 +13,80 @@ interface Message {
 const KB: Record<string, { patterns: string[]; response: string }> = {
   greeting: {
     patterns: ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening', 'start'],
-    response: "Hello! 👋 I'm **Primeflow Business Advisor**, your AI-powered guide to business registration, compliance, and corporate advisory in Nigeria.\n\nHow can I help you today? You can ask me about:\n- 🏢 Company Incorporation\n- 📋 CAC Registration process\n- 🛡️ SCUML, PENCOM, NSITF compliance\n- 💰 Tax filing and accounting\n- 📅 Registration timelines\n- 💵 Service quotations"
+    response: "**Primeflow Business Advisor**\n\nThis assistant provides structured guidance on company formation, CAC filings, regulatory compliance, taxation, and professional fees in Nigeria.\n\nYou may ask about:\n• Company incorporation and business name registration\n• CAC procedures and documentation\n• SCUML, PENCOM, NSITF and related compliance\n• Tax registration, filing cycles, and tax clearance\n• Indicative timelines and professional fees\n\nInformation provided here is general. Statutory filings and formal advice are handled by Primeflow consultants."
   },
   incorporation: {
     patterns: ['incorporate', 'incorporation', 'company', 'limited liability', 'llc', 'ltd', 'register company', 'form a company'],
-    response: "**Company Incorporation in Nigeria** 🏢\n\nTo incorporate a company with the CAC, you'll need:\n\n**Required Documents:**\n• 2 proposed company names\n• Memorandum & Articles of Association\n• Directors' details (Name, DOB, Address, Signature)\n• Shareholders' details\n• Share capital structure\n• Registered office address\n\n**Timeline:** 7–14 working days\n\n**Minimum Share Capital:** ₦1,000,000 (for private companies)\n\n**Our Fee:** Starting from ₦85,000 all-inclusive\n\nWould you like to **start the registration process**? Click 'Sign In' or 'Get Started' to access our client portal! 🚀"
+    response: "**Company incorporation (CAC)**\n\nA private company limited by shares is a separate legal entity. It is typically appropriate where limited liability, multiple owners, banking facilities, or public-sector contracting is required.\n\n**Usual requirements**\n• Two proposed company names\n• Particulars of directors and shareholders\n• Share capital and shareholding structure\n• Nature of business\n• A registered office address in Nigeria\n• Memorandum and articles of association (prepared as part of the filing)\n\n**Indicative timeline:** 7–14 working days, subject to CAC systems and complete documentation.\n**Indicative professional fee:** from ₦85,000 (government charges may apply in addition, depending on share capital and extras).\n\nPrimeflow prepares, files, and follows the application through to certificate issuance."
   },
   businessname: {
     patterns: ['business name', 'sole proprietorship', 'enterprise', 'trading as'],
-    response: "**Business Name Registration** 🏪\n\nBusiness Name registration is ideal for sole proprietors and small businesses.\n\n**Requirements:**\n• 2 proposed business names\n• Proprietor's valid ID\n• Proprietor's home address\n• Nature of business\n\n**Timeline:** 3–5 working days\n**Our Fee:** Starting from ₦35,000\n\n**Key Notes:**\n✅ Faster and cheaper than full incorporation\n✅ Valid for all business activities\n⚠️ No limited liability protection\n\nReady to get started? Our team will handle everything from name search to certificate delivery!"
+    response: "**Business name registration**\n\nBusiness name registration is commonly used by sole proprietors and small trading concerns. It is generally faster and less costly than incorporation, but it does **not** confer limited liability: the proprietor remains personally responsible for the business.\n\n**Usual requirements**\n• Two proposed names\n• Valid identification of the proprietor\n• Residential address\n• Nature of business\n\n**Indicative timeline:** 3–5 working days.\n**Indicative professional fee:** from ₦35,000.\n\nPrimeflow conducts the name search, files with the CAC, and delivers the certificate."
   },
   scuml: {
     patterns: ['scuml', 'money laundering', 'aml', 'anti money'],
-    response: "**SCUML Registration** 🛡️\n\n**What is SCUML?**\nThe Special Control Unit Against Money Laundering (SCUML) is required for Designated Non-Financial Businesses and Professions (DNFBPs) in Nigeria.\n\n**Who Needs SCUML?**\n• Car dealerships\n• Real estate agents/developers\n• Lawyers, accountants, auditors\n• Trust and company service providers\n• Precious metals/stones dealers\n• Non-profit organizations\n\n**Requirements:**\n• CAC certificate\n• Tax Identification Number (TIN)\n• Director IDs and details\n• Business profile\n\n**Timeline:** 7–14 working days\n**Our Fee:** Starting from ₦40,000\n\nNon-registration attracts **penalties and possible prosecution**. Let Primeflow handle your SCUML registration today!"
+    response: "**SCUML registration**\n\nThe Special Control Unit Against Money Laundering (SCUML) registers Designated Non-Financial Businesses and Professions (DNFBPs) in Nigeria. Sectors typically in scope include real estate, motor dealerships, dealers in precious metals and stones, certain professional practices, trust and company service providers, and many non-profit organisations.\n\n**Usual requirements**\n• Evidence of CAC registration\n• Tax Identification Number (TIN)\n• Particulars and identification of directors or principals\n• A concise business or organisational profile\n\n**Indicative timeline:** 7–14 working days.\n**Indicative professional fee:** from ₦40,000.\n\nOperating without registration where it is required may attract regulatory penalties. Primeflow assesses scope, prepares the file, and submits the application."
   },
   pencom: {
     patterns: ['pencom', 'pension', 'retirement', 'pension fund'],
-    response: "**PENCOM Compliance** 👥\n\n**What is PENCOM?**\nThe National Pension Commission (PenCom) regulates pension schemes in Nigeria. All employers with **3 or more employees** must comply.\n\n**Requirements for Compliance:**\n• Register employees under a licensed Pension Fund Administrator (PFA)\n• Deduct and remit 8% (employee) + 10% (employer) of monthly emolument\n• File quarterly returns\n\n**Benefits of Compliance:**\n✅ Avoid penalties (up to 2% of unpaid contributions)\n✅ Eligible for government contracts\n✅ Attract quality talent\n\n**Our Services Include:**\n• PFA selection assistance\n• Employee registration\n• Ongoing remittance management\n\n**Fee:** Starting from ₦50,000\n\nContact us to ensure your business is fully PENCOM compliant!"
+    response: "**PENCOM (pension) compliance**\n\nThe National Pension Commission oversees mandatory contributory pensions. Employers with **three or more employees** are generally required to register staff with a licensed Pension Fund Administrator (PFA) and remit contributions.\n\n**Typical obligations**\n• Enrolment of eligible employees with a PFA\n• Remittance of employee and employer contributions (commonly 8% and 10% of monthly emolument, subject to current law)\n• Periodic reporting as required\n\n**Indicative professional fee:** from ₦50,000 for set-up support.\n\nNon-compliance may attract penalties and can affect eligibility for certain contracts. Primeflow assists with PFA selection, staff enrolment, and remittance arrangements."
   },
   nsitf: {
     patterns: ['nsitf', 'social insurance', 'employee compensation', 'workplace accident'],
-    response: "**NSITF Registration** 🏥\n\n**What is NSITF?**\nThe Nigeria Social Insurance Trust Fund provides compensation to employees for occupational injuries, diseases, or death.\n\n**Who Must Register:**\nAll employers with at least **one employee** in Nigeria.\n\n**Contribution Rate:** 1% of total monthly payroll\n\n**Benefits:**\n✅ Medical treatment for workplace injuries\n✅ Monthly disability benefits\n✅ Death benefits for dependents\n✅ Required for most government contracts\n\n**Timeline:** 7–14 working days\n**Our Fee:** Starting from ₦45,000\n\nDon't risk non-compliance fines. Let us register your business with NSITF today!"
+    response: "**NSITF registration**\n\nThe Nigeria Social Insurance Trust Fund administers employees’ compensation for occupational injury, disease, or death. Employers with at least one employee in Nigeria are generally required to register and contribute (commonly 1% of total monthly payroll, subject to current rules).\n\n**Indicative timeline:** 7–14 working days.\n**Indicative professional fee:** from ₦45,000.\n\nRegistration is often a prerequisite for public-sector contracting. Primeflow handles registration and ongoing compliance support."
   },
   tax: {
     patterns: ['tax', 'taxation', 'vat', 'company income tax', 'cit', 'nrs', 'tin', 'tax clearance'],
-    response: "**Tax Services in Nigeria** 💰\n\n**Key Tax Obligations for Companies:**\n\n📌 **Company Income Tax (CIT)**\n• 20% for companies with turnover ≤ ₦25M (SMEs)\n• 30% for companies with turnover > ₦100M\n• Due annually within 6 months of financial year-end\n\n📌 **Value Added Tax (VAT)**\n• 7.5% on goods and services\n• Monthly filing on or before 21st of each month\n\n📌 **Withholding Tax (WHT)**\n• Deducted at source on payments\n• Rates vary: 5%–10%\n\n**Our Tax Services:**\n✅ TIN Registration\n✅ VAT filing\n✅ CIT returns preparation\n✅ Tax audit defense\n✅ Tax clearance certificate\n\n**Starting from ₦60,000/year**\n\nLet our tax experts keep your business fully compliant with NRS!"
+    response: "**Taxation (NRS)**\n\nCompanies and many other entities must obtain a Tax Identification Number and meet filing and payment obligations administered with the Nigeria Revenue Service.\n\n**Company Income Tax (CIT)** is assessed annually (generally within six months of year-end). Rates depend on turnover bands under current law; confirm applicable rates for your period.\n\n**Value Added Tax (VAT)** is currently 7.5% on taxable supplies and is typically filed monthly (often on or before the 21st of the following month).\n\n**Withholding tax** is deducted at source on specified payments, commonly in the 5%–10% range depending on the item.\n\nPrimeflow provides TIN registration, VAT and CIT filings, tax clearance applications, and support during reviews. Indicative annual tax-compliance retainers start from ₦60,000."
   },
   annualreturns: {
     patterns: ['annual returns', 'annual filing', 'yearly returns', 'cac return'],
-    response: "**Annual Returns Filing** 📋\n\n**What are Annual Returns?**\nAll registered companies and business names in Nigeria must file Annual Returns with the CAC every year.\n\n**Deadline:**\n• Business Names: Within 90 days of anniversary date\n• Companies: Within 42 days of AGM (or within 18 months of incorporation)\n\n**Penalty for Non-Filing:**\n⚠️ ₦10,000 + ₦5,000 per month for late filing\n⚠️ Risk of striking off from CAC register\n\n**What's Required:**\n• RC Number / BN Number\n• Audited accounts (for companies)\n• Directors' details update\n\n**Our Fee:** Starting from ₦30,000\n\nDon't let your business get struck off! Contact us now to file your Annual Returns."
+    response: "**CAC annual returns**\n\nRegistered companies and business names must file annual returns with the CAC.\n\n**Typical deadlines**\n• Business names: within 90 days of the anniversary of registration\n• Companies: generally within 42 days of the annual general meeting (with a longer window for the first return after incorporation)\n\n**Consequences of default** include statutory penalties that accrue, and, in persistent cases, the risk of striking off.\n\n**Usual information:** RC or BN number, current officer particulars, and, for companies, accounts as required.\n\n**Indicative professional fee:** from ₦30,000.\n\nProvide your registration number and Primeflow will confirm status, prepare, and file."
   },
   trademark: {
     patterns: ['trademark', 'brand protection', 'intellectual property', 'ip', 'patent'],
-    response: "**Trademark Registration** ™️\n\n**Why Register Your Trademark?**\n• Exclusive rights to your brand name/logo\n• Legal protection against counterfeiting\n• Increases business value\n• Required for franchise businesses\n\n**Process:**\n1. Trademark search (2–3 days)\n2. Application filing at IPONL\n3. Publication in Trademarks Journal\n4. Certificate issuance (12–24 months)\n\n**Classes:** Protect your mark in specific goods/services classes (1–45)\n\n**Our Fee:** Starting from ₦120,000 per class (including government fees)\n\n**Protect your brand today!** Contact Primeflow to begin your trademark registration."
+    response: "**Trademark registration**\n\nRegistration of a mark confers exclusive rights in the relevant classes of goods or services and supports enforcement against unauthorised use. It is often required for franchising and brand licensing.\n\n**Process (indicative)**\n1. Availability search (typically 2–3 days)\n2. Application at the registry\n3. Journal publication\n4. Certificate, commonly 12–24 months after filing, subject to oppositions and registry workload\n\n**Indicative professional fee:** from ₦120,000 per class, inclusive of typical government charges.\n\nPrimeflow conducts the search, files the application, and monitors the matter through to grant."
   },
   timeline: {
     patterns: ['how long', 'timeline', 'duration', 'days', 'weeks', 'processing time', 'how many days'],
-    response: "**Registration Timelines** ⏱️\n\n| Service | Timeline |\n|---------|----------|\n| Business Name | 3–5 working days |\n| Company Incorporation | 7–14 working days |\n| Annual Returns | 3–5 working days |\n| SCUML Registration | 7–14 working days |\n| PENCOM Compliance | 7–14 working days |\n| NSITF Registration | 7–14 working days |\n| Trademark Application | 12–24 months |\n| Tax Clearance Certificate | 14–21 working days |\n\n**Note:** Timelines depend on CAC system availability and completeness of documents. Primeflow's expert team ensures your applications are error-free to avoid delays.\n\nNeed a faster turnaround? Contact us — we may have express processing options available!"
+    response: "**Indicative processing times**\n\n| Service | Working days (typical) |\n|---------|----------|\n| Business name | 3–5 |\n| Company incorporation | 7–14 |\n| Annual returns | 3–5 |\n| SCUML | 7–14 |\n| PENCOM set-up | 7–14 |\n| NSITF | 7–14 |\n| Tax clearance | 14–21 |\n| Trademark (to certificate) | 12–24 months |\n\nTimes depend on agency systems and the completeness of your documents. Incomplete or inconsistent files are the most common cause of delay. Primeflow reviews packs before submission. Expedited options, where available, can be discussed with a consultant."
   },
   pricing: {
     patterns: ['price', 'cost', 'how much', 'fee', 'charge', 'rate', 'quotation', 'quote'],
-    response: "**Service Pricing Guide** 💵\n\n| Service | Starting From |\n|---------|---------------|\n| Business Name Registration | ₦35,000 |\n| Company Incorporation | ₦85,000 |\n| Annual Returns | ₦30,000 |\n| SCUML Registration | ₦40,000 |\n| PENCOM Compliance | ₦50,000 |\n| NSITF Registration | ₦45,000 |\n| Trademark Registration | ₦120,000/class |\n| Tax Filing (Annual) | ₦60,000/year |\n| Bookkeeping (Monthly) | ₦45,000/month |\n\n*All prices include VAT and government fees unless otherwise stated.*\n\n💬 **Need a custom quote?** Contact us at:\n📞 **Call, SMS & WhatsApp:** [+234 707 292 8256](https://wa.me/2347072928256)\n\nWe offer **package deals** for businesses that need multiple services!"
+    response: "**Indicative professional fees**\n\n| Service | From |\n|---------|---------------|\n| Business name registration | ₦35,000 |\n| Company incorporation | ₦85,000 |\n| Annual returns | ₦30,000 |\n| SCUML registration | ₦40,000 |\n| PENCOM set-up | ₦50,000 |\n| NSITF registration | ₦45,000 |\n| Trademark (per class) | ₦120,000 |\n| Tax compliance (annual) | ₦60,000 |\n| Bookkeeping (monthly) | ₦45,000 |\n\nFigures are starting professional fees. Government charges, share capital, additional classes, and the condition of your records may affect the final quotation. Combined mandates can be priced as a package.\n\nFor a written quote, [contact a Primeflow consultant](https://wa.me/2347072928256)."
   },
   contact: {
     patterns: ['contact', 'call', 'reach', 'speak', 'human', 'agent', 'consultant', 'whatsapp', 'phone', 'email'],
-    response: "**Contact Primeflow** 📞\n\nOur expert consultants are ready to help!\n\n📞 **Call, SMS & WhatsApp:** [+234 707 292 8256](https://wa.me/2347072928256)\n📧 **Email:** primeflowconsultingservices@gmail.com\n📍 **Office:** Suite 29, Ejimuz Plaza, Aso Savings Road, Kubwa, Abuja\n\n🕐 **Business Hours:**\nMonday – Friday: 8am – 5pm\nSaturday: 10am – 2pm\n\nYou can also **create a free account** and use our secure client portal to submit applications, chat with consultants, and track your progress in real-time!"
+    response: "**Primeflow Consulting Services**\n\n**WhatsApp, calls and SMS:** [+234 707 292 8256](https://wa.me/2347072928256)\n**Email:** primeflowconsultingservices@gmail.com\n**Office:** Suite 29, Ejimuz Plaza, Aso Savings Road, Kubwa, Abuja\n\n**Hours:** Monday–Friday, 8:00am–5:00pm; Saturday, 10:00am–2:00pm.\n\nRegistered clients may also use the portal to submit documents, correspond with assigned officers, and track filings."
   },
   cac: {
     patterns: ['cac', 'corporate affairs commission', 'registration number', 'rc number'],
-    response: "**Corporate Affairs Commission (CAC)** 🏛️\n\nThe CAC is Nigeria's government agency responsible for the regulation and supervision of the formation, incorporation, management and winding-up of companies.\n\n**Services Regulated by CAC:**\n• Company Incorporation\n• Business Name Registration\n• Incorporation of Trustees (NGOs/Associations)\n• Annual Returns filing\n• Post-incorporation changes\n• Company search & certification\n\n**Primeflow as CAC Agents:**\nWe are authorized to process all CAC filings on your behalf, ensuring accuracy and speed.\n\n**CAC Online Portal:** cac.gov.ng\n\nNeed help with any CAC service? Just ask, or create an account to get started!"
+    response: "**Corporate Affairs Commission (CAC)**\n\nThe CAC is the statutory registry for companies, business names, and incorporated trustees in Nigeria. It also receives annual returns, post-incorporation changes, and official searches.\n\n**Matters commonly handled**\n• Incorporation and business name registration\n• Incorporated trustees (associations and NGOs)\n• Annual returns\n• Change of name, directors, share capital, and registered office\n• Certified true copies and status reports\n\nPrimeflow prepares and lodges CAC filings and monitors them to conclusion. The Commission’s portal is cac.gov.ng."
   },
   bookkeeping: {
     patterns: ['bookkeeping', 'accounting', 'financial records', 'payroll', 'financial reporting', 'audit'],
-    response: "**Accounting & Bookkeeping Services** 📊\n\n**Monthly Bookkeeping Package Includes:**\n✅ Transaction recording & categorization\n✅ Bank reconciliation\n✅ Accounts payable & receivable\n✅ Monthly financial statements\n✅ VAT computation & filing\n\n**Payroll Services Include:**\n✅ Salary computation\n✅ PAYE tax calculation\n✅ Payslip generation\n✅ Pension deduction & remittance\n\n**Annual Packages:**\n✅ Year-end accounts preparation\n✅ CIT returns\n✅ Audit support\n✅ Financial analysis & reporting\n\n**Pricing:**\n• Bookkeeping: From ₦45,000/month\n• Payroll: From ₦25,000/month\n• Annual Accounts: From ₦150,000\n\nGet in touch for a custom quote tailored to your business size!"
+    response: "**Accounting, bookkeeping and payroll**\n\n**Monthly bookkeeping** typically covers transaction recording, bank reconciliation, payables and receivables, management accounts, and VAT computation.\n\n**Payroll** covers salary computation, PAYE, payslips, and pension deductions.\n\n**Year-end** support includes statutory accounts, CIT returns, and liaison with auditors.\n\n**Indicative fees:** bookkeeping from ₦45,000 per month; payroll from ₦25,000 per month; annual accounts from ₦150,000.\n\nA consultant will scope the engagement to turnover, transaction volume, and reporting needs."
   },
   default: {
     patterns: [],
-    response: "I'm not sure I fully understand your question, but I'm here to help! 🤔\n\nHere are some things I can assist you with:\n\n• **CAC Registration** — company incorporation, business name\n• **Compliance** — SCUML, PENCOM, NSITF, NRS\n• **Taxation** — VAT, CIT, tax clearance\n• **Pricing & Timelines** — cost and duration estimates\n• **Contact** — reach our human consultants\n\nCould you rephrase your question or choose from the options above? Alternatively, contact our team directly:\n📞 **Call & WhatsApp:** +234 707 292 8256\n📱 **WhatsApp Only:** +234 706 671 4961"
+    response: "This question falls outside the topics covered in detail here.\n\nThis advisor addresses:\n• CAC incorporation and business name registration\n• SCUML, PENCOM, NSITF and related compliance\n• Tax registration, VAT, CIT and tax clearance\n• Indicative fees and processing times\n\nPlease rephrase the question, or speak with a consultant for a matter-specific assessment."
   }
 };
 
+const CONTACT_CTA = '\n\n**Next step:** [Speak with a Primeflow consultant on WhatsApp](https://wa.me/2347072928256) · +234 707 292 8256';
+
+function withContact(text: string) {
+  if (text.includes('Speak with a Primeflow consultant')) return text;
+  return text + CONTACT_CTA;
+}
+
 const QUICK_PROMPTS = [
-  'How do I register a company?',
-  'What is SCUML and who needs it?',
-  'How much does incorporation cost?',
-  'What are the tax obligations?',
-  'How long does registration take?',
-  'How can I contact Primeflow?',
+  'What is required to incorporate a company?',
+  'Who must register with SCUML?',
+  'What are your professional fees?',
+  'What are the principal tax obligations?',
+  'How long do CAC filings take?',
+  'How do I reach a consultant?',
 ];
 
 // ─── Match KB entry ───────────────────────────────────────────────────────────
@@ -88,7 +95,7 @@ function matchResponse(input: string, location: { state: string; lga: string } |
 
   // Location specific query intercepts
   if (location && location.state && (lower.includes('office') || lower.includes('location') || lower.includes('address') || lower.includes('where are you'))) {
-    return `📍 **Primeflow Localized Advisory**\n\nSince your business is registered in **${location.state} ${location.lga ? '(' + location.lga + ')' : ''}**, our services are customized for your location!\n\n🏢 **Abuja HQ Office:** Suite 29, Ejimuz Plaza, Aso Savings Road, Kubwa, Abuja.\n\n💼 **Local Support:** We offer remote consultations and physical document pickup services across **${location.state}** to make your compliance filings hassle-free!\n\n💬 **Contact local advisor:**\n📞 **Call & WhatsApp:** +234 707 292 8256\n📱 **WhatsApp Only:** +234 706 671 4961`;
+    return withContact(`**Office and regional support**\n\nYour profile indicates activity in **${location.state}**${location.lga ? ` (${location.lga})` : ''}. Primeflow coordinates remote filings nationwide and offers document collection where arranged.\n\n**Head office:** Suite 29, Ejimuz Plaza, Aso Savings Road, Kubwa, Abuja.`);
   }
 
   for (const key of Object.keys(KB)) {
@@ -96,59 +103,70 @@ function matchResponse(input: string, location: { state: string; lga: string } |
     if (KB[key].patterns.some(p => lower.includes(p))) {
       let resp = KB[key].response;
       if (location && location.state && key === 'contact') {
-        resp += `\n\n📍 *Special Note for clients in **${location.state}**: We have dedicated representatives assigned to coordinate filings in your region!*`;
+        resp += `\n\nFor clients in **${location.state}**, Primeflow assigns a coordinating officer for regional filings where required.`;
       }
-      return resp;
+      return withContact(resp);
     }
   }
-  return KB.default.response;
+  return withContact(KB.default.response);
 }
 
 // ─── Format markdown-like text ────────────────────────────────────────────────
+function formatInline(text: string): React.ReactNode[] {
+  const chunks = text.split(/(\[[^\]]+\]\([^)]+\)|\*\*[^*]+\*\*)/g);
+  return chunks.filter(Boolean).map((chunk, j) => {
+    const link = chunk.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+    if (link) {
+      return (
+        <a
+          key={j}
+          href={link[2]}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: '#D71920', fontWeight: 700, textDecoration: 'underline' }}
+        >
+          {link[1]}
+        </a>
+      );
+    }
+    if (chunk.startsWith('**') && chunk.endsWith('**')) {
+      return <strong key={j} style={{ color: '#e2e8f0' }}>{chunk.slice(2, -2)}</strong>;
+    }
+    return <React.Fragment key={j}>{chunk}</React.Fragment>;
+  });
+}
+
 function formatText(text: string): React.ReactNode {
   const lines = text.split('\n');
   return lines.map((line, i) => {
-    // Headers
-    if (line.startsWith('**') && line.endsWith('**')) {
+    if (line.startsWith('**') && line.endsWith('**') && !line.includes('](')) {
       return <strong key={i} style={{ color: '#fff', display: 'block', marginTop: i > 0 ? '10px' : 0 }}>{line.replace(/\*\*/g, '')}</strong>;
     }
-    // Table rows
     if (line.startsWith('|')) {
       const cells = line.split('|').filter(c => c.trim()).map(c => c.trim());
       if (cells.every(c => c.replace(/-/g, '').trim() === '')) return null;
       return (
         <div key={i} style={{ display: 'grid', gridTemplateColumns: `1fr 1fr`, gap: '4px', fontSize: '0.8rem', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          {cells.map((c, j) => <span key={j} style={{ color: j === 0 ? '#e2e8f0' : '#D71920', fontWeight: j === 0 ? '400' : '600' }}>{c}</span>)}
+          {cells.map((c, j) => <span key={j} style={{ color: j === 0 ? '#e2e8f0' : '#D71920', fontWeight: j === 0 ? '400' : '600' }}>{formatInline(c)}</span>)}
         </div>
       );
     }
-    // Bullet points
     if (line.match(/^[•✅⚠️📌📱📧📍🕐]/)) {
-      const cleaned = line.replace(/\*\*(.*?)\*\*/g, '$1');
-      return <div key={i} style={{ display: 'flex', gap: '6px', color: '#cbd5e1', fontSize: '0.85rem', marginTop: '2px' }}><span style={{ flexShrink: 0 }}>{line[0]}</span><span>{cleaned.slice(line[0].length === 1 ? 1 : 2).trim()}</span></div>;
+      return <div key={i} style={{ display: 'flex', gap: '6px', color: '#cbd5e1', fontSize: '0.85rem', marginTop: '2px' }}><span style={{ flexShrink: 0 }}>{line[0]}</span><span>{formatInline(line.slice(1).trim())}</span></div>;
     }
-    // Inline bold
-    if (line.includes('**')) {
-      const parts = line.split(/(\*\*.*?\*\*)/g);
-      return <div key={i} style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '4px', lineHeight: '1.6' }}>
-        {parts.map((p, j) => p.startsWith('**') ? <strong key={j} style={{ color: '#e2e8f0' }}>{p.replace(/\*\*/g, '')}</strong> : p)}
-      </div>;
-    }
-    // Empty line
     if (line.trim() === '') return <div key={i} style={{ height: '6px' }} />;
-    // Default
-    return <div key={i} style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: '1.6', marginTop: '2px' }}>{line}</div>;
+    return <div key={i} style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: '1.6', marginTop: '4px' }}>{formatInline(line)}</div>;
   }).filter(Boolean);
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-const AIAdvisor: React.FC = () => {
+const AIAdvisor: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const { user, token } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '0',
       role: 'assistant',
-      text: "Welcome to **Primeflow Business Advisor!** 🚀\n\nI'm your AI-powered guide to business registration, regulatory compliance, and corporate advisory in Nigeria.\n\nAsk me anything about CAC registration, SCUML, taxes, pricing, or timelines. I'm here to help!",
+      text: "**Primeflow Business Advisor**\n\nThis assistant outlines CAC registration, regulatory compliance, taxation, fees, and timelines in Nigeria. It does not replace a consultant review of your facts.\n\nAsk a specific question, or open a consultation for a formal instruction." + CONTACT_CTA,
       timestamp: new Date()
     }
   ]);
@@ -199,7 +217,7 @@ const AIAdvisor: React.FC = () => {
     // Simulate AI thinking delay
     const delay = 600 + Math.random() * 800;
     setTimeout(() => {
-      const responseText = matchResponse(text, userLocation);
+      const responseText = withContact(matchResponse(text, userLocation));
       const botMsg: Message = { id: (Date.now() + 1).toString(), role: 'assistant', text: responseText, timestamp: new Date() };
       setMessages(prev => [...prev, botMsg]);
       setIsTyping(false);
@@ -215,14 +233,14 @@ const AIAdvisor: React.FC = () => {
     setMessages([{
       id: '0',
       role: 'assistant',
-      text: "Chat cleared! How can I help you today? Ask about registration, compliance, taxes, or our services.",
+      text: "The conversation has been cleared. Ask about registration, compliance, taxation, or professional fees." + CONTACT_CTA,
       timestamp: new Date()
     }]);
     setShowPrompts(true);
   };
 
   return (
-    <div className="animate-fade-in ai-advisor-container" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--header-height))', padding: '20px', gap: '20px' }}>
+    <div className="animate-fade-in ai-advisor-container" style={{ display: 'flex', flexDirection: 'column', height: embedded ? 'min(72vh, 680px)' : 'calc(100vh - var(--header-height))', padding: embedded ? '0' : '20px', gap: '20px' }}>
       {/* Header */}
       <div className="glass-panel" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -233,7 +251,7 @@ const AIAdvisor: React.FC = () => {
             <h2 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: '800', margin: 0, fontFamily: "'Outfit', sans-serif" }}>Primeflow Business Advisor</h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
               <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', animation: 'pulseGlow 2s infinite' }} />
-              <span style={{ color: '#64748b', fontSize: '0.78rem' }}>AI-Powered · Always Available</span>
+              <span style={{ color: '#64748b', fontSize: '0.78rem' }}>General guidance · Consultant review for filings</span>
             </div>
           </div>
         </div>
@@ -321,7 +339,7 @@ const AIAdvisor: React.FC = () => {
                 type="text"
                 value={inputText}
                 onChange={e => setInputText(e.target.value)}
-                placeholder="Ask about registration, compliance, taxes, pricing..."
+                placeholder="Ask about incorporation, compliance, tax, or fees"
                 className="form-input"
                 style={{ flex: 1, margin: 0 }}
                 disabled={isTyping}
@@ -331,8 +349,8 @@ const AIAdvisor: React.FC = () => {
               </button>
             </form>
             <p style={{ color: '#475569', fontSize: '0.7rem', marginTop: '10px', textAlign: 'center' }}>
-              AI responses are informational. For legal advice, consult our certified team. 
-              <a href="https://wa.me/2347072928256" target="_blank" rel="noopener noreferrer" style={{ color: '#D71920', textDecoration: 'none', marginLeft: '4px' }}>Chat with a human →</a>
+              Guidance is general and not legal advice. For a filing or opinion,
+              <a href="https://wa.me/2347072928256" target="_blank" rel="noopener noreferrer" style={{ color: '#D71920', textDecoration: 'none', marginLeft: '4px', fontWeight: 700 }}>speak with a Primeflow consultant →</a>
             </p>
           </div>
         </div>
