@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Building2, ShieldCheck, FileText, TrendingUp, Users, Phone, Mail,
@@ -220,6 +220,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowAuth }) => {
     { label: 'Why Us', href: '#why-us' },
     { label: 'Contact', href: '#contact' },
   ];
+
+  useLayoutEffect(() => {
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    if (window.location.hash) {
+      history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    }
+    window.scrollTo(0, 0);
+    const frame = window.requestAnimationFrame(() => window.scrollTo(0, 0));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     document.body.classList.toggle('landing-menu-open', mobileMenuOpen);

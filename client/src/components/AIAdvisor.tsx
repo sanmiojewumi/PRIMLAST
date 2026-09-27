@@ -175,7 +175,7 @@ const AIAdvisor: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const [minimized, setMinimized] = useState(false);
   const [showPrompts, setShowPrompts] = useState(true);
   const [userLocation, setUserLocation] = useState<{ state: string; lga: string } | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesBoxRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -202,8 +202,9 @@ const AIAdvisor: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   }, [user, token]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    const box = messagesBoxRef.current;
+    if (box) box.scrollTop = box.scrollHeight;
+  }, [messages, isTyping]);
 
   const sendMessage = (text: string) => {
     if (!text.trim()) return;
@@ -268,7 +269,7 @@ const AIAdvisor: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
       {!minimized && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px', minHeight: 0 }}>
           {/* Messages area */}
-          <div className="glass-panel" style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div ref={messagesBoxRef} className="glass-panel" style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {messages.map((msg) => (
               <div key={msg.id} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', flexDirection: msg.role === 'user' ? 'row-reverse' : 'row' }}>
                 {/* Avatar */}
@@ -314,8 +315,6 @@ const AIAdvisor: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
                 </div>
               </div>
             )}
-
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Quick prompts */}
