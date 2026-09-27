@@ -1,13 +1,67 @@
 {
-  "buildCommand": "cd client && npm install && npm run build",
+  "buildCommand": "npm run build",
   "outputDirectory": "client/dist",
+  "functions": {
+    "api/index.ts": {
+      "memory": 1024,
+      "maxDuration": 15
+    }
+  },
   "rewrites": [
+    {
+      "source": "/api",
+      "destination": "/api/index.ts"
+    },
     {
       "source": "/api/(.*)",
       "destination": "/api/index.ts"
     },
     {
-      "source": "/(.*)",
+      "source": "/auth/(.*)",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/services/(.*)",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/documents/(.*)",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/messages/(.*)",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/admin/(.*)",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/compliance/(.*)",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/compliance",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/health",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/download-db-pdf",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/download-db-sql",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/uploads/(.*)",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/((?!api|auth|services|documents|messages|admin|compliance|health|download-db-pdf|download-db-sql|uploads).*)",
       "destination": "/index.html"
     }
   ]
