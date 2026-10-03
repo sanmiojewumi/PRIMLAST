@@ -29,3 +29,7 @@ uploads/
 # Log files
 *.log
 logs/
+
+# Bluehost secrets
+php-hosting/config.php
+
